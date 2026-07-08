@@ -1951,7 +1951,7 @@ async function flushSave(){
 }
 
 async function syncNow(){
-  if(!isDirector()){ const q=ANNA_QUIPS[Math.floor(Math.random()*ANNA_QUIPS.length)]; toast(q); return; }
+  if(!isEditMode){ toast('🔒 Unlock editing first to sync'); return; }
   const btn=document.getElementById('btn-sync');
   if(btn){btn.textContent='⟳ Syncing…';btn.disabled=true;}
   try{
