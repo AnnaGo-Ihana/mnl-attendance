@@ -6566,6 +6566,38 @@ function importExcel(input){
         log.push(`📊 Employee Info: read ${found} employees`);
       } else { log.push('ℹ️ Sheet "Employee Info" not found (optional — skip if not importing start dates/passwords/birthdays)'); }
 
+      // ── Contact Info Sheet (real HR master-list format: Names | Email | Phone | Department | Start Date | Remarks) ──
+      if(wb.SheetNames.includes('Contact Info')){
+        const ws = wb.Sheets['Contact Info'];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+        // Find the header row (contains "Names" in col A) instead of assuming a fixed row,
+        // since this sheet sometimes has a blank title row above the real header.
+        let headerRow = -1;
+        for(let r=0;r<Math.min(rows.length,5);r++){
+          if(rows[r] && String(rows[r][0]||'').trim().toLowerCase()==='names'){ headerRow=r; break; }
+        }
+        let found=0;
+        if(headerRow===-1){
+          log.push('⚠️ Contact Info: could not find header row (expected a "Names" column)');
+        } else {
+          for(let r=headerRow+1;r<rows.length;r++){
+            const row=rows[r];
+            if(!row||!row[0]) continue;
+            const fullName=String(row[0]).replace(/\s+/g,' ').trim();
+            if(!fullName) continue;
+            const email = row[1] ? String(row[1]).trim() : null;
+            const phone = row[2] ? String(row[2]).trim() : null;
+            const startDate = excelDateToYMD(row[4]);
+            if(startDate||email||phone){
+              infoUpdates[fullName] = {...(infoUpdates[fullName]||{}), startDate, email, phone};
+              found++;
+            }
+          }
+          log.push(`📊 Contact Info: read ${found} employees`);
+        }
+      } else { log.push('ℹ️ Sheet "Contact Info" not found (optional — skip if not importing start dates/emails/phone numbers)'); }
+
+
       // Match against roster
       let matched=0, unmatched=[];
       let infoMatched=0, infoUnmatched=[];
@@ -6621,6 +6653,12 @@ function importExcel(input){
               if(!state.birthdays) state.birthdays={};
               state.birthdays[emp.name]=infoMatch.bday;
             }
+            if(infoMatch.email||infoMatch.phone){
+              if(!state._contacts) state._contacts={};
+              if(!state._contacts[emp.name]) state._contacts[emp.name]={};
+              if(infoMatch.email) state._contacts[emp.name].email=infoMatch.email;
+              if(infoMatch.phone) state._contacts[emp.name].wa=infoMatch.phone;
+            }
           } else {
             infoUnmatched.push(emp.name);
           }
@@ -6632,8 +6670,8 @@ function importExcel(input){
       if(unmatched.length) log.push(`⚠️ Not matched (${unmatched.length}): ${unmatched.join(', ')}`);
       if(Object.keys(infoUpdates).length){
         log.push(`
-🎯 Employee Info matched: ${infoMatched} employees`);
-        if(infoUnmatched.length) log.push(`⚠️ Employee Info not matched (${infoUnmatched.length}): ${infoUnmatched.join(', ')}`);
+🎯 Employee/Contact Info matched: ${infoMatched} employees`);
+        if(infoUnmatched.length) log.push(`⚠️ Employee/Contact Info not matched (${infoUnmatched.length}): ${infoUnmatched.join(', ')}`);
       }
 
       pendingLeaveImport = true;
