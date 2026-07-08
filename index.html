@@ -354,6 +354,7 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
     <!-- LEFT: Brand names -->
     <div style="display:flex;align-items:center;gap:0;flex:0 0 auto">
       <div class="sync-dot" id="sync-dot" title="Sync status"></div>
+      <span id="sync-status-text" style="font-size:9px;color:rgba(196,168,255,.6);margin-right:8px;white-space:nowrap">Saved ✓</span>
       <div style="display:flex;align-items:center;gap:8px">
         <div style="text-align:center;padding:0 10px;border-right:1px solid rgba(240,180,41,.2)">
           <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#c4b5fd">FUSION MARKETS</div>
@@ -1579,6 +1580,11 @@ function setSyncStatus(status){ // 'ok' | 'syncing' | 'error'
   const dot=document.getElementById('sync-dot');
   dot.className='sync-dot'+(status==='syncing'?' syncing':status==='error'?' error':'');
   dot.title=status==='ok'?'All changes saved':status==='syncing'?'Saving…':'Sync error — check connection';
+  const label=document.getElementById('sync-status-text');
+  if(label){
+    label.textContent=status==='ok'?'Saved ✓':status==='syncing'?'Saving…':'⚠️ Save failed';
+    label.style.color=status==='ok'?'rgba(196,168,255,.6)':status==='syncing'?'#FFC107':'#f44336';
+  }
 }
 
 function showLoading(msg='Loading…'){
@@ -1643,10 +1649,12 @@ async function loadFromDB(){
         state.employees = JSON.parse(JSON.stringify(INIT_DATA.employees));
         console.log('FORCE: Restored all employees from INIT_DATA');
       } else {
-        // Merge any missing employees
+        // Merge any missing employees (but never resurrect ones that were intentionally renamed/removed)
         const _initEmps = INIT_DATA.employees || [];
+        const _retired = state._retiredNames || [];
         let _added = 0;
         _initEmps.forEach(initEmp => {
+          if(_retired.includes(initEmp.name)) return;
           const exists = state.employees.find(e => e.name === initEmp.name);
           if(!exists){ state.employees.push(initEmp); _added++; }
         });
@@ -1674,10 +1682,13 @@ async function loadFromDB(){
       }
       // Always ensure all INIT_DATA employees exist in state
       // This prevents employees from disappearing due to DB corruption
+      // (but never resurrect ones that were intentionally renamed/removed)
       if(!state.employees) state.employees = [];
       const _initEmps = INIT_DATA.employees || [];
+      const _retired2 = state._retiredNames || [];
       let _empsAdded = false;
       _initEmps.forEach(initEmp => {
+        if(_retired2.includes(initEmp.name)) return;
         const exists = state.employees.find(e => e.name === initEmp.name);
         if(!exists){ state.employees.push(initEmp); _empsAdded = true; }
       });
@@ -1885,6 +1896,7 @@ async function saveToDB(){
       body: JSON.stringify({data: _stateToSave, updated_at: new Date().toISOString()})
     });
     setSyncStatus('ok');
+    _hasUnsavedChanges = false;
     // Save shared backup to Supabase after every successful save
     // Use a separate 'backup' row so all leads can see/restore it
     try{
@@ -1923,6 +1935,7 @@ async function saveToDB(){
 }
 
 function scheduleSave(){
+  _hasUnsavedChanges = true;
   clearTimeout(saveTimeout);
   setSyncStatus('syncing');
   saveTimeout = setTimeout(()=>saveToDB(), 800);
@@ -2768,10 +2781,13 @@ async function restoreFromBackup(backupData){
     if(backup.cutoffArchives && backup.cutoffArchives.length > 0) state.cutoffArchives = backup.cutoffArchives;
     // FIXED: Always merge INIT_DATA employees in case backup predates employee storage
     // This ensures employee names always show even if the backup is old
+    // (but never resurrect ones that were intentionally renamed/removed)
     if(!state.employees || state.employees.length === 0) state.employees = JSON.parse(JSON.stringify(INIT_DATA.employees||[]));
     else {
       const _initEmps = INIT_DATA.employees || [];
+      const _retired3 = state._retiredNames || [];
       _initEmps.forEach(initEmp => {
+        if(_retired3.includes(initEmp.name)) return;
         const exists = state.employees.find(e => e.name === initEmp.name);
         if(!exists) state.employees.push(initEmp);
       });
@@ -6138,6 +6154,7 @@ function getUserAccess(name, pw) {
 let isEditMode = false;
 let currentUser = null;
 let _isSaving = false; // {name, role, dept, accessLevel: 'full'|'ot_only', otDept}
+let _hasUnsavedChanges = false; // true whenever an edit is pending and hasn't been confirmed saved yet
 
 function checkEditAccess(){
   try {
@@ -6500,8 +6517,58 @@ function importExcel(input){
         }
       } else { log.push('⚠️ Sheet "SL Monitoring" not found'); }
 
+      // ── Employee Info Sheet (start date, password, birthday) ──
+      let infoUpdates = {};
+      function excelDateToYMD(val){
+        if(val===null||val===undefined||val==='') return null;
+        if(typeof val==='number'){
+          const d = new Date(Math.round((val-25569)*86400*1000));
+          if(isNaN(d.getTime())) return null;
+          return d.toISOString().slice(0,10);
+        }
+        const s = String(val).trim();
+        // Try MM/DD/YYYY or M/D/YYYY
+        let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if(m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+        // Try YYYY-MM-DD already
+        if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        return null;
+      }
+      function excelDateToMD(val){
+        if(val===null||val===undefined||val==='') return null;
+        if(typeof val==='number'){
+          const d = new Date(Math.round((val-25569)*86400*1000));
+          if(isNaN(d.getTime())) return null;
+          return `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        const s = String(val).trim();
+        let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-]\d{2,4})?$/);
+        if(m) return `${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+        if(/^\d{2}-\d{2}$/.test(s)) return s;
+        return null;
+      }
+      if(wb.SheetNames.includes('Employee Info')){
+        const ws = wb.Sheets['Employee Info'];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+        // Row 1 = header labels, data starts row 2: First Name | Last Name | Start Date | Password | Birthday
+        let found=0;
+        for(let r=1;r<rows.length;r++){
+          const row=rows[r];
+          if(!row||!row[0]||!row[1]) continue;
+          const fname=String(row[0]).trim();
+          const lname=String(row[1]).trim();
+          const fullName=fname+' '+lname;
+          const startDate = excelDateToYMD(row[2]);
+          const pw = row[3] ? String(row[3]).trim().toUpperCase() : null;
+          const bday = excelDateToMD(row[4]);
+          if(startDate||pw||bday){ infoUpdates[fullName]={startDate,pw,bday}; found++; }
+        }
+        log.push(`📊 Employee Info: read ${found} employees`);
+      } else { log.push('ℹ️ Sheet "Employee Info" not found (optional — skip if not importing start dates/passwords/birthdays)'); }
+
       // Match against roster
       let matched=0, unmatched=[];
+      let infoMatched=0, infoUnmatched=[];
       state.employees.forEach(emp=>{
         // Helper: normalize name for comparison
         function normName(n){ return n.toLowerCase().replace(/\s+/g,' ').trim(); }
@@ -6538,11 +6605,36 @@ function importExcel(input){
         } else {
           unmatched.push(emp.name);
         }
+
+        if(Object.keys(infoUpdates).length){
+          const infoMatch = findInMap(infoUpdates);
+          if(infoMatch){
+            infoMatched++;
+            if(infoMatch.startDate){
+              if(!state.startDates) state.startDates={};
+              state.startDates[emp.name]=infoMatch.startDate;
+            }
+            if(infoMatch.pw){
+              ALL_CREDENTIALS[emp.name] = {...(ALL_CREDENTIALS[emp.name]||{}), pw:infoMatch.pw, access:(ALL_CREDENTIALS[emp.name]||{}).access||'view_only'};
+            }
+            if(infoMatch.bday){
+              if(!state.birthdays) state.birthdays={};
+              state.birthdays[emp.name]=infoMatch.bday;
+            }
+          } else {
+            infoUnmatched.push(emp.name);
+          }
+        }
       });
 
       log.push(`
 🎯 Matched: ${matched} employees`);
       if(unmatched.length) log.push(`⚠️ Not matched (${unmatched.length}): ${unmatched.join(', ')}`);
+      if(Object.keys(infoUpdates).length){
+        log.push(`
+🎯 Employee Info matched: ${infoMatched} employees`);
+        if(infoUnmatched.length) log.push(`⚠️ Employee Info not matched (${infoUnmatched.length}): ${infoUnmatched.join(', ')}`);
+      }
 
       pendingLeaveImport = true;
       document.getElementById('import-progress').innerHTML = log.map(l=>`<div>${l}</div>`).join('');
@@ -6563,7 +6655,7 @@ function confirmImport(){
   renderDash();
   renderTable();
   document.getElementById('import-modal').classList.remove('open');
-  toast('✅ Leave credits imported successfully!');
+  toast('✅ Import applied successfully!');
   pendingLeaveImport = null;
 }
 
@@ -6592,6 +6684,7 @@ function startApp(){
     // Hide welcome banner if previously dismissed
     try{ if(localStorage.getItem('att_hide_banner')) document.getElementById('welcome-banner').style.display='none'; }catch(e){}
     setInterval(async()=>{
+      if(_isSaving || _hasUnsavedChanges) return; // never clobber local edits that haven't saved yet
       try{
         const rows=await sbFetch('attendance?id=eq.state&select=data,updated_at');
         if(rows&&rows.length){
@@ -6624,6 +6717,25 @@ function startApp(){
     }
   } catch(e) {}
   startApp();
+
+  // ── UNSAVED CHANGES PROTECTION ──────────────────────────────
+  // 1) If the tab is hidden (switched tabs, minimized, backgrounded on mobile),
+  //    flush any pending save immediately instead of waiting for the 800ms debounce.
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'hidden' && _hasUnsavedChanges){
+      flushSave();
+    }
+  });
+  // 2) If someone tries to close/refresh the tab while a save hasn't completed,
+  //    warn them and try to flush immediately so the browser's delay buys time for it to finish.
+  window.addEventListener('beforeunload', (e)=>{
+    if(_hasUnsavedChanges){
+      flushSave();
+      e.preventDefault();
+      e.returnValue = 'You have unsaved changes that may not be saved yet. Leave anyway?';
+      return e.returnValue;
+    }
+  });
 })();
 
 // ── LEAVE DUPLICATE CHECK ──────────────────────────────
@@ -7493,6 +7605,11 @@ function saveEditEmp(){
     const statusVal=(document.getElementById('edit-emp-status')||{}).value||'regular';
     state.employees[idx].empStatus = statusVal;
   }
+  // Prevent the old name from being resurrected by the INIT_DATA safety-merge on next load
+  if(newName !== origName){
+    if(!state._retiredNames) state._retiredNames = [];
+    if(!state._retiredNames.includes(origName)) state._retiredNames.push(origName);
+  }
 
   ALL_CREDENTIALS[newName] = {pw, access};
 
@@ -7580,6 +7697,8 @@ function removeEmployee(name){
   if(!isDirector()){ toast(ANNA_QUIPS[0]); return; }
   if(!confirm('Permanently remove '+name+'?\n\nTheir historical attendance data stays in the DB but they will no longer appear anywhere in the tracker.')) return;
   state.employees = (state.employees||[]).filter(e=>e.name!==name);
+  if(!state._retiredNames) state._retiredNames = [];
+  if(!state._retiredNames.includes(name)) state._retiredNames.push(name);
   delete ALL_CREDENTIALS[name];
   if(state.empNotes) delete state.empNotes[name];
   document.querySelectorAll('#login-name').forEach(sel=>{
