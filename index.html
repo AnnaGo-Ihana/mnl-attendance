@@ -6798,11 +6798,13 @@ function getDeptLeads(dept){
   // Anna Go (Director) is always notified
   // Per dept, notify the team leads/managers with matching dept
   const SUPERVISOR_ROLES = ['team lead','deputy team lead','manager','deputy manager','director'];
+  const normDept = d => (d||'').trim().toUpperCase();
+  const targetDept = normDept(dept);
   const director = (state.employees||[]).find(e => e.role==='Director');
   const leads = (state.employees||[]).filter(e => {
     const role = (e.role||'').trim().toLowerCase();
     const isLead = SUPERVISOR_ROLES.includes(role);
-    const matchesDept = e.dept === dept || e.dept === 'All Departments';
+    const matchesDept = normDept(e.dept) === targetDept || normDept(e.dept) === 'ALL DEPARTMENTS';
     return isLead && matchesDept && e.name !== (director||{}).name;
   });
   const names = [...new Set([
@@ -8861,8 +8863,10 @@ function checkLeaveDuplicates(agent,fromDate,toDate,excludeId){
 }
 function getDeptLeads(dept){
   const SUPERVISOR_ROLES=['team lead','deputy team lead','manager','deputy manager','director'];
+  const normDept=d=>(d||'').trim().toUpperCase();
+  const targetDept=normDept(dept);
   const director=(state.employees||[]).find(e=>e.role==='Director');
-  const leads=(state.employees||[]).filter(e=>{ const r=(e.role||'').trim().toLowerCase(); return SUPERVISOR_ROLES.includes(r)&&(e.dept===dept||e.dept==='All Departments')&&e.name!==(director||{}).name; });
+  const leads=(state.employees||[]).filter(e=>{ const r=(e.role||'').trim().toLowerCase(); return SUPERVISOR_ROLES.includes(r)&&(normDept(e.dept)===targetDept||normDept(e.dept)==='ALL DEPARTMENTS')&&e.name!==(director||{}).name; });
   return [...new Set([...(director?[director.name]:[]),...leads.map(e=>e.name)])];
 }
 function getPendingLeaveAlerts(){
