@@ -8387,6 +8387,11 @@ function renderLeaves(){
     const SUPERVISOR_ROLES = ['team lead','deputy team lead','manager','deputy manager','director'];
     const agentIsLead = SUPERVISOR_ROLES.includes(agentRole);
     const canReviewThis = canReview && (isDirectorUser || (isLeadOfDept && !agentIsLead));
+    let noReviewReason='';
+    if(canReview && !isDirectorUser && !canReviewThis && l.status==='Pending'){
+      if(!isLeadOfDept) noReviewReason='no dept match ("'+l.dept+'")';
+      else if(agentIsLead) noReviewReason='agent role is "'+(agentEmp.role||'(blank)')+'" — Anna only';
+    }
     return '<tr style="border-bottom:1px solid var(--border)">'+
       '<td style="padding:10px 12px;font-size:12px;color:var(--text);white-space:nowrap"><b>'+l.agent+'</b><br><span style="color:var(--text3);font-size:10px">'+l.dept+'</span></td>'+
       '<td style="padding:10px 12px;font-size:12px;color:var(--text2);white-space:nowrap">'+l.from+(l.to!==l.from?' → '+l.to:'')+'<br><span style="color:var(--text3);font-size:10px">'+days+' day'+(days>1?'s':'')+'</span></td>'+
@@ -8396,7 +8401,7 @@ function renderLeaves(){
       '<td style="padding:10px 12px;font-size:11px;color:var(--text3);max-width:140px">'+(l.leadNotes||'—')+'</td>'+
       '<td style="padding:10px 12px;font-size:10px;color:var(--text3);white-space:nowrap">'+(l.filedAt?formatFiledAt(l.filedAt):'—')+'</td>'+
       '<td style="padding:10px 12px">'+(l.docLink?'<a href="'+l.docLink+'" target="_blank" style="font-size:11px;color:#9d6fff;text-decoration:none">📎 Doc</a>':'')+'</td>'+
-      '<td style="padding:10px 12px">'+(canReviewThis&&l.status==='Pending'?'<button data-lid="'+l.id+'" onclick="openReviewModal(this.dataset.lid)" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11px;cursor:pointer">Review</button>':'')+'</td>'+
+      '<td style="padding:10px 12px">'+(canReviewThis&&l.status==='Pending'?'<button data-lid="'+l.id+'" onclick="openReviewModal(this.dataset.lid)" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11px;cursor:pointer">Review</button>':(noReviewReason?'<span style="font-size:9px;color:var(--text3);font-style:italic">'+noReviewReason+'</span>':''))+'</td>'+
     '</tr>';
   }).join('');
   const thead='<thead><tr style="border-bottom:1px solid var(--border)">'+['Agent','Dates','Type','Reason','Status','Lead Notes','Filed','Doc',''].map(h=>'<th style="padding:8px 12px;font-size:10px;font-weight:700;color:var(--text3);text-align:left;text-transform:uppercase">'+h+'</th>').join('')+'</tr></thead>';
