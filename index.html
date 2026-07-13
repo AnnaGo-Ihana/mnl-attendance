@@ -1593,8 +1593,10 @@ function setSyncStatus(status){ // 'ok' | 'syncing' | 'error'
 function updateLastEditorLabel(){
   const el=document.getElementById('last-editor-text');
   if(!el) return;
+  const canSeeNames = currentUser && currentUser.accessLevel==='full';
+  if(!canSeeNames){ el.textContent=''; return; }
   if(state._lastEditedBy){
-    const isMe = currentUser && currentUser.name && currentUser.name.split(' ')[0]===state._lastEditedBy;
+    const isMe = currentUser.name && currentUser.name.split(' ')[0]===state._lastEditedBy;
     el.textContent = isMe ? '· you' : ('· last: '+state._lastEditedBy);
   } else {
     el.textContent='';
@@ -1606,6 +1608,8 @@ const PRESENCE_STALE_MS = 45000; // consider someone "offline" if no heartbeat i
 function renderPresenceList(presence){
   const el=document.getElementById('presence-text');
   if(!el) return;
+  const canSeeNames = currentUser && currentUser.accessLevel==='full';
+  if(!canSeeNames){ el.textContent=''; el.title=''; return; }
   const now=Date.now();
   const myFirst = currentUser ? currentUser.name.split(' ')[0] : null;
   const active = Object.entries(presence||{})
@@ -6782,7 +6786,8 @@ function startApp(){
           const ns=rows[0].data;
           if(JSON.stringify(ns)!==JSON.stringify(state)){
             state=ns;buildDateSel();renderDash();renderTable();
-            const editor = state._lastEditedBy ? (' by '+state._lastEditedBy) : '';
+            const canSeeNames = currentUser && currentUser.accessLevel==='full';
+            const editor = (canSeeNames && state._lastEditedBy) ? (' by '+state._lastEditedBy) : '';
             toast('🔄 Updated'+editor);
             updateLastEditorLabel();
           }
