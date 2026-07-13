@@ -759,6 +759,41 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
         <option value="Other">Other</option>
       </select>
     </div>
+    <div style="border-top:1px solid var(--border);margin:14px 0 10px;padding-top:10px">
+      <label style="font-weight:700">📅 Set Recurring Schedule <span style="color:var(--text3);font-weight:400">(optional — fills in shift times for a date range)</span></label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1">
+          <label style="font-size:10px">Shift Start</label>
+          <select id="edit-emp-sched-start" style="width:100%;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px"></select>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:10px">Shift End</label>
+          <select id="edit-emp-sched-end" style="width:100%;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px"></select>
+        </div>
+      </div>
+      <label style="font-size:10px">Rest Days (RD)</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:400"><input type="checkbox" class="sched-rd-day" value="SUN"> Sun</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:400"><input type="checkbox" class="sched-rd-day" value="MON"> Mon</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:400"><input type="checkbox" class="sched-rd-day" value="TUE"> Tue</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:400"><input type="checkbox" class="sched-rd-day" value="WED"> Wed</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:400"><input type="checkbox" class="sched-rd-day" value="THU"> Thu</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:400"><input type="checkbox" class="sched-rd-day" value="FRI"> Fri</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;font-weight:400"><input type="checkbox" class="sched-rd-day" value="SAT" checked> Sat</label>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1">
+          <label style="font-size:10px">From</label>
+          <input type="date" id="edit-emp-sched-from" style="width:100%">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:10px">To</label>
+          <input type="date" id="edit-emp-sched-to" style="width:100%">
+        </div>
+      </div>
+      <button type="button" class="btn light" style="width:100%;padding:8px;font-size:12px" onclick="applyScheduleFromEditModal()">📅 Apply Schedule to Date Range</button>
+      <div id="edit-emp-sched-msg" style="font-size:11px;min-height:14px;margin-top:4px"></div>
+    </div>
     <div id="edit-emp-msg" style="font-size:11px;min-height:16px;margin-bottom:4px"></div>
     <div class="ma">
       <button class="btn go" onclick="saveEditEmp()">Save Changes</button>
@@ -7667,8 +7702,74 @@ function openEditOneEmp(name){
   const sepEl=document.getElementById('edit-emp-sep-reason');
   if(sepEl) sepEl.value=empRecord.sepReason||'';
   toggleLastDayField();
+  populateScheduleHourSelects();
+  document.querySelectorAll('.sched-rd-day').forEach(cb=>{ cb.checked = (cb.value==='SUN'||cb.value==='SAT'); });
+  const schedFromEl=document.getElementById('edit-emp-sched-from'); if(schedFromEl) schedFromEl.value='';
+  const schedToEl=document.getElementById('edit-emp-sched-to'); if(schedToEl) schedToEl.value='';
+  const schedMsgEl=document.getElementById('edit-emp-sched-msg'); if(schedMsgEl) schedMsgEl.textContent='';
   document.getElementById('edit-emp-msg').textContent = '';
   document.getElementById('edit-one-emp-m').classList.add('open');
+}
+
+function populateScheduleHourSelects(){
+  const startEl=document.getElementById('edit-emp-sched-start');
+  const endEl=document.getElementById('edit-emp-sched-end');
+  if(!startEl||!endEl||startEl.options.length) return; // already populated
+  const hours=[];
+  for(let h=1;h<=12;h++) hours.push(h+'AM');
+  for(let h=1;h<=12;h++) hours.push(h+'PM');
+  // Order starting from 12AM (midnight) through 11PM for natural reading
+  const ordered=['12AM',...hours.filter(h=>h!=='12AM')];
+  ordered.forEach(h=>{
+    startEl.appendChild(new Option(h,h));
+    endEl.appendChild(new Option(h,h));
+  });
+  startEl.value='7AM';
+  endEl.value='4PM';
+}
+
+function applyScheduleFromEditModal(){
+  const name = document.getElementById('edit-emp-orig-name').value;
+  const msg = document.getElementById('edit-emp-sched-msg');
+  const start = document.getElementById('edit-emp-sched-start').value;
+  const end = document.getElementById('edit-emp-sched-end').value;
+  const from = document.getElementById('edit-emp-sched-from').value;
+  const to = document.getElementById('edit-emp-sched-to').value;
+  const rdDays = [...document.querySelectorAll('.sched-rd-day:checked')].map(cb=>cb.value);
+  if(!name){ msg.style.color='#ef4444'; msg.textContent='⚠ Save the employee first'; return; }
+  if(!from||!to){ msg.style.color='#ef4444'; msg.textContent='⚠ Pick a From and To date'; return; }
+  if(from>to){ msg.style.color='#ef4444'; msg.textContent='⚠ From date must be before To date'; return; }
+  const sched = start+'-'+end;
+  const ct = getScheduleClockTimes(sched);
+  if(!confirm(`Apply schedule to ${name}?\n\nShift: ${sched} (rest days: ${rdDays.join(', ')||'none'})\nRange: ${from} → ${to}\n\nThis will overwrite any existing schedule in this range.`)) return;
+  if(!state.timesheet) state.timesheet={};
+  let count=0;
+  let d = new Date(from+'T00:00:00');
+  const endD = new Date(to+'T00:00:00');
+  while(d<=endD){
+    const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(!state.dates.includes(ds)){ state.dates.push(ds); state.dates.sort(); }
+    const dayName = DAYS_OF_WEEK[d.getDay()];
+    const isRD = rdDays.includes(dayName);
+    const k = tsk(name, ds);
+    if(!state.timesheet[k]) state.timesheet[k]={schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+    if(isRD){
+      state.timesheet[k].schedule='RD';
+      state.timesheet[k].timeIn=''; state.timesheet[k].timeOut=''; state.timesheet[k].nd=0;
+      state.timesheet[k].notes='RD';
+    } else {
+      state.timesheet[k].schedule=sched;
+      state.timesheet[k].nd=SCHEDULE_ND[sched]||0;
+      if(ct){ state.timesheet[k].timeIn=ct.timeIn; state.timesheet[k].timeOut=ct.timeOut; }
+      if(state.timesheet[k].notes==='RD') state.timesheet[k].notes='';
+    }
+    count++;
+    d.setDate(d.getDate()+1);
+  }
+  scheduleSave();
+  renderSchedulePage(); renderTimesheet(); renderTable();
+  msg.style.color='#4ade80';
+  msg.textContent=`✅ Applied to ${count} day(s)`;
 }
 
 function saveEditEmp(){
