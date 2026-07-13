@@ -354,7 +354,8 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
     <!-- LEFT: Brand names -->
     <div style="display:flex;align-items:center;gap:0;flex:0 0 auto">
       <div class="sync-dot" id="sync-dot" title="Sync status"></div>
-      <span id="sync-status-text" style="font-size:9px;color:rgba(196,168,255,.6);margin-right:8px;white-space:nowrap">Saved ✓</span>
+      <span id="sync-status-text" style="font-size:9px;color:rgba(196,168,255,.6);margin-right:6px;white-space:nowrap">Saved ✓</span>
+      <span id="last-editor-text" style="font-size:9px;color:rgba(196,168,255,.4);margin-right:8px;white-space:nowrap"></span>
       <div style="display:flex;align-items:center;gap:8px">
         <div style="text-align:center;padding:0 10px;border-right:1px solid rgba(240,180,41,.2)">
           <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#c4b5fd">FUSION MARKETS</div>
@@ -1584,6 +1585,18 @@ function setSyncStatus(status){ // 'ok' | 'syncing' | 'error'
   if(label){
     label.textContent=status==='ok'?'Saved ✓':status==='syncing'?'Saving…':'⚠️ Save failed';
     label.style.color=status==='ok'?'rgba(196,168,255,.6)':status==='syncing'?'#FFC107':'#f44336';
+  }
+  updateLastEditorLabel();
+}
+
+function updateLastEditorLabel(){
+  const el=document.getElementById('last-editor-text');
+  if(!el) return;
+  if(state._lastEditedBy){
+    const isMe = currentUser && currentUser.name && currentUser.name.split(' ')[0]===state._lastEditedBy;
+    el.textContent = isMe ? '· you' : ('· last: '+state._lastEditedBy);
+  } else {
+    el.textContent='';
   }
 }
 
@@ -6714,7 +6727,7 @@ function startApp(){
         }
       }
     }catch(e){}
-    checkEditAccess();hideLoading();buildDateSel();renderDash();autoCheckContractReminders();renderBirthdayBanner();checkBirthdayReminders();
+    checkEditAccess();hideLoading();buildDateSel();renderDash();autoCheckContractReminders();renderBirthdayBanner();checkBirthdayReminders();updateLastEditorLabel();
     // Ensure timesheet + schedule date pickers show current cutoff on load
     const _coInit = getCutoff();
     ['ts-date-from','sched-date-from'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=_coInit.start; });
@@ -6729,7 +6742,9 @@ function startApp(){
           const ns=rows[0].data;
           if(JSON.stringify(ns)!==JSON.stringify(state)){
             state=ns;buildDateSel();renderDash();renderTable();
-            toast('Updated by another user');
+            const editor = state._lastEditedBy ? (' by '+state._lastEditedBy) : '';
+            toast('🔄 Updated'+editor);
+            updateLastEditorLabel();
           }
         }
       }catch(e){}
