@@ -5360,7 +5360,7 @@ function renderSchedulePage(){
   const dateFrom = document.getElementById('sched-date-from')?document.getElementById('sched-date-from').value:'';
   const dateTo   = document.getElementById('sched-date-to')?document.getElementById('sched-date-to').value:'';
 
-  let emps = state.employees.filter(e=>!teamF||e.team===teamF);
+  let emps = state.employees.filter(e=>!e.inactive && (!teamF||e.team===teamF));
   let dates = [...state.dates].sort();
   if(dateFrom) dates=dates.filter(d=>d>=dateFrom);
   if(dateTo)   dates=dates.filter(d=>d<=dateTo);
@@ -5711,7 +5711,7 @@ function exportScheduleCSV(){
   const teamF = document.getElementById('sched-team-filter').value;
   const dateFrom = document.getElementById('sched-date-from').value;
   const dateTo = document.getElementById('sched-date-to').value;
-  let emps = state.employees.filter(e=>!teamF||e.team===teamF);
+  let emps = state.employees.filter(e=>!e.inactive && (!teamF||e.team===teamF));
   let dates = [...state.dates].sort();
   if(dateFrom) dates=dates.filter(d=>d>=dateFrom);
   if(dateTo) dates=dates.filter(d=>d<=dateTo);
