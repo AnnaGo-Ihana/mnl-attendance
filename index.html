@@ -2638,8 +2638,8 @@ function openPop(emp,date,cur){
     hdTags2.style.flexDirection = 'column';
     // Highlight existing tag in notes
     if(cur==='HD' && existingNote){
-      if(existingNote.includes('HDSL')) highlightHDTag('HDSL');
-      else if(existingNote.includes('HDVL')) highlightHDTag('HDVL');
+      if(existingNote.includes('HDSL')||existingNote.includes('Paid Halfday SL')) highlightHDTag('HDSL');
+      else if(existingNote.includes('HDVL')||existingNote.includes('Paid Halfday VL')) highlightHDTag('HDVL');
     }
   }
   document.getElementById('spop').classList.add('open');
@@ -2661,8 +2661,8 @@ function setSt(st){
     // Re-highlight if current notes already contain a tag
     const notes=document.getElementById('pop-notes');
     if(notes){
-      if(notes.value.includes('HDSL')){ highlightHDTag('HDSL'); }
-      else if(notes.value.includes('HDVL')){ highlightHDTag('HDVL'); }
+      if(notes.value.includes('HDSL')||notes.value.includes('Paid Halfday SL')){ highlightHDTag('HDSL'); }
+      else if(notes.value.includes('HDVL')||notes.value.includes('Paid Halfday VL')){ highlightHDTag('HDVL'); }
     }
   }
 }
@@ -2679,10 +2679,11 @@ function highlightHDTag(tag){
 function tagHDType(tag){
   const notes = document.getElementById('pop-notes');
   if(!notes) return;
-  // Remove any existing HD sub-type tag then prepend new one
-  let txt = notes.value.replace(/^(HDSL|HDVL)\s*[-|:]*\s*/i,'').trim();
-  if(tag){ notes.value = tag + (txt ? ' - ' + txt : ''); }
-  else    { notes.value = txt; }
+  // Remove any existing HD sub-type tag (old or new format) then prepend new one
+  let txt = notes.value.replace(/^(Paid Halfday VL|Paid Halfday SL|HDSL|HDVL)\s*[-|:]*\s*/i,'').trim();
+  const friendly = tag==='HDVL' ? 'Paid Halfday VL' : tag==='HDSL' ? 'Paid Halfday SL' : '';
+  if(friendly){ notes.value = friendly + (txt ? ' - ' + txt : ''); }
+  else        { notes.value = txt; }
   highlightHDTag(tag);
 }
 function savePopup(){
@@ -2710,6 +2711,15 @@ function savePopup(){
   const note=document.getElementById('pop-notes').value.trim();
   if(note) state.notes[noteKey(pEmp,pDate)]=note;
   else delete state.notes[noteKey(pEmp,pDate)];
+  // If this is a Half Day with an HD sub-type tag (Paid Halfday VL/SL), also push
+  // that note into the actual Timesheet entry, and mark it manual so the
+  // Timesheet's own auto-detect (Late/Undertime/OT) never overwrites it.
+  if(pCurSt==='HD' && /Paid Halfday (VL|SL)/i.test(note)){
+    const _tk = tsk(pEmp, pDate);
+    if(!state.timesheet[_tk]) state.timesheet[_tk] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+    state.timesheet[_tk].notes = note;
+    state.timesheet[_tk]._notesManual = true;
+  }
   // Save onsite
   if(!state.onsite) state.onsite={};
   const onsite=parseFloat(document.getElementById('pop-onsite').value)||0;
@@ -4097,6 +4107,11 @@ function getShiftTimes(schedule){
 function detectAttendanceIssues(schedule, timeIn, timeOut, attendance){
   // Returns array of issues: ['Late 5min', 'Undertime 30min', '2hrs OT']
   if(!schedule || !timeIn || !timeOut) return [];
+  // Half Day is an approved partial day (paid via VL/SL sub-tag) — don't run
+  // Late/Undertime/OT detection against it at all, since there's no single
+  // correct "half the shift" formula that works for every company convention,
+  // and flagging it as Undertime is simply wrong: it's approved, not a violation.
+  if(attendance === 'HD') return [];
   const shift = getShiftTimes(schedule);
   if(!shift) return [];
 
@@ -4109,17 +4124,10 @@ function detectAttendanceIssues(schedule, timeIn, timeOut, attendance){
 
   const issues = [];
   const GRACE = 0; // no grace period - even 1 min counts
+  const expectedOut = shift.outH;
 
-  // Half Day: only half the shift is expected, so compare against half the
-  // duration instead of the full scheduled end time. Otherwise the unworked
-  // (leave-covered) half gets wrongly flagged as Undertime.
-  const isHalfDay = attendance === 'HD';
-  const fullDuration = shift.outH - shift.inH;
-  const expectedOut = isHalfDay ? shift.inH + fullDuration/2 : shift.outH;
-
-  // Check late (actual in > scheduled in + grace) — skip for half-day since
-  // either half of the shift could have been the one worked.
-  if(!isHalfDay && actualIn > shift.inH + GRACE){
+  // Check late (actual in > scheduled in + grace)
+  if(actualIn > shift.inH + GRACE){
     const lateMin = Math.round((actualIn - shift.inH) * 60);
     if(lateMin >= 1){
       const lateH = lateMin/60;
