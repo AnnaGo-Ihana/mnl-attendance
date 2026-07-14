@@ -1638,6 +1638,25 @@ function updateLastEditorLabel(){
   }
 }
 
+async function pullLatestFromServer(){
+  if(_isSaving || _hasUnsavedChanges) return false; // never clobber local edits that haven't saved yet
+  try{
+    const rows=await sbFetch('attendance?id=eq.state&select=data,updated_at');
+    if(rows&&rows.length){
+      const ns=rows[0].data;
+      if(JSON.stringify(ns)!==JSON.stringify(state)){
+        state=ns;buildDateSel();renderDash();renderTable();
+        const canSeeNames = currentUser && currentUser.accessLevel==='full';
+        const editor = (canSeeNames && state._lastEditedBy) ? (' by '+state._lastEditedBy) : '';
+        toast('🔄 Updated'+editor);
+        updateLastEditorLabel();
+        return true;
+      }
+    }
+  }catch(e){}
+  return false;
+}
+
 // ── PRESENCE: who's currently viewing/working on the tracker ──────────────
 const PRESENCE_STALE_MS = 45000; // consider someone "offline" if no heartbeat in 45s
 function renderPresenceList(presence){
@@ -6813,23 +6832,7 @@ function startApp(){
     ['ts-date-to','sched-date-to'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=_coInit.end; });
     // Hide welcome banner if previously dismissed
     try{ if(localStorage.getItem('att_hide_banner')) document.getElementById('welcome-banner').style.display='none'; }catch(e){}
-    setInterval(async()=>{
-      if(_isSaving || _hasUnsavedChanges) return; // never clobber local edits that haven't saved yet
-      try{
-        const rows=await sbFetch('attendance?id=eq.state&select=data,updated_at');
-        if(rows&&rows.length){
-          const ns=rows[0].data;
-          if(JSON.stringify(ns)!==JSON.stringify(state)){
-            state=ns;buildDateSel();renderDash();renderTable();
-            const canSeeNames = currentUser && currentUser.accessLevel==='full';
-            const editor = (canSeeNames && state._lastEditedBy) ? (' by '+state._lastEditedBy) : '';
-            toast('🔄 Updated'+editor);
-            updateLastEditorLabel();
-          }
-        }
-      }catch(e){}
-      syncPresence();
-    },15000);
+    setInterval(()=>{ pullLatestFromServer(); syncPresence(); },15000);
   }).catch(()=>{
     hideLoading();localStorage.removeItem(STORAGE_KEY);
     // Setup screen removed - just show error toast
@@ -6855,9 +6858,16 @@ function startApp(){
   // ── UNSAVED CHANGES PROTECTION ──────────────────────────────
   // 1) If the tab is hidden (switched tabs, minimized, backgrounded on mobile),
   //    flush any pending save immediately instead of waiting for the 800ms debounce.
+  // 2) If the tab becomes visible again, force a fresh pull from the server first —
+  //    browsers throttle background tabs, so a tab left open overnight can silently
+  //    fall behind. Without this, the first edit after reopening it would save that
+  //    stale copy and overwrite anything anyone else correctly entered in the meantime.
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'hidden' && _hasUnsavedChanges){
       flushSave();
+    }
+    if(document.visibilityState === 'visible'){
+      pullLatestFromServer();
     }
   });
   // 2) If someone tries to close/refresh the tab while a save hasn't completed,
@@ -6870,9 +6880,9 @@ function startApp(){
       return e.returnValue;
     }
   });
+  window.addEventListener('focus', ()=>{ pullLatestFromServer(); });
 })();
 
-// ── LEAVE DUPLICATE CHECK ──────────────────────────────
 function checkLeaveDuplicates(agent, fromDate, toDate, excludeId){
   const leaves = (state.leaveRequests||[]).filter(l =>
     l.agent === agent &&
