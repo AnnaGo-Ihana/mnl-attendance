@@ -3885,7 +3885,8 @@ function recalcAllNDNotes(){
       const nd = calcActualND(e.schedule, e.timeIn, e.timeOut, base);
       e.nd = nd;
       if(!e._notesManual){
-        const issues = detectAttendanceIssues(e.schedule, e.timeIn, e.timeOut);
+        const attSt = state.attendance[gk(emp.name,d)]||'';
+        const issues = detectAttendanceIssues(e.schedule, e.timeIn, e.timeOut, attSt);
         e.notes = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
       }
       updated++;
@@ -4093,7 +4094,7 @@ function getShiftTimes(schedule){
   return {inH, outH};
 }
 
-function detectAttendanceIssues(schedule, timeIn, timeOut){
+function detectAttendanceIssues(schedule, timeIn, timeOut, attendance){
   // Returns array of issues: ['Late 5min', 'Undertime 30min', '2hrs OT']
   if(!schedule || !timeIn || !timeOut) return [];
   const shift = getShiftTimes(schedule);
@@ -4109,8 +4110,16 @@ function detectAttendanceIssues(schedule, timeIn, timeOut){
   const issues = [];
   const GRACE = 0; // no grace period - even 1 min counts
 
-  // Check late (actual in > scheduled in + grace)
-  if(actualIn > shift.inH + GRACE){
+  // Half Day: only half the shift is expected, so compare against half the
+  // duration instead of the full scheduled end time. Otherwise the unworked
+  // (leave-covered) half gets wrongly flagged as Undertime.
+  const isHalfDay = attendance === 'HD';
+  const fullDuration = shift.outH - shift.inH;
+  const expectedOut = isHalfDay ? shift.inH + fullDuration/2 : shift.outH;
+
+  // Check late (actual in > scheduled in + grace) — skip for half-day since
+  // either half of the shift could have been the one worked.
+  if(!isHalfDay && actualIn > shift.inH + GRACE){
     const lateMin = Math.round((actualIn - shift.inH) * 60);
     if(lateMin >= 1){
       const lateH = lateMin/60;
@@ -4119,10 +4128,9 @@ function detectAttendanceIssues(schedule, timeIn, timeOut){
     }
   }
 
-  // Check undertime (actual out < scheduled out - grace)
-  const adjSchedOut = shift.outH;
-  if(adjOut < adjSchedOut - GRACE){
-    const utMin = Math.round((adjSchedOut - adjOut) * 60);
+  // Check undertime (actual out < expected out - grace)
+  if(adjOut < expectedOut - GRACE){
+    const utMin = Math.round((expectedOut - adjOut) * 60);
     if(utMin >= 1){
       const utH = utMin/60;
       const label = utMin < 60 ? utMin+'min Undertime' : (Number.isInteger(utH)?utH+'hr':utH.toFixed(1)+'hrs')+' Undertime';
@@ -4130,9 +4138,9 @@ function detectAttendanceIssues(schedule, timeIn, timeOut){
     }
   }
 
-  // Check OT (actual out > scheduled out + grace)
-  if(adjOut > adjSchedOut + GRACE){
-    const otMin = Math.round((adjOut - adjSchedOut) * 60);
+  // Check OT (actual out > expected out + grace)
+  if(adjOut > expectedOut + GRACE){
+    const otMin = Math.round((adjOut - expectedOut) * 60);
     if(otMin >= 1){
       const otH = otMin/60;
       const label = otMin < 60 ? otMin+'min OT' : (Number.isInteger(otH)?otH+'hr':otH.toFixed(1)+'hrs')+' OT';
@@ -4278,7 +4286,9 @@ function setTsEntry(emp, date, field, val){
   if((field==='timeOut'||field==='notes') && state.timesheet[k]){
     const e2=state.timesheet[k];
     if(e2.timeIn&&e2.timeOut&&e2.schedule){
-      const issues=detectAttendanceIssues(e2.schedule,e2.timeIn,e2.timeOut);
+      const _kParts = k.split('||');
+      const attSt2 = state.attendance[gk(_kParts[1], _kParts[2])]||'';
+      const issues=detectAttendanceIssues(e2.schedule,e2.timeIn,e2.timeOut,attSt2);
       const otIssue=issues.find(i=>i.type==='ot');
       if(otIssue){
         syncTimesheetOTToTracker(k.split('||')[0], k.split('||')[1], e2, otIssue);
@@ -4588,7 +4598,8 @@ function saveTimeEntry(){
         if(sched && (to||ti)){
           const toEff = to || '';
           if(toEff){
-            const issues = detectAttendanceIssues(sched, tiEff, toEff);
+            const attSt3 = state.attendance[gk(emp.name,d)]||'';
+            const issues = detectAttendanceIssues(sched, tiEff, toEff, attSt3);
             const note = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
             const k2 = tsk(emp.name,d);
             if(!state.timesheet[k2]?._notesManual){
@@ -4616,7 +4627,7 @@ function saveTimeEntry(){
           const ct=getScheduleClockTimes(entry.schedule);
           return ct?ct.timeIn:'';
         })();
-        const _issues = _ti ? detectAttendanceIssues(entry.schedule, _ti, entry.timeOut) : [];
+        const _issues = _ti ? detectAttendanceIssues(entry.schedule, _ti, entry.timeOut, state.attendance[gk(emp.name,d)]||'') : [];
         const _note = _issues.length>0 ? _issues.map(i=>i.note).join(' | ') : '';
         const _k = tsk(emp.name,d);
         const _stored = state.timesheet[_k];
