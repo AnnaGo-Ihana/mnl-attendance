@@ -1646,6 +1646,7 @@ async function pullLatestFromServer(){
       const ns=rows[0].data;
       if(JSON.stringify(ns)!==JSON.stringify(state)){
         state=ns;buildDateSel();renderDash();renderTable();
+        setSyncBaseline();
         const canSeeNames = currentUser && currentUser.accessLevel==='full';
         const editor = (canSeeNames && state._lastEditedBy) ? (' by '+state._lastEditedBy) : '';
         toast('🔄 Updated'+editor);
@@ -1981,6 +1982,44 @@ async function saveToDB(){
   setSyncStatus('syncing');
   if(currentUser) state._lastEditedBy = currentUser.name.split(' ')[0];
   try{
+    // ── CONCURRENT-EDIT SAFETY: merge with the latest server data before writing ──
+    // Problem this solves: this app keeps one big JSON blob per save. If two people edit
+    // around the same time, whoever saves last can silently overwrite the other's work,
+    // because a plain overwrite includes that person's whole (locally stale) copy of
+    // attendance/timesheet, not just the cells they actually touched.
+    // Fix: right before saving, pull the current server copy, then merge it with OUR
+    // local copy using a diff against our own last-known-good snapshot (_baseline*) —
+    // so only cells we actually changed override the server's version; everything else
+    // (including anyone else's concurrent edits) is taken from the server as-is.
+    try{
+      const _freshRows = await sbFetch('attendance?id=eq.state&select=data');
+      if(_freshRows && _freshRows.length && _freshRows[0].data){
+        const serverAtt = _freshRows[0].data.attendance || {};
+        const serverTs  = _freshRows[0].data.timesheet  || {};
+        const mergedAtt = {...serverAtt};
+        Object.keys(state.attendance||{}).forEach(k=>{
+          if(JSON.stringify(state.attendance[k]) !== JSON.stringify(_baselineAttendance[k])){
+            mergedAtt[k] = state.attendance[k]; // we actually changed this cell — keep ours
+          }
+        });
+        // Also carry forward any deletions we made (key existed in baseline, gone locally)
+        Object.keys(_baselineAttendance||{}).forEach(k=>{
+          if(!(k in (state.attendance||{})) && (k in mergedAtt)) delete mergedAtt[k];
+        });
+        const mergedTs = {...serverTs};
+        Object.keys(state.timesheet||{}).forEach(k=>{
+          if(JSON.stringify(state.timesheet[k]) !== JSON.stringify(_baselineTimesheet[k])){
+            mergedTs[k] = state.timesheet[k];
+          }
+        });
+        Object.keys(_baselineTimesheet||{}).forEach(k=>{
+          if(!(k in (state.timesheet||{})) && (k in mergedTs)) delete mergedTs[k];
+        });
+        state.attendance = mergedAtt;
+        state.timesheet = mergedTs;
+      }
+    }catch(e){ /* if the pre-save fetch fails, fall back to saving our local copy as-is */ }
+
     // SIZE REDUCTION FIX: Save archives separately, keep main state row lean
     // Only keep the 2 most recent archives in the main state row to prevent Supabase bloat
     const _allArchives = state.cutoffArchives || [];
@@ -2007,6 +2046,7 @@ async function saveToDB(){
     });
     setSyncStatus('ok');
     _hasUnsavedChanges = false;
+    setSyncBaseline();
     // Save shared backup to Supabase after every successful save
     // Use a separate 'backup' row so all leads can see/restore it
     try{
@@ -6265,6 +6305,14 @@ let isEditMode = false;
 let currentUser = null;
 let _isSaving = false; // {name, role, dept, accessLevel: 'full'|'ot_only', otDept}
 let _hasUnsavedChanges = false; // true whenever an edit is pending and hasn't been confirmed saved yet
+let _baselineAttendance = {}; // snapshot of attendance as of the last known-good sync with the server
+let _baselineTimesheet = {};  // same, for timesheet — used to merge concurrent edits from other users safely
+function setSyncBaseline(){
+  try{
+    _baselineAttendance = JSON.parse(JSON.stringify(state.attendance||{}));
+    _baselineTimesheet = JSON.parse(JSON.stringify(state.timesheet||{}));
+  }catch(e){}
+}
 
 function checkEditAccess(){
   try {
@@ -6825,7 +6873,7 @@ function startApp(){
         }
       }
     }catch(e){}
-    checkEditAccess();hideLoading();buildDateSel();renderDash();autoCheckContractReminders();renderBirthdayBanner();checkBirthdayReminders();updateLastEditorLabel();syncPresence();
+    checkEditAccess();hideLoading();buildDateSel();renderDash();autoCheckContractReminders();renderBirthdayBanner();checkBirthdayReminders();updateLastEditorLabel();syncPresence();setSyncBaseline();
     // Ensure timesheet + schedule date pickers show current cutoff on load
     const _coInit = getCutoff();
     ['ts-date-from','sched-date-from'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=_coInit.start; });
