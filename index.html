@@ -212,6 +212,8 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
 .so-L{background:#001838;color:#5db8ff;}
 .so-VL{background:#003040;color:#00cfff;}
 .so-SL{background:#3d1800;color:#ffaa5c;}
+.so-EL{background:#3d0a0a;color:#ff4d4d;}
+.so-BL{background:#2a2a2e;color:#9ca3af;}
 .so-Off{background:#180d30;color:#8878b8;}
 .pa{display:flex;gap:8px;margin-top:14px;}
 .pa .btn{flex:1;padding:8px;font-size:12px;}
@@ -514,6 +516,8 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
         <option value="UT">Undertime (UT)</option>
         <option value="VL">Vacation Leave (VL)</option>
         <option value="SL">Sick Leave (SL)</option>
+        <option value="EL">Emergency Leave (EL)</option>
+        <option value="BL">Bereavement Leave (BL)</option>
         <option value="Off">Off</option>
       </select>
       <button class="btn light" onclick="openAddEmp()" id="btn-add-emp" style="display:none">+ Employee</button>
@@ -535,12 +539,14 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
     <div class="sg2">
       <div class="so so-P"   onclick="setSt('P')">P — Present</div>
       <div class="so so-A"   onclick="setSt('A')">A — Absent</div>
-      <div class="so so-HD"  onclick="setSt('HD')">HD — Half Day</div>
-      <div class="so so-UT"  onclick="setSt('UT')">UT — Undertime</div>
+      <div class="so so-HD"   onclick="setSt('HD')">HD — Half Day</div>
+      <div class="so so-UT"   onclick="setSt('UT')">UT — Undertime</div>
       <div class="so so-L"   onclick="setSt('L')">L — Late</div>
-      <div class="so so-VL"  onclick="setSt('VL')">VL — Vacation</div>
-      <div class="so so-SL"  onclick="setSt('SL')">SL — Sick Leave</div>
-      <div class="so so-Off" onclick="setSt('Off')">Off — Rest Day</div>
+      <div class="so so-VL"   onclick="setSt('VL')">VL — Vacation</div>
+      <div class="so so-SL"   onclick="setSt('SL')">SL — Sick Leave</div>
+      <div class="so so-EL"   onclick="setSt('EL')">EL — Emergency</div>
+      <div class="so so-BL"   onclick="setSt('BL')">BL — Bereavement</div>
+      <div class="so so-Off"   onclick="setSt('Off')">Off — Rest Day</div>
     </div>
 
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
@@ -4022,7 +4028,7 @@ const SCHEDULE_ND = {
   '6PM-3AM':4,'7PM-4AM':5,'8PM-5AM':6,'9PM-6AM':8,'10PM-7AM':7,'11PM-8AM':6,
   'RD':0,'RDOT':0,'Custom':0
 };
-const TS_NOTES = ['','RD','RDOT','Paid VL','Paid SL','Unpaid SL','VL - No Pay','SL - No Pay','Suspended','UT','Late','Half Day','Adjusted sched','OT','Holiday','No Call No Show','On Leave','Custom'];
+const TS_NOTES = ['','RD','RDOT','Paid VL','Paid SL','Emergency Leave','Bereavement Leave','Unpaid SL','VL - No Pay','SL - No Pay','Suspended','UT','Late','Half Day','Adjusted sched','OT','Holiday','No Call No Show','On Leave','Custom'];
 
 function tsk(emp, date){ return 'ts||'+emp+'||'+date; }
 
@@ -4204,7 +4210,7 @@ function getTsEntry(emp, date){
       if(!entry._timesManual){
         entry.timeIn = ''; entry.timeOut = ''; entry.nd = 0;
       }
-      const base = att==='VL'?'Paid VL':att==='SL'?'Paid SL':att==='Off'?'Rest Day':'Absent';
+      const base = att==='VL'?'Paid VL':att==='SL'?'Paid SL':att==='EL'?'Emergency Leave':att==='BL'?'Bereavement Leave':att==='Off'?'Rest Day':'Absent';
       const autoNote = holiday ? holiday+' | '+base : base;
       if(attChanged || !entry._notesManual || !entry.notes.includes(base)){
         entry.notes = autoNote;
@@ -4218,10 +4224,10 @@ function getTsEntry(emp, date){
       }
     } else {
       if(attChanged && !entry._notesManual){
-        const wasLeaveNote = /Paid VL|Paid SL|Absent/i.test(entry.notes||'');
+        const wasLeaveNote = /Paid VL|Paid SL|Emergency Leave|Bereavement Leave|Absent/i.test(entry.notes||'');
         if(wasLeaveNote){ entry.notes = holiday||''; state.timesheet[k].notes = entry.notes; }
       }
-      if(holiday && !entry._notesManual && (!entry.notes || entry.notes===holiday || /Paid VL|Paid SL|Absent/i.test(entry.notes||''))){
+      if(holiday && !entry._notesManual && (!entry.notes || entry.notes===holiday || /Paid VL|Paid SL|Emergency Leave|Bereavement Leave|Absent/i.test(entry.notes||''))){
         entry.notes = holiday; state.timesheet[k].notes = holiday;
       } else if(!entry._notesManual && !entry.notes){
         if(att==='HD') entry.notes = 'Half Day';
@@ -4419,10 +4425,10 @@ function renderTimesheet(){
       const entry = getTsEntry(emp.name, d);
       const attendance = state.attendance[gk(emp.name,d)]||'';
       empTotalND += parseFloat(entry.nd)||0;
-      const attColor = attendance==='P'?'#00e896':attendance==='A'?'#ff5c7a':attendance==='VL'?'#00cfff':attendance==='SL'?'#ffaa5c':attendance==='HD'?'#ffcf3d':attendance==='L'?'#5db8ff':attendance==='UT'?'#c49eff':'var(--text3)';
+      const attColor = attendance==='P'?'#00e896':attendance==='A'?'#ff5c7a':attendance==='VL'?'#00cfff':attendance==='SL'?'#ffaa5c':attendance==='EL'?'#ff4d4d':attendance==='BL'?'#9ca3af':attendance==='HD'?'#ffcf3d':attendance==='L'?'#5db8ff':attendance==='UT'?'#c49eff':'var(--text3)';
       // Auto-sync VL/SL/A to notes from tracker
       if(['VL','SL','EL','BL','A','Off'].includes(attendance) && entry && !entry._notesManual){
-        const autoNote = attendance==='VL'?'Paid VL':attendance==='SL'?'Paid SL':attendance==='Off'?'Rest Day':'Absent';
+        const autoNote = attendance==='VL'?'Paid VL':attendance==='SL'?'Paid SL':attendance==='EL'?'Emergency Leave':attendance==='BL'?'Bereavement Leave':attendance==='Off'?'Rest Day':'Absent';
         if(!entry.notes) entry.notes = autoNote;
         entry.nd = 0;
       }
