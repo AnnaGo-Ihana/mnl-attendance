@@ -7085,7 +7085,7 @@ function confirmStartNewCutoff(earlyOverride){
   const nextLabel = cutoffLabel(next.start, next.end);
   const msg = earlyOverride
     ? 'Archive current cutoff (' + label + ') early and start ' + nextLabel + '?'
-    : 'Archive cutoff ' + label + ' and start ' + nextLabel + '?\n\nThis will:\n• Save all current timesheet & OT data under "' + label + '"\n• Reset the timesheet & OT view to the new period\n• Old data stays accessible from the Archive dropdown';
+    : 'Start new cutoff ' + nextLabel + '?\n\nThis will:\n• Save a snapshot of "' + label + '" under the Archive dropdown for reference\n• Add the new period\'s dates to the tracker\n• All existing data stays exactly as-is — nothing is deleted or cleared';
   if(!confirm(msg)) return;
   archiveAndAdvanceCutoff();
 }
@@ -7095,7 +7095,7 @@ function archiveAndAdvanceCutoff(){
   const label = cutoffLabel(co.start, co.end);
   const next = getNextFortnight(co.end);
 
-  // Build archive snapshot
+  // Build archive snapshot (kept for the "View Past Cutoff" dropdown / reporting clarity)
   if(!state.cutoffArchives) state.cutoffArchives = [];
   state.cutoffArchives.push({
     id: 'co_' + co.start + '_' + co.end,
@@ -7112,35 +7112,20 @@ function archiveAndAdvanceCutoff(){
     dates: (state.dates || []).filter(d => d >= co.start && d <= co.end),
   });
 
-  // Advance cutoff
+  // Advance cutoff pointer (controls what counts as "current period" for banners/UI)
   state.cutoff = next;
 
-  // Generate new date range in state.dates (keep existing dates, add new period)
+  // Add the new period's dates — NEVER remove old ones. Old dates, attendance, and
+  // timesheet entries stay exactly as they are in the live data; nothing gets deleted.
+  // (Previously this replaced state.dates entirely and deleted old attendance/timesheet/OT
+  // entries for the just-ended period, which caused real data loss when this ran.)
   const newDates = [];
   const d = new Date(next.start + 'T00:00:00');
   const end = new Date(next.end + 'T00:00:00');
   while(d <= end){ newDates.push(fmt(new Date(d))); d.setDate(d.getDate()+1); }
-  state.dates = newDates;
-
-  // Clear OT entries for the old period (keep future/manual ones outside old range)
-  state.otEntries = (state.otEntries || []).filter(e =>
-    !e.date || e.date > co.end || e.date < co.start
-  );
-
-  // Clear timesheet entries for old dates
-  const oldKeys = Object.keys(state.timesheet || {}).filter(k => {
-    const parts = k.split('||');
-    const d = parts[parts.length-1];
-    return d >= co.start && d <= co.end;
-  });
-  oldKeys.forEach(k => delete state.timesheet[k]);
-
-  // Clear attendance for old dates
-  const oldAttKeys = Object.keys(state.attendance || {}).filter(k => {
-    const d = k.split('||')[1];
-    return d >= co.start && d <= co.end;
-  });
-  oldAttKeys.forEach(k => delete state.attendance[k]);
+  const existingDates = new Set(state.dates || []);
+  newDates.forEach(nd => { if(!existingDates.has(nd)) state.dates.push(nd); });
+  state.dates.sort();
 
   saveToDB();
   hideCutoffBanner();
