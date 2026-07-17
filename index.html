@@ -2512,7 +2512,13 @@ function renderTable(){
     r1.appendChild(th1);
   });
   const st=document.createElement('th');
-  st.textContent='Summary';st.style.cssText='min-width:110px;position:sticky;top:0;z-index:15;background:var(--bg);';
+  st.style.cssText='min-width:110px;position:sticky;top:0;z-index:15;background:var(--bg);';
+  let _summaryUpdatedHtml = '';
+  if(state._leaveCreditsUpdatedAt){
+    const _d = new Date(state._leaveCreditsUpdatedAt);
+    _summaryUpdatedHtml = `<div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px" title="Last leave credits import: ${_d.toLocaleString()}">Updated ${MONTHS[_d.getMonth()]} ${_d.getDate()}</div>`;
+  }
+  st.innerHTML = `<div>Summary</div>${_summaryUpdatedHtml}`;
   r1.appendChild(st);
   thead.innerHTML='';thead.appendChild(r1);
   tbody.innerHTML='';
