@@ -9132,16 +9132,33 @@ function decideLeave(status){
   toast((status==='Approved'?'✅':'❌')+' Leave '+status.toLowerCase()+' for '+_l.agent.split(' ')[0]);
   if(status==='Approved'){
     // Show notify panel instead of closing right away
-    _notifyingLeave = _l;
-    const c = (state._contacts||{})[_l.agent] || {};
-    const days=Math.ceil((new Date(_l.to)-new Date(_l.from))/(1000*60*60*24))+1;
-    document.getElementById('lv-notify-info').innerHTML = '<b>'+_l.agent+'</b><br>'+_l.type+' · '+_l.from+(_l.to!==_l.from?' → '+_l.to:'')+' ('+days+' day'+(days>1?'s':'')+')'+(c.email?'<br>📧 '+c.email:'<br><span style="color:var(--text3)">No email on file</span>')+(c.wa?'<br>💬 '+c.wa:'<br><span style="color:var(--text3)">No phone number on file</span>');
-    document.getElementById('lv-notify-email-btn').disabled = !c.email;
-    document.getElementById('lv-notify-email-btn').style.opacity = c.email ? '1' : '.4';
-    document.getElementById('lv-notify-wa-btn').disabled = !c.wa;
-    document.getElementById('lv-notify-wa-btn').style.opacity = c.wa ? '1' : '.4';
-    document.getElementById('lv-review-main').style.display='none';
-    document.getElementById('lv-notify-panel').style.display='';
+    try{
+      _notifyingLeave = _l;
+      const c = (state._contacts||{})[_l.agent] || {};
+      const days=Math.ceil((new Date(_l.to)-new Date(_l.from))/(1000*60*60*24))+1;
+      const infoEl = document.getElementById('lv-notify-info');
+      const emailBtn = document.getElementById('lv-notify-email-btn');
+      const waBtn = document.getElementById('lv-notify-wa-btn');
+      const mainEl = document.getElementById('lv-review-main');
+      const panelEl = document.getElementById('lv-notify-panel');
+      if(!infoEl||!emailBtn||!waBtn||!mainEl||!panelEl){
+        console.error('Notify panel elements missing:', {infoEl,emailBtn,waBtn,mainEl,panelEl});
+        toast('⚠️ Approved, but the notify screen failed to load (missing UI element)');
+        closeReviewModal();
+        return;
+      }
+      infoEl.innerHTML = '<b>'+_l.agent+'</b><br>'+_l.type+' · '+_l.from+(_l.to!==_l.from?' → '+_l.to:'')+' ('+days+' day'+(days>1?'s':'')+')'+(c.email?'<br>📧 '+c.email:'<br><span style="color:var(--text3)">No email on file</span>')+(c.wa?'<br>💬 '+c.wa:'<br><span style="color:var(--text3)">No phone number on file</span>');
+      emailBtn.disabled = !c.email;
+      emailBtn.style.opacity = c.email ? '1' : '.4';
+      waBtn.disabled = !c.wa;
+      waBtn.style.opacity = c.wa ? '1' : '.4';
+      mainEl.style.display='none';
+      panelEl.style.display='';
+    }catch(err){
+      console.error('Notify panel error:', err);
+      toast('⚠️ Approved, but the notify screen hit an error: '+err.message);
+      closeReviewModal();
+    }
   } else {
     closeReviewModal();
   }
