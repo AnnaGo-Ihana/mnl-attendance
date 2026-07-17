@@ -474,7 +474,7 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
     </div>
     <div class="sec-lbl">Overall Summary</div>
     <div class="overall-row" id="overall-row"></div>
-    <div class="sec-lbl" style="padding-top:8px">Leave Credits Summary</div>
+    <div class="sec-lbl" style="padding-top:8px;display:flex;align-items:center;gap:8px">Leave Credits Summary <span id="leave-credits-updated" style="font-weight:400;text-transform:none;color:var(--text3);font-size:10px"></span></div>
   <div style="padding:0 24px 8px" id="leave-summary"></div>
   <div class="sec-lbl">Leadership</div>
     <div style="padding:0 24px 16px" id="lead-section-wrap"></div>
@@ -3405,6 +3405,17 @@ function buildTrendChart(){
 function renderLeaveSummary() {
   const wrap = document.getElementById('leave-summary');
   if(!wrap) return;
+
+  const updatedEl = document.getElementById('leave-credits-updated');
+  if(updatedEl){
+    if(state._leaveCreditsUpdatedAt){
+      const d = new Date(state._leaveCreditsUpdatedAt);
+      updatedEl.textContent = '· Updated as of ' + MONTHS[d.getMonth()] + ' ' + d.getDate();
+      updatedEl.title = 'Last leave credits import: ' + d.toLocaleString();
+    } else {
+      updatedEl.textContent = '';
+    }
+  }
 
   const TEAM_COLORS = {CS:'#1a6b9a',KYC:'#6b3a9a',Funding:'#1a7a4a',Marketing:'#9a2060',Operations:'#1a5a7a',Finance:'#5a6a10'};
   const TEAM_BG = {CS:'#e4f2f8',KYC:'#f0eafc',Funding:'#e4f8ec',Marketing:'#fce8f4',Operations:'#e4f0f8',Finance:'#f4f8e0'};
@@ -6629,6 +6640,7 @@ function checkPin(){ checkRoleLogin(); }
 
 // ─── EXCEL IMPORT ────────────────────────────────────────────────────────────
 let pendingLeaveImport = null;
+let _lastImportHadCredits = false;
 
 function importExcel(input){
   const file = input.files[0];
@@ -6868,6 +6880,7 @@ function importExcel(input){
       }
 
       pendingLeaveImport = true;
+      _lastImportHadCredits = matched > 0;
       document.getElementById('import-progress').innerHTML = log.map(l=>`<div>${l}</div>`).join('');
       document.getElementById('import-summary').style.display='block';
       document.getElementById('import-summary').innerHTML = `✅ Ready to apply — ${matched} employees updated`;
@@ -6882,12 +6895,16 @@ function importExcel(input){
 
 function confirmImport(){
   if(!pendingLeaveImport) return;
+  if(_lastImportHadCredits){
+    state._leaveCreditsUpdatedAt = new Date().toISOString();
+  }
   scheduleSave();
   renderDash();
   renderTable();
   document.getElementById('import-modal').classList.remove('open');
   toast('✅ Import applied successfully!');
   pendingLeaveImport = null;
+  _lastImportHadCredits = false;
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
