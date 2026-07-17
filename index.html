@@ -8390,13 +8390,25 @@ function renderWeeklyRankings(weekIdx){
 <!-- LEAD REVIEW MODAL -->
 <div id="leave-review-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:95vw">
-    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px">📝 Review Leave Request</div>
-    <div id="lv-review-info" style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7"></div>
-    <div style="margin-bottom:12px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Lead Notes</div><textarea id="lv-review-notes" rows="3" placeholder="Add notes for the agent..." style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;resize:vertical;font-family:var(--font);box-sizing:border-box"></textarea></div>
-    <div style="display:flex;gap:8px">
-      <button onclick="decideLeave('Approved')" style="flex:1;padding:9px;border-radius:8px;border:none;background:#22c55e;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✅ Approve</button>
-      <button onclick="decideLeave('Declined')" style="flex:1;padding:9px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:12px;font-weight:600;cursor:pointer">❌ Decline</button>
-      <button onclick="closeReviewModal()" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer">Cancel</button>
+    <div id="lv-review-main">
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px">📝 Review Leave Request</div>
+      <div id="lv-review-info" style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7"></div>
+      <div style="margin-bottom:12px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Lead Notes</div><textarea id="lv-review-notes" rows="3" placeholder="Add notes for the agent..." style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;resize:vertical;font-family:var(--font);box-sizing:border-box"></textarea></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="decideLeave('Approved')" style="flex:1;padding:9px;border-radius:8px;border:none;background:#22c55e;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✅ Approve</button>
+        <button onclick="decideLeave('Declined')" style="flex:1;padding:9px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:12px;font-weight:600;cursor:pointer">❌ Decline</button>
+        <button onclick="closeReviewModal()" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer">Cancel</button>
+      </div>
+    </div>
+    <div id="lv-notify-panel" style="display:none">
+      <div style="font-size:16px;font-weight:700;color:#22c55e;margin-bottom:6px">✅ Leave Approved</div>
+      <div id="lv-notify-info" style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6"></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Let them know — opens your email/WhatsApp with the message pre-filled:</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button id="lv-notify-email-btn" onclick="sendLeaveNotify('email')" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">📧 Email</button>
+        <button id="lv-notify-wa-btn" onclick="sendLeaveNotify('wa')" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">💬 WhatsApp</button>
+      </div>
+      <button onclick="closeReviewModal()" style="width:100%;padding:9px;border-radius:8px;border:none;background:transparent;color:var(--text3);font-size:12px;cursor:pointer">Done, skip notifying</button>
     </div>
   </div>
 </div>
@@ -9078,7 +9090,12 @@ function openReviewModal(id){
   document.getElementById('lv-review-notes').value=leave.leadNotes||'';
   modal.style.display='flex';
 }
-function closeReviewModal(){ document.getElementById('leave-review-modal').style.display='none'; _reviewingLeaveId=null; }
+function closeReviewModal(){
+  document.getElementById('leave-review-modal').style.display='none';
+  document.getElementById('lv-review-main').style.display='';
+  document.getElementById('lv-notify-panel').style.display='none';
+  _reviewingLeaveId=null;
+}
 function decideLeave(status){
   if(!canManageLeaves()){ toast('😄 Oops! This one\'s Anna-coded. She\'ll handle it. Let her know!'); return; }
   if(!_reviewingLeaveId) return;
@@ -9094,8 +9111,41 @@ function decideLeave(status){
   state.leaveRequests[idx].reviewedAt=new Date().toISOString();
   const _l=state.leaveRequests[idx];
   logAudit((status==='Approved'?'Approved leave':'Declined leave'), _l.type+' '+_l.from+(_l.to&&_l.to!==_l.from?' → '+_l.to:''), _l.agent);
-  closeReviewModal(); scheduleSave(); renderLeaves(); renderLeaveAlertBanner();
-  toast((status==='Approved'?'✅':'❌')+' Leave '+status.toLowerCase()+' for '+state.leaveRequests[idx].agent.split(' ')[0]);
+  scheduleSave(); renderLeaves(); renderLeaveAlertBanner();
+  toast((status==='Approved'?'✅':'❌')+' Leave '+status.toLowerCase()+' for '+_l.agent.split(' ')[0]);
+  if(status==='Approved'){
+    // Show notify panel instead of closing right away
+    _notifyingLeave = _l;
+    const c = (state._contacts||{})[_l.agent] || {};
+    const days=Math.ceil((new Date(_l.to)-new Date(_l.from))/(1000*60*60*24))+1;
+    document.getElementById('lv-notify-info').innerHTML = '<b>'+_l.agent+'</b><br>'+_l.type+' · '+_l.from+(_l.to!==_l.from?' → '+_l.to:'')+' ('+days+' day'+(days>1?'s':'')+')'+(c.email?'<br>📧 '+c.email:'<br><span style="color:var(--text3)">No email on file</span>')+(c.wa?'<br>💬 '+c.wa:'<br><span style="color:var(--text3)">No phone number on file</span>');
+    document.getElementById('lv-notify-email-btn').disabled = !c.email;
+    document.getElementById('lv-notify-email-btn').style.opacity = c.email ? '1' : '.4';
+    document.getElementById('lv-notify-wa-btn').disabled = !c.wa;
+    document.getElementById('lv-notify-wa-btn').style.opacity = c.wa ? '1' : '.4';
+    document.getElementById('lv-review-main').style.display='none';
+    document.getElementById('lv-notify-panel').style.display='';
+  } else {
+    closeReviewModal();
+  }
+}
+let _notifyingLeave = null;
+function sendLeaveNotify(channel){
+  if(!_notifyingLeave) return;
+  const l = _notifyingLeave;
+  const c = (state._contacts||{})[l.agent] || {};
+  const days=Math.ceil((new Date(l.to)-new Date(l.from))/(1000*60*60*24))+1;
+  const firstName = l.agent.split(' ')[0];
+  const dateRange = l.from + (l.to!==l.from ? ' to ' + l.to : '');
+  const msg = `Hi ${firstName}, your ${l.type} leave request for ${dateRange} (${days} day${days>1?'s':''}) has been approved. ${l.leadNotes ? 'Note: '+l.leadNotes : ''}`;
+  if(channel==='email' && c.email){
+    const subject = encodeURIComponent(`Leave Approved: ${dateRange}`);
+    const body = encodeURIComponent(msg);
+    window.open(`mailto:${c.email}?subject=${subject}&body=${body}`, '_blank');
+  } else if(channel==='wa' && c.wa){
+    const phone = c.wa.replace(/[^0-9]/g,'');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
 }
 function checkLeaveDuplicates(agent,fromDate,toDate,excludeId){
   return (state.leaveRequests||[]).filter(l=>{
