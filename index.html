@@ -1832,13 +1832,14 @@ async function loadFromDB(){
       // Heal any leaves with dept:"—" from the .team vs .dept bug
       healLeavesDept();
       // Auto-advance cutoff if the stored one has expired and hasn't been archived yet
+      let _coldStart = false;
       const _today = new Date(); _today.setHours(0,0,0,0);
       const _cutoffEnd = new Date(state.cutoff.end + 'T00:00:00');
       if(_cutoffEnd < _today){
         // Cutoff is in the past — advance to correct current period
         // SAFETY FIX: Skip auto-archive on Supabase cold start (free tier pauses on weekends).
         // If attendance+timesheet are empty, data hasn't loaded yet. Don't archive empty data.
-        const _coldStart = Object.keys(state.attendance||{}).length === 0 && Object.keys(state.timesheet||{}).length === 0;
+        _coldStart = Object.keys(state.attendance||{}).length === 0 && Object.keys(state.timesheet||{}).length === 0;
         if(_coldStart){
           console.warn('COLD START DETECTED: Cutoff expired but data is empty. Skipping auto-archive to prevent Monday data loss.');
           let _coT=state.cutoff,_sg2=0;
@@ -1922,39 +1923,44 @@ async function loadFromDB(){
       }
       if(_datesAdded){
         state.dates = [..._existing2].sort();
-        if(state.employees && state.employees.length > 0) await saveToDB();
+        // CRITICAL: never save here if we detected a cold start above — attendance/timesheet
+        // are still empty at this point and saving would overwrite good server data with
+        // nothing. This was the actual gap that let data loss through even though the
+        // cold-start branch above said "don't save" — this save didn't check that flag.
+        if(!_coldStart && state.employees && state.employees.length > 0) await saveToDB();
+        else if(_coldStart) console.warn('COLD START: Skipping dates-added save to avoid overwriting server data with empty attendance/timesheet.');
       }
       // Seed birthdays from 201 file if not yet set
       if(!state.birthdays || Object.keys(state.birthdays).length===0){
         state.birthdays = {...INIT_BIRTHDAYS};
-        await saveToDB();
+        if(!_coldStart) await saveToDB();
       } else {
         // Merge any missing ones
         let bdayAdded = false;
         Object.entries(INIT_BIRTHDAYS).forEach(([n,b])=>{
           if(!state.birthdays[n]){ state.birthdays[n]=b; bdayAdded=true; }
         });
-        if(bdayAdded) await saveToDB();
+        if(bdayAdded && !_coldStart) await saveToDB();
       }
       // Seed start dates from 201 file if not yet set
       if(!state.startDates || Object.keys(state.startDates).length===0){
         state.startDates = {...INIT_START_DATES};
-        await saveToDB();
+        if(!_coldStart) await saveToDB();
       } else {
         let sdAdded = false;
         Object.entries(INIT_START_DATES).forEach(([n,s])=>{
           if(!state.startDates[n]){ state.startDates[n]=s; sdAdded=true; }
         });
-        if(sdAdded) await saveToDB();
+        if(sdAdded && !_coldStart) await saveToDB();
       }
       if(!state.leaveRequests || state.leaveRequests.length===0){
         state.leaveRequests = INIT_LEAVE_DATA;
-        await saveToDB();
+        if(!_coldStart) await saveToDB();
       } else if(state.leaveRequests.length < 500){
         // Merge: add any INIT records not already present
         const existIds = new Set(state.leaveRequests.map(l=>l._excelId).filter(Boolean));
         const toAdd = INIT_LEAVE_DATA.filter(l=>!existIds.has(l._excelId));
-        if(toAdd.length){ state.leaveRequests = [...state.leaveRequests, ...toAdd]; await saveToDB(); }
+        if(toAdd.length){ state.leaveRequests = [...state.leaveRequests, ...toAdd]; if(!_coldStart) await saveToDB(); }
       }
     }
   } else {
@@ -4053,7 +4059,7 @@ const SCHEDULE_ND = {
   '12AM-9AM':6,'1AM-10AM':5,'2AM-11AM':4,'3AM-12PM':3,'4AM-1PM':2,'5AM-2PM':1,
   '6AM-3PM':0,'7AM-4PM':0,'8AM-5PM':0,'9AM-6PM':0,'10AM-7PM':0,'11AM-8PM':0,
   '12PM-9PM':0,'1PM-10PM':0,'2PM-11PM':1,'3PM-12AM':2,'4PM-1AM':3,'5PM-2AM':4,
-  '6PM-3AM':4,'7PM-4AM':5,'8PM-5AM':6,'9PM-6AM':8,'10PM-7AM':7,'11PM-8AM':6,
+  '6PM-3AM':4,'7PM-4AM':5,'8PM-5AM':6,'9PM-6AM':7,'10PM-7AM':7,'11PM-8AM':6,
   'RD':0,'RDOT':0,'Custom':0
 };
 const TS_NOTES = ['','RD','RDOT','Paid VL','Paid SL','Emergency Leave','Bereavement Leave','Unpaid SL','VL - No Pay','SL - No Pay','Suspended','UT','Late','Half Day','Adjusted sched','OT','Holiday','No Call No Show','On Leave','Custom'];
