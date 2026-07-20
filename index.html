@@ -4876,7 +4876,7 @@ function exportTimesheetCSV(){
   const toVal   = (document.getElementById('ts-date-to')||{}).value   || getCutoff().end;
   const dates = [...state.dates].sort().filter(d => d >= fromVal && d <= toVal);
   let csv = 'Department,Employee,Date,Day,Schedule,Time In,Time Out,ND,Notes,Attendance\n';
-  const emps = state.employees.filter(e=>!deptF||e.team===deptF);
+  const emps = state.employees.filter(e=>!e.inactive && (!deptF||e.team===deptF));
   emps.forEach(emp=>{
     dates.forEach(d=>{
       const e=getTsEntry(emp.name,d);
