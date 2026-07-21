@@ -8439,17 +8439,34 @@ function renderWeeklyRankings(weekIdx){
       <option value="Off">Off — Rest Day</option>
     </select>
 
-    <label style="font-size:11px;color:var(--text3)">Team / Department</label>
-    <select id="bulk-mark-team" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;box-sizing:border-box">
-      <option value="">All Teams</option>
-      <option value="Leadership">Leadership</option>
-      <option value="CS">CS</option>
-      <option value="KYC">KYC</option>
-      <option value="Funding">Funding</option>
-      <option value="Marketing">Marketing</option>
-      <option value="Operations">Operations</option>
-      <option value="Finance">Finance</option>
-    </select>
+    <div style="display:flex;gap:14px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-weight:400;cursor:pointer">
+        <input type="radio" name="bulk-mark-mode" value="dept" checked onchange="toggleBulkMarkMode()"> By Team/Dept
+      </label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-weight:400;cursor:pointer">
+        <input type="radio" name="bulk-mark-mode" value="person" onchange="toggleBulkMarkMode()"> Specific Person(s)
+      </label>
+    </div>
+
+    <div id="bulk-mark-dept-wrap">
+      <label style="font-size:11px;color:var(--text3)">Team / Department</label>
+      <select id="bulk-mark-team" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;box-sizing:border-box">
+        <option value="">All Teams</option>
+        <option value="Leadership">Leadership</option>
+        <option value="CS">CS</option>
+        <option value="KYC">KYC</option>
+        <option value="Funding">Funding</option>
+        <option value="Marketing">Marketing</option>
+        <option value="Operations">Operations</option>
+        <option value="Finance">Finance</option>
+      </select>
+    </div>
+
+    <div id="bulk-mark-person-wrap" style="display:none">
+      <label style="font-size:11px;color:var(--text3)">Search & select people</label>
+      <input type="text" id="bulk-mark-person-search" placeholder="Search name..." oninput="renderBulkMarkPersonList()" style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:6px;box-sizing:border-box">
+      <div id="bulk-mark-person-list" style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:7px;padding:6px;margin-bottom:12px;background:var(--bg)"></div>
+    </div>
 
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <div style="flex:1">
@@ -9176,15 +9193,40 @@ function openBulkMark(){
   document.getElementById('bulk-mark-from').value='';
   document.getElementById('bulk-mark-to').value='';
   document.getElementById('bulk-mark-skip-existing').checked=false;
+  document.getElementById('bulk-mark-person-search').value='';
+  document.querySelector('input[name="bulk-mark-mode"][value="dept"]').checked = true;
   // Default team filter to whatever's currently selected on the Tracker, for convenience
   const curTeam = (document.getElementById('tf')||{}).value||'';
   document.getElementById('bulk-mark-team').value = curTeam;
+  toggleBulkMarkMode();
   document.getElementById('bulk-mark-modal').style.display='flex';
+}
+
+function toggleBulkMarkMode(){
+  const mode = document.querySelector('input[name="bulk-mark-mode"]:checked').value;
+  document.getElementById('bulk-mark-dept-wrap').style.display = mode==='dept' ? '' : 'none';
+  document.getElementById('bulk-mark-person-wrap').style.display = mode==='person' ? '' : 'none';
+  if(mode==='person') renderBulkMarkPersonList();
+}
+
+function renderBulkMarkPersonList(){
+  const wrap = document.getElementById('bulk-mark-person-list');
+  if(!wrap) return;
+  const q = (document.getElementById('bulk-mark-person-search').value||'').toLowerCase();
+  // Remember which ones are currently checked so re-render (on search) doesn't lose selections
+  const prevChecked = new Set([...wrap.querySelectorAll('input[type=checkbox]:checked')].map(cb=>cb.value));
+  const emps = (state.employees||[]).filter(e=>!e.inactive && e.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  wrap.innerHTML = emps.map(e=>{
+    const checked = prevChecked.has(e.name) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);font-weight:400;padding:3px 0;cursor:pointer">
+      <input type="checkbox" class="bulk-mark-person-cb" value="${e.name.replace(/"/g,'&quot;')}" ${checked}> ${e.name} <span style="color:var(--text3);font-size:10px">${e.team||''}</span>
+    </label>`;
+  }).join('') || '<div style="font-size:11px;color:var(--text3)">No matches</div>';
 }
 
 function applyBulkMark(){
   const status = document.getElementById('bulk-mark-status').value;
-  const teamF = document.getElementById('bulk-mark-team').value;
+  const mode = document.querySelector('input[name="bulk-mark-mode"]:checked').value;
   const from = document.getElementById('bulk-mark-from').value;
   const to = document.getElementById('bulk-mark-to').value;
   const skipExisting = document.getElementById('bulk-mark-skip-existing').checked;
@@ -9193,7 +9235,17 @@ function applyBulkMark(){
   if(!from || !to){ msg.style.color='#ef4444'; msg.textContent='⚠ Pick a From and To date'; return; }
   if(from > to){ msg.style.color='#ef4444'; msg.textContent='⚠ From date must be before To date'; return; }
 
-  const emps = (state.employees||[]).filter(e => !e.inactive && (!teamF || e.team===teamF));
+  let emps, scopeLabel;
+  if(mode==='person'){
+    const selectedNames = [...document.querySelectorAll('.bulk-mark-person-cb:checked')].map(cb=>cb.value);
+    if(selectedNames.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ Select at least one person'; return; }
+    emps = (state.employees||[]).filter(e => selectedNames.includes(e.name));
+    scopeLabel = selectedNames.length===1 ? selectedNames[0] : selectedNames.length+' people';
+  } else {
+    const teamF = document.getElementById('bulk-mark-team').value;
+    emps = (state.employees||[]).filter(e => !e.inactive && (!teamF || e.team===teamF));
+    scopeLabel = teamF || 'All Teams';
+  }
   const dates = (state.dates||[]).filter(d => d>=from && d<=to);
 
   if(emps.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ No matching employees found'; return; }
@@ -9211,8 +9263,7 @@ function applyBulkMark(){
 
   if(toApply.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ Nothing to apply (all cells already have a status and "skip existing" is checked)'; return; }
 
-  const teamLabel = teamF || 'All Teams';
-  if(!confirm(`Mark ${emps.length} employee(s) × ${dates.length} date(s) as "${status}"?\n\nTeam: ${teamLabel}\nRange: ${from} → ${to}\nCells affected: ${toApply.length}${skipExisting ? ' (existing marks skipped)' : ' (this will overwrite any existing marks)'}\n\nThis cannot be undone in bulk — you'd need to fix cells individually.`)) return;
+  if(!confirm(`Mark ${emps.length} employee(s) × ${dates.length} date(s) as "${status}"?\n\nScope: ${scopeLabel}\nRange: ${from} → ${to}\nCells affected: ${toApply.length}${skipExisting ? ' (existing marks skipped)' : ' (this will overwrite any existing marks)'}\n\nThis cannot be undone in bulk — you'd need to fix cells individually.`)) return;
 
   toApply.forEach(k => { state.attendance[k] = status; });
 
