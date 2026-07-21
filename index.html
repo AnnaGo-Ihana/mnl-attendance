@@ -753,10 +753,10 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
       <option value="view_only">View Only — sees all tabs, files own leaves</option>
       <option value="full">Full — lead/manager access</option>
       <option value="leave_only">Leave Only — leave tab only</option>
-      <option value="disabled">Disabled — cannot login</option>
+      <option value="disabled">Disabled — cannot login, removed from active lists</option>
     </select>
     <div id="edit-emp-lastday-wrap" style="display:none">
-      <label>📤 Last Day of Work <span style="color:var(--text3);font-weight:400">(resigned / terminated / end of contract)</span></label>
+      <label>📤 Last Day of Work <span style="color:var(--text3);font-weight:400">(marks them inactive — resigned / terminated / end of contract)</span></label>
       <input type="date" id="edit-emp-lastday">
       <label>📋 Separation Reason <span style="color:var(--text3);font-weight:400">(optional)</span></label>
       <select id="edit-emp-sep-reason" style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:4px">
@@ -6537,6 +6537,11 @@ function checkRoleLogin(){
   if(!name){err.textContent='⚠️ Please select your name';return;}
   if(!pass){err.textContent='⚠️ Please enter your password';return;}
   if(!ALL_CREDENTIALS[name]){err.textContent='⚠️ Name not in system';return;}
+  const _empCheck = (state.employees||[]).find(e=>e.name===name);
+  if(_empCheck && _empCheck.inactive){
+    err.textContent='🚫 This account has been deactivated'+(_empCheck.sepReason?' ('+_empCheck.sepReason+')':'')+'. Contact Anna if this is a mistake.';
+    return;
+  }
   const access = getUserAccess(name, pass);
   if(!access){
     err.textContent='❌ Wrong password for '+name.split(' ')[0]+' — try again';
@@ -7882,6 +7887,12 @@ function saveEditEmp(){
       else delete state.employees[idx2].lastDay;
       if(sepVal) state.employees[idx2].sepReason=sepVal;
       else delete state.employees[idx2].sepReason;
+      // Tie "Disabled" access level to the inactive flag: mark them inactive
+      // (removes them from Tracker/Schedule/Timesheet) and their login is
+      // blocked at the login screen regardless of their PIN, since login
+      // now checks this same flag on the live employee record.
+      if(access==='disabled'){ state.employees[idx2].inactive = true; }
+      else { delete state.employees[idx2].inactive; }
     }
   }
 
