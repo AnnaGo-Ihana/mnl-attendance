@@ -4224,7 +4224,7 @@ function getTsEntry(emp, date){
       }
       const base = att==='VL'?'Paid VL':att==='SL'?'Paid SL':att==='EL'?'Emergency Leave':att==='BL'?'Bereavement Leave':att==='Off'?'Rest Day':'Absent';
       const autoNote = holiday ? holiday+' | '+base : base;
-      if(attChanged || !entry._notesManual || !entry.notes.includes(base)){
+      if(attChanged || !entry._notesManual){
         entry.notes = autoNote;
         entry._notesManual = false;
         state.timesheet[k].notes = autoNote;
