@@ -2588,6 +2588,16 @@ function openPop(emp,date,cur){
       else if(existingNote.includes('HDVL')||existingNote.includes('Paid Halfday VL')) highlightHDTag('HDVL');
     }
   }
+  // Show/hide VL sub-type tags (this was missing — only setSt() handled it, not reopening an existing VL cell)
+  const vlTags2 = document.getElementById('pop-vl-tags');
+  if(vlTags2){
+    vlTags2.style.display = (cur==='VL' && !ro) ? 'flex' : 'none';
+    vlTags2.style.flexDirection = 'column';
+    if(cur==='VL'){
+      if(existingNote.includes('Unpaid VL')) highlightVLTag('UNPAIDVL');
+      else highlightVLTag('PAIDVL');
+    }
+  }
   document.getElementById('spop').classList.add('open');
 }
 function closePop(){document.getElementById('spop').classList.remove('open');}
