@@ -6521,13 +6521,21 @@ function toggleLock(){
 
 function populateLoginNameDropdown(){
   const sel = document.getElementById('login-name');
-  if(!sel || sel.options.length > 1) return; // already populated
-  const names = Object.keys(ALL_CREDENTIALS).sort((a,b)=>a.localeCompare(b));
+  if(!sel) return;
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">— Select your name —</option>';
+  const names = Object.keys(ALL_CREDENTIALS)
+    .filter(n=>{
+      const emp = (state.employees||[]).find(e=>e.name===n);
+      return !(emp && emp.inactive);
+    })
+    .sort((a,b)=>a.localeCompare(b));
   names.forEach(n=>{
     const opt = document.createElement('option');
     opt.value = n; opt.textContent = n;
     sel.appendChild(opt);
   });
+  if(names.includes(prevVal)) sel.value = prevVal;
 }
 
 function checkRoleLogin(){
