@@ -525,6 +525,7 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
       <button class="btn light" onclick="openLeaveEdit()" id="btn-edit-leave" style="display:none">✏️ Edit Credits</button>
       <button class="btn light" onclick="document.getElementById('xl-import-input').click()" id="btn-import-xl" style="display:none;background:rgba(52,211,153,.1);border-color:#34d399;color:#34d399">📥 Import Excel</button>
       <button class="btn light" onclick="openManageDepts()" id="btn-manage-depts" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">🏢 Departments</button>
+      <button class="btn light" onclick="openBulkMark()" id="btn-bulk-mark" style="display:none;background:rgba(255,193,7,.1);border-color:#FFC107;color:#FFC107">🖊️ Bulk Mark</button>
       <input type="file" id="xl-import-input" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
     </div>
     <div class="tw"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
@@ -6355,7 +6356,7 @@ function switchLoginTab(tab){} // unified login - no tabs needed
 function enableLeaveMode(showToast=true){
   isEditMode = false;
   // Hide edit/admin buttons
-  ['btn-add-date','btn-add-emp','btn-edit-emps','btn-edit-leave','btn-import-xl','btn-manage-depts',
+  ['btn-add-date','btn-add-emp','btn-edit-emps','btn-edit-leave','btn-import-xl','btn-manage-depts','btn-bulk-mark',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-lock','btn-sync'].forEach(id=>{
     document.querySelectorAll('#'+id).forEach(el=>el.style.display='none');
   });
@@ -6390,7 +6391,7 @@ function enableViewMode(showToast=true){
   // Clear any stale leave_only session that might override
   localStorage.removeItem('att_leave_unlocked');
   // Hide all admin/edit buttons — keep + File Leave visible
-  ['btn-add-date','btn-add-emp','btn-edit-emps','btn-edit-leave','btn-import-xl','btn-manage-depts',
+  ['btn-add-date','btn-add-emp','btn-edit-emps','btn-edit-leave','btn-import-xl','btn-manage-depts','btn-bulk-mark',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-sync',
    'btn-new-cutoff','btn-export'].forEach(id=>{
     document.querySelectorAll('#'+id).forEach(el=>el.style.display='none');
@@ -6428,7 +6429,7 @@ function enableViewMode(showToast=true){
 
 function enableEditMode(showToast=true){
   isEditMode = true;
-  ['btn-add-date','btn-add-emp','btn-edit-emps','btn-edit-leave','btn-import-xl','btn-manage-depts',
+  ['btn-add-date','btn-add-emp','btn-edit-emps','btn-edit-leave','btn-import-xl','btn-manage-depts','btn-bulk-mark',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-new-cutoff'].forEach(id=>{
     document.querySelectorAll('#'+id).forEach(el=>el.style.display='');
   });
@@ -6490,7 +6491,7 @@ function disableEditMode(){
   localStorage.removeItem(PIN_STORAGE_KEY);
   localStorage.removeItem(OT_PIN_STORAGE_KEY);
   localStorage.removeItem('att_leave_unlocked');
-  ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
+  ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts','btn-bulk-mark',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
@@ -8372,6 +8373,61 @@ function renderWeeklyRankings(weekIdx){
 </div>
 
 <!-- LEAD REVIEW MODAL -->
+<div id="bulk-mark-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:440px;max-width:95vw">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">🖊️ Bulk Mark Attendance</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Mark attendance for many employees and dates at once</div>
+
+    <label style="font-size:11px;color:var(--text3)">Status</label>
+    <select id="bulk-mark-status" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;box-sizing:border-box">
+      <option value="P">P — Present</option>
+      <option value="A">A — Absent</option>
+      <option value="HD">HD — Half Day</option>
+      <option value="UT">UT — Undertime</option>
+      <option value="L">L — Late</option>
+      <option value="VL">VL — Vacation</option>
+      <option value="SL">SL — Sick Leave</option>
+      <option value="EL">EL — Emergency</option>
+      <option value="BL">BL — Bereavement</option>
+      <option value="Off">Off — Rest Day</option>
+    </select>
+
+    <label style="font-size:11px;color:var(--text3)">Team / Department</label>
+    <select id="bulk-mark-team" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;box-sizing:border-box">
+      <option value="">All Teams</option>
+      <option value="Leadership">Leadership</option>
+      <option value="CS">CS</option>
+      <option value="KYC">KYC</option>
+      <option value="Funding">Funding</option>
+      <option value="Marketing">Marketing</option>
+      <option value="Operations">Operations</option>
+      <option value="Finance">Finance</option>
+    </select>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1">
+        <label style="font-size:11px;color:var(--text3)">From</label>
+        <input type="date" id="bulk-mark-from" style="width:100%;box-sizing:border-box">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:11px;color:var(--text3)">To</label>
+        <input type="date" id="bulk-mark-to" style="width:100%;box-sizing:border-box">
+      </div>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:16px;font-weight:400">
+      <input type="checkbox" id="bulk-mark-skip-existing"> Skip cells that already have a status (don't overwrite)
+    </label>
+
+    <div id="bulk-mark-msg" style="font-size:11px;min-height:16px;margin-bottom:8px"></div>
+
+    <div style="display:flex;gap:8px">
+      <button onclick="applyBulkMark()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#FFC107;color:#000;font-size:12px;font-weight:700;cursor:pointer">Apply</button>
+      <button onclick="document.getElementById('bulk-mark-modal').style.display='none'" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="leave-review-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:95vw">
     <div id="lv-review-main">
@@ -9059,6 +9115,59 @@ let _reviewingLeaveId=null;
 const _LEAD_OWN_LEAVE_QUIPS = [
   'Look at you, being efficient! But your own leave goes straight to Anna — she\'ll take good care of it. 🌸',
 ];
+function openBulkMark(){
+  if(!isEditMode){ toast('🔒 Unlock editing first'); return; }
+  document.getElementById('bulk-mark-msg').textContent='';
+  document.getElementById('bulk-mark-from').value='';
+  document.getElementById('bulk-mark-to').value='';
+  document.getElementById('bulk-mark-skip-existing').checked=false;
+  // Default team filter to whatever's currently selected on the Tracker, for convenience
+  const curTeam = (document.getElementById('tf')||{}).value||'';
+  document.getElementById('bulk-mark-team').value = curTeam;
+  document.getElementById('bulk-mark-modal').style.display='flex';
+}
+
+function applyBulkMark(){
+  const status = document.getElementById('bulk-mark-status').value;
+  const teamF = document.getElementById('bulk-mark-team').value;
+  const from = document.getElementById('bulk-mark-from').value;
+  const to = document.getElementById('bulk-mark-to').value;
+  const skipExisting = document.getElementById('bulk-mark-skip-existing').checked;
+  const msg = document.getElementById('bulk-mark-msg');
+
+  if(!from || !to){ msg.style.color='#ef4444'; msg.textContent='⚠ Pick a From and To date'; return; }
+  if(from > to){ msg.style.color='#ef4444'; msg.textContent='⚠ From date must be before To date'; return; }
+
+  const emps = (state.employees||[]).filter(e => !e.inactive && (!teamF || e.team===teamF));
+  const dates = (state.dates||[]).filter(d => d>=from && d<=to);
+
+  if(emps.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ No matching employees found'; return; }
+  if(dates.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ No tracker dates found in that range'; return; }
+
+  let toApply = [];
+  emps.forEach(e=>{
+    dates.forEach(d=>{
+      const k = gk(e.name, d);
+      const existing = state.attendance[k];
+      if(skipExisting && existing) return;
+      toApply.push(k);
+    });
+  });
+
+  if(toApply.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ Nothing to apply (all cells already have a status and "skip existing" is checked)'; return; }
+
+  const teamLabel = teamF || 'All Teams';
+  if(!confirm(`Mark ${emps.length} employee(s) × ${dates.length} date(s) as "${status}"?\n\nTeam: ${teamLabel}\nRange: ${from} → ${to}\nCells affected: ${toApply.length}${skipExisting ? ' (existing marks skipped)' : ' (this will overwrite any existing marks)'}\n\nThis cannot be undone in bulk — you'd need to fix cells individually.`)) return;
+
+  toApply.forEach(k => { state.attendance[k] = status; });
+
+  scheduleSave();
+  renderTable();
+  renderDash();
+  document.getElementById('bulk-mark-modal').style.display='none';
+  toast(`✅ Marked ${toApply.length} cell(s) as ${status}`);
+}
+
 function openReviewModal(id){
   if(!canManageLeaves()){ toast('😄 Oops! This one\'s Anna-coded. She\'ll handle it. Let her know!'); return; }
   const leave=(state.leaveRequests||[]).find(l=>l.id===id); if(!leave) return;
