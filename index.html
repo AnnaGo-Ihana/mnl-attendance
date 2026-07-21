@@ -572,6 +572,24 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
             </button>
           </div>
         </div>
+        <!-- VL Sub-type tags: only visible for leads when VL is selected -->
+        <div id="pop-vl-tags" style="display:none;margin-bottom:8px;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10px;color:#00cfff;font-weight:700;display:block;margin-bottom:4px">🏖️ VL Type (Leads only — tag paid or unpaid):</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" id="vl-tag-paid" onclick="tagVLType('PAIDVL')" title="Paid Vacation Leave"
+              style="padding:5px 12px;border-radius:20px;border:2px solid #00cfff;background:#003040;color:#00cfff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--mono)">
+              Paid VL
+            </button>
+            <button type="button" id="vl-tag-unpaid" onclick="tagVLType('UNPAIDVL')" title="Unpaid Vacation Leave"
+              style="padding:5px 12px;border-radius:20px;border:2px solid #ff9f43;background:#3d2200;color:#ff9f43;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--mono)">
+              Unpaid VL
+            </button>
+            <button type="button" id="vl-tag-clear" onclick="tagVLType('')" title="Clear tag"
+              style="padding:5px 12px;border-radius:20px;border:2px solid var(--border);background:var(--bg);color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--mono)">
+              Clear
+            </button>
+          </div>
+        </div>
         <textarea id="pop-notes" rows="2" placeholder="e.g. Medical certificate submitted, sick since Monday…"
           style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;font-family:var(--font);resize:none;line-height:1.5;outline:none"
           onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='var(--border)'"></textarea>
@@ -2593,6 +2611,18 @@ function setSt(st){
       else if(notes.value.includes('HDVL')||notes.value.includes('Paid Halfday VL')){ highlightHDTag('HDVL'); }
     }
   }
+  // Show VL sub-type tags for leads only
+  const vlTags = document.getElementById('pop-vl-tags');
+  if(vlTags){
+    const isLead = isEditMode;
+    vlTags.style.display = (st==='VL' && isLead) ? 'flex' : 'none';
+    vlTags.style.flexDirection = 'column';
+    const notes=document.getElementById('pop-notes');
+    if(notes){
+      if(notes.value.includes('Unpaid VL')){ highlightVLTag('UNPAIDVL'); }
+      else { highlightVLTag('PAIDVL'); }
+    }
+  }
 }
 
 function highlightHDTag(tag){
@@ -2602,6 +2632,23 @@ function highlightHDTag(tag){
     btn.style.opacity = (t===tag)?'1':'0.4';
     btn.style.boxShadow = (t===tag)?'0 0 8px currentColor':'';
   });
+}
+
+function highlightVLTag(tag){
+  const paidBtn = document.getElementById('vl-tag-paid');
+  const unpaidBtn = document.getElementById('vl-tag-unpaid');
+  if(paidBtn) { paidBtn.style.opacity = (tag==='PAIDVL')?'1':'0.4'; paidBtn.style.boxShadow = (tag==='PAIDVL')?'0 0 8px currentColor':''; }
+  if(unpaidBtn) { unpaidBtn.style.opacity = (tag==='UNPAIDVL')?'1':'0.4'; unpaidBtn.style.boxShadow = (tag==='UNPAIDVL')?'0 0 8px currentColor':''; }
+}
+
+function tagVLType(tag){
+  const notes = document.getElementById('pop-notes');
+  if(!notes) return;
+  let txt = notes.value.replace(/^(Unpaid VL|Paid VL)\s*[-|:]*\s*/i,'').trim();
+  const friendly = tag==='UNPAIDVL' ? 'Unpaid VL' : tag==='PAIDVL' ? 'Paid VL' : '';
+  if(friendly){ notes.value = friendly + (txt ? ' - ' + txt : ''); }
+  else        { notes.value = txt; }
+  highlightVLTag(tag);
 }
 
 function tagHDType(tag){
@@ -2639,10 +2686,10 @@ function savePopup(){
   const note=document.getElementById('pop-notes').value.trim();
   if(note) state.notes[noteKey(pEmp,pDate)]=note;
   else delete state.notes[noteKey(pEmp,pDate)];
-  // If this is a Half Day with an HD sub-type tag (Paid Halfday VL/SL), also push
-  // that note into the actual Timesheet entry, and mark it manual so the
-  // Timesheet's own auto-detect (Late/Undertime/OT) never overwrites it.
-  if(pCurSt==='HD' && /Paid Halfday (VL|SL)/i.test(note)){
+  // If this is a Half Day with an HD sub-type tag (Paid Halfday VL/SL), or a VL
+  // day tagged Paid/Unpaid, also push that note into the actual Timesheet entry,
+  // and mark it manual so the Timesheet's own auto-detect never overwrites it.
+  if((pCurSt==='HD' && /Paid Halfday (VL|SL)/i.test(note)) || (pCurSt==='VL' && /(Unpaid VL|Paid VL)/i.test(note))){
     const _tk = tsk(pEmp, pDate);
     if(!state.timesheet[_tk]) state.timesheet[_tk] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
     state.timesheet[_tk].notes = note;
@@ -3978,7 +4025,7 @@ const SCHEDULE_ND = {
   '6PM-3AM':4,'7PM-4AM':5,'8PM-5AM':6,'9PM-6AM':7,'10PM-7AM':7,'11PM-8AM':6,
   'RD':0,'RDOT':0,'Custom':0
 };
-const TS_NOTES = ['','RD','RDOT','Paid VL','Paid SL','Emergency Leave','Bereavement Leave','Unpaid SL','VL - No Pay','SL - No Pay','Suspended','UT','Late','Half Day','Adjusted sched','OT','Holiday','No Call No Show','On Leave','Custom'];
+const TS_NOTES = ['','RD','RDOT','Paid VL','Unpaid VL','Paid SL','Emergency Leave','Bereavement Leave','Unpaid SL','VL - No Pay','SL - No Pay','Suspended','UT','Late','Half Day','Adjusted sched','OT','Holiday','No Call No Show','On Leave','Custom'];
 
 function tsk(emp, date){ return 'ts||'+emp+'||'+date; }
 
