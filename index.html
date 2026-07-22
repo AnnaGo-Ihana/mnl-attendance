@@ -880,6 +880,7 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
     </select>
     <div id="ts-cutoff-archive-wrap" style="display:inline-block"></div>
     <button id="btn-new-cutoff" onclick="confirmStartNewCutoff(true)" style="display:none;padding:6px 12px;border-radius:7px;border:none;background:rgba(157,111,255,.2);color:#c4b5fd;font-size:12px;font-weight:600;cursor:pointer">📦 New Cutoff</button>
+    <button id="btn-fix-cutoff" onclick="fixCutoffDates()" style="display:none;padding:6px 12px;border-radius:7px;border:1px solid rgba(157,111,255,.4);background:transparent;color:#c4b5fd;font-size:12px;font-weight:600;cursor:pointer">🛠️ Fix Cutoff Dates</button>
     <select id="ts-emp-filter" onchange="renderTimesheet()" style="min-width:160px">
       <option value="">All Employees</option>
     </select>
@@ -1785,73 +1786,18 @@ async function loadFromDB(){
       }
       // Heal any leaves with dept:"—" from the .team vs .dept bug
       healLeavesDept();
-      // Auto-advance cutoff if the stored one has expired and hasn't been archived yet
-      let _coldStart = false;
-      const _today = new Date(); _today.setHours(0,0,0,0);
-      const _cutoffEnd = new Date(state.cutoff.end + 'T00:00:00');
-      if(_cutoffEnd < _today){
-        // Cutoff is in the past — advance to correct current period
-        // SAFETY FIX: Skip auto-archive on Supabase cold start (free tier pauses on weekends).
-        // If attendance+timesheet are empty, data hasn't loaded yet. Don't archive empty data.
-        _coldStart = Object.keys(state.attendance||{}).length === 0 && Object.keys(state.timesheet||{}).length === 0;
-        if(_coldStart){
-          console.warn('COLD START DETECTED: Cutoff expired but data is empty. Skipping auto-archive to prevent Monday data loss.');
-          let _coT=state.cutoff,_sg2=0;
-          while(true){const _dd=new Date(_coT.end+'T00:00:00');_dd.setDate(_dd.getDate()+1);const _ss=_dd.toISOString().slice(0,10);_dd.setDate(_dd.getDate()+13);const _ee=_dd.toISOString().slice(0,10);_coT={start:_ss,end:_ee};if(new Date(_ee+'T00:00:00')>=_today||_sg2++>10)break;}
-          state.cutoff=_coT;
-          // DO NOT saveToDB here - preserves data integrity on cold start
-        } else {
-        let _co = state.cutoff;
-        let _safeGuard = 0;
-        const _advanceByFortnight = (endDate) => {
-          const d = new Date(endDate + 'T00:00:00');
-          d.setDate(d.getDate() + 1);          // start = day after end
-          const start = d.toISOString().slice(0,10);
-          d.setDate(d.getDate() + 13);          // end = start + 13 = 14 days total
-          const end = d.toISOString().slice(0,10);
-          return {start, end};
-        };
-        while(true){
-          const _next = _advanceByFortnight(_co.end);
-          const _nextEnd = new Date(_next.end + 'T00:00:00');
-          // Archive the old period if not already archived
-          if(!state.cutoffArchives) state.cutoffArchives = [];
-          const _alreadyArchived = state.cutoffArchives.some(a => a.start === _co.start && a.end === _co.end);
-          if(!_alreadyArchived){
-            // Safety: never archive if attendance is completely empty (could be Supabase pause/cold start)
-            const _arcAtt = Object.fromEntries(Object.entries(state.attendance||{}).filter(([k])=>{ const dd=k.split('||')[1]; return dd>=_co.start&&dd<=_co.end; }));
-            const _arcTs  = Object.fromEntries(Object.entries(state.timesheet||{}).filter(([k])=>{ const p=k.split('||'); const dd=p[p.length-1]; return dd>=_co.start&&dd<=_co.end; }));
-            const _hasData = Object.keys(_arcAtt).length > 0 || Object.keys(_arcTs).length > 0;
-            state.cutoffArchives.push({
-              id: 'co_' + _co.start + '_' + _co.end,
-              start: _co.start, end: _co.end,
-              label: _co.start + ' – ' + _co.end,
-              archivedAt: new Date().toISOString(),
-              _emptyWarning: !_hasData,
-              dates: (state.dates||[]).filter(d=>d>=_co.start&&d<=_co.end),
-              attendance: _arcAtt,
-              timesheet: _arcTs,
-              otEntries: (state.otEntries||[]).filter(e=>e.date>=_co.start&&e.date<=_co.end),
-            });
-            if(!_hasData) console.warn('⚠️ Archived cutoff '+_co.start+'-'+_co.end+' with EMPTY data — Supabase may have been paused. Use Restore from Backup if data is missing.');
-          }
-          _co = _next;
-          if(new Date(_co.end + 'T00:00:00') >= _today || _safeGuard++ > 10) break;
-        }
-        state.cutoff = _co;
-        // Add dates for new cutoff WITHOUT removing existing ones (preserve plotted attendance)
-        const _existing = new Set(state.dates||[]);
-        const _d2 = new Date(_co.start + 'T00:00:00');
-        const _end2 = new Date(_co.end + 'T00:00:00');
-        while(_d2 <= _end2){
-          _existing.add(_d2.getFullYear()+'-'+String(_d2.getMonth()+1).padStart(2,'0')+'-'+String(_d2.getDate()).padStart(2,'0'));
-          _d2.setDate(_d2.getDate()+1);
-        }
-        state.dates = [..._existing].sort();
-        // Only save if we have employee data (safety check to prevent accidental wipe)
-        if(state.employees && state.employees.length > 0) await saveToDB();
-        } // end else (not cold start)
-      }
+      // Cold-start detection: if attendance+timesheet are both empty, data likely hasn't
+      // loaded yet (e.g. Supabase still waking up) - several save guards below use this
+      // to avoid committing an empty state over real server data.
+      let _coldStart = Object.keys(state.attendance||{}).length === 0 && Object.keys(state.timesheet||{}).length === 0;
+      // NOTE: cutoff advancement is intentionally NOT automatic here. It used to silently
+      // archive and advance state.cutoff on page load for ANYONE (not just leads) the moment
+      // today's date passed the stored cutoff's end date - with zero confirmation. That's a
+      // real problem: it moved a shared, live value without anyone deciding to. Advancing the
+      // cutoff is now only ever done via the lead-facing banner (checkCutoffAutoAdvance() +
+      // showCutoffAdvanceBanner()), which requires an explicit "Archive & Start New Cutoff"
+      // click from someone with edit access - matching the same confirmation-required design
+      // already used for the manual button on the Timesheet/Overtime tabs.
       if(!state.cutoffArchives) state.cutoffArchives = [];
       // Fix any archives with dates outside their stated range or wrong end date
       state.cutoffArchives.forEach(arc => {
@@ -6523,7 +6469,7 @@ function enableViewMode(showToast=true){
   // Hide all admin/edit buttons — keep + File Leave visible
   ['btn-add-date','btn-add-emp','btn-edit-emps','btn-edit-leave','btn-import-xl','btn-manage-depts','btn-bulk-mark',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-sync',
-   'btn-new-cutoff','btn-export'].forEach(id=>{
+   'btn-new-cutoff','btn-fix-cutoff','btn-export'].forEach(id=>{
     document.querySelectorAll('#'+id).forEach(el=>el.style.display='none');
   });
   // Hide export button (Anna-only)
@@ -6563,6 +6509,7 @@ function enableEditMode(showToast=true){
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-new-cutoff'].forEach(id=>{
     document.querySelectorAll('#'+id).forEach(el=>el.style.display='');
   });
+  document.querySelectorAll('#btn-fix-cutoff').forEach(el=>el.style.display = isDirector() ? '' : 'none');
   document.querySelectorAll('#btn-lock').forEach(lb=>{
     const name = currentUser?currentUser.name:'Lead';
     lb.innerHTML='🔓 '+name.split(' ')[0]+' <span style="font-size:10px;opacity:.7">· logout</span>';
@@ -7233,6 +7180,24 @@ function showCutoffAdvanceBanner(){
 function hideCutoffBanner(){
   const b = document.getElementById('cutoff-advance-banner');
   if(b) b.style.display = 'none';
+}
+
+function fixCutoffDates(){
+  if(!isDirector()){ toast('🔒 This is Anna-only'); return; }
+  const co = getCutoff();
+  const newStart = prompt('Fix cutoff START date (YYYY-MM-DD):', co.start);
+  if(newStart===null) return;
+  const newEnd = prompt('Fix cutoff END date (YYYY-MM-DD):', co.end);
+  if(newEnd===null) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(newStart) || !/^\d{4}-\d{2}-\d{2}$/.test(newEnd)){
+    toast('⚠️ Use YYYY-MM-DD format for both dates'); return;
+  }
+  if(newStart > newEnd){ toast('⚠️ Start date must be before end date'); return; }
+  if(!confirm(`Set cutoff to ${newStart} → ${newEnd}?\n\nThis directly overrides the current cutoff (${co.start} → ${co.end}) without archiving anything. Use this only to correct a wrongly-advanced cutoff.`)) return;
+  state.cutoff = {start:newStart, end:newEnd};
+  scheduleSave();
+  renderTable(); renderDash();
+  toast(`✅ Cutoff set to ${newStart} → ${newEnd}`);
 }
 
 function confirmStartNewCutoff(earlyOverride){
