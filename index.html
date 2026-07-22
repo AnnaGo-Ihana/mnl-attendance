@@ -1610,7 +1610,7 @@ async function pullLatestFromServer(){
     if(rows&&rows.length){
       const ns=rows[0].data;
       if(JSON.stringify(ns)!==JSON.stringify(state)){
-        state=ns;buildDateSel();renderDash();renderTable();
+        state=ns;buildDateSel();applyLeaveOverrides();renderDash();renderTable();
         setSyncBaseline();
         const canSeeNames = isDirector();
         const editor = (canSeeNames && state._lastEditedBy) ? (' by '+state._lastEditedBy) : '';
@@ -3623,6 +3623,18 @@ function saveLeaveEdits(){
 }
 
 function applyLeaveOverrides(){
+  // THE ACTUAL FIX: VL_BASE/SL_BASE are hardcoded defaults baked into the code.
+  // Every save (Edit Credits, Excel import) correctly persists the real value into
+  // state._leaveOverrides, but nothing was ever re-applying that saved data back
+  // onto VL_BASE/SL_BASE on a fresh page load - so imports/edits appeared to work
+  // in the moment, then silently reverted to the old hardcoded numbers after any
+  // refresh, even though the correct data was sitting in the database the whole time.
+  if(state._leaveOverrides){
+    Object.entries(state._leaveOverrides).forEach(([name, vals])=>{
+      if(vals && vals.vl !== undefined) VL_BASE[name] = vals.vl;
+      if(vals && vals.sl !== undefined) SL_BASE[name] = vals.sl;
+    });
+  }
   updateAllDeptSelects();
   // One-time fix: correct stale 'Client Success' dept on OT entries for Funding/KYC employees
   if(state.otEntries && state.employees){
