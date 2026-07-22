@@ -9311,25 +9311,35 @@ function applyTrackerSelectStatus(){
 
   if(dates.length===0){ toast('⚠ No dates in the visible range'); return; }
 
+  // Count how many cells will actually be touched vs skipped (already marked Off)
+  let toApply = [];
+  let skippedOff = 0;
+  names.forEach(emp=>{
+    dates.forEach(d=>{
+      if(state.attendance[gk(emp,d)]==='Off'){ skippedOff++; return; }
+      toApply.push({emp,d});
+    });
+  });
+
+  if(toApply.length===0){ toast('⚠ Nothing to apply — every selected cell is already marked Off'); return; }
+
   const displayLabel = isUnpaid ? (status+' (Unpaid)') : status;
-  if(!confirm(`Mark ${names.length} employee(s) × ${dates.length} date(s) as "${displayLabel}"?\n\nThis will overwrite any existing marks for these cells. This cannot be undone in bulk.`)) return;
+  if(!confirm(`Mark ${names.length} employee(s) as "${displayLabel}"?\n\nCells to update: ${toApply.length}${skippedOff ? `\nRest days (Off) skipped: ${skippedOff}` : ''}\n\nThis will overwrite any other existing marks for these cells. This cannot be undone in bulk.`)) return;
 
   const noteText = isUnpaid ? ('Unpaid '+status) : (status==='VL' ? 'Paid VL' : status==='SL' ? 'Paid SL' : '');
   let count = 0;
-  names.forEach(emp=>{
-    dates.forEach(d=>{
-      state.attendance[gk(emp, d)] = status;
-      if(isUnpaid || status==='VL' || status==='SL'){
-        const _tk = tsk(emp, d);
-        if(!state.timesheet[_tk]) state.timesheet[_tk] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
-        state.timesheet[_tk].timeIn = '';
-        state.timesheet[_tk].timeOut = '';
-        state.timesheet[_tk].nd = 0;
-        state.timesheet[_tk].notes = noteText;
-        state.timesheet[_tk]._notesManual = true;
-      }
-      count++;
-    });
+  toApply.forEach(({emp,d})=>{
+    state.attendance[gk(emp, d)] = status;
+    if(isUnpaid || status==='VL' || status==='SL'){
+      const _tk = tsk(emp, d);
+      if(!state.timesheet[_tk]) state.timesheet[_tk] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+      state.timesheet[_tk].timeIn = '';
+      state.timesheet[_tk].timeOut = '';
+      state.timesheet[_tk].nd = 0;
+      state.timesheet[_tk].notes = noteText;
+      state.timesheet[_tk]._notesManual = true;
+    }
+    count++;
   });
 
   scheduleSave();
