@@ -3911,6 +3911,12 @@ function recalcAllNDNotes(){
 }
 
 function toggleAllComplete(checked, emps, dates){
+  if(!isEditMode){
+    toast('🔒 Unlock editing first');
+    const sa=document.getElementById('chk-select-all');
+    if(sa) sa.checked=false;
+    return;
+  }
   if(checked && !confirm('Mark ALL '+emps.length+' employees as complete attendance for '+dates.length+' date(s)?\n\nThis will auto-fill Time In/Out from their schedules.')) {
     const sa=document.getElementById('chk-select-all');
     if(sa)sa.checked=false; return;
@@ -4414,6 +4420,7 @@ function renderTimesheet(){
     saDiv.style.cssText='padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px';
     const saChk = document.createElement('input');
     saChk.type='checkbox'; saChk.id='chk-select-all';
+    saChk.disabled = !isEditMode;
     saChk.style.cssText='accent-color:#9d6fff;cursor:pointer;width:14px;height:14px';
     saChk.title='Mark ALL visible employees as complete attendance';
     saChk.onchange=()=>toggleAllComplete(saChk.checked, emps, dates);
