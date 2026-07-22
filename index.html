@@ -2456,7 +2456,9 @@ function renderTable(){
   let _summaryUpdatedHtml = '';
   if(state._leaveCreditsUpdatedAt){
     const _d = new Date(state._leaveCreditsUpdatedAt);
-    _summaryUpdatedHtml = `<div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px" title="Last leave credits import: ${_d.toLocaleString()}">Updated ${MONTHS[_d.getMonth()]} ${_d.getDate()}</div>`;
+    const _co = getCutoff();
+    const _coLabel = cutoffLabel(_co.start, _co.end);
+    _summaryUpdatedHtml = `<div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px" title="Last leave credits import: ${_d.toLocaleString()}">Updated ${MONTHS[_d.getMonth()]} ${_d.getDate()} (${_coLabel} cutoff)</div>`;
   }
   st.innerHTML = `<div>Summary</div>${_summaryUpdatedHtml}`;
   r1.appendChild(st);
@@ -2470,6 +2472,9 @@ function renderTable(){
     const tr=document.createElement('tr');
     const ntd=document.createElement('td');ntd.className='nc';
     const inp=document.createElement('input');inp.type='text';inp.value=emp.name;
+    inp.readOnly = !isEditMode;
+    inp.title = isEditMode ? 'Click to rename (moves attendance history to the new name)' : '';
+    inp.style.cursor = isEditMode ? 'text' : 'default';
     inp.onchange=e=>renameEmp(emp.name,e.target.value);
     // Add employment status badge
     const contract = getEmpContract(emp.name);
@@ -2739,7 +2744,9 @@ function delEmp(){
   closePop();renderTable();renderDash();scheduleSave();
 }
 function renameEmp(old,next){
+  if(!isEditMode){ toast('🔒 Unlock editing first'); renderTable(); return; }
   next=next.trim();if(!next||next===old)return;
+  if(!confirm(`Rename "${old}" to "${next}"?\n\nThis will move all their existing attendance history to the new name.`)){ renderTable(); return; }
   const e=state.employees.find(e=>e.name===old);if(!e)return;
   e.name=next;
   state.dates.forEach(d=>{const k=gk(old,d),kn=gk(next,d);if(state.attendance[k]!==undefined){state.attendance[kn]=state.attendance[k];delete state.attendance[k];}});
