@@ -5096,7 +5096,34 @@ function clearOTDates(){
   renderOT();
 }
 
+function syncAllTimesheetOTToTracker(){
+  let changed = false;
+  Object.keys(state.timesheet||{}).forEach(k=>{
+    const parts = k.split('||');
+    if(parts.length<3) return;
+    const empName = parts[1], date = parts[2];
+    const entry = state.timesheet[k];
+    if(!entry || !entry.timeOut || !entry.schedule) return;
+    const ti = entry.timeIn || (()=>{
+      const ct=getScheduleClockTimes(entry.schedule);
+      return ct?ct.timeIn:'';
+    })();
+    if(!ti) return;
+    const attendance = state.attendance[gk(empName,date)]||'';
+    const issues = detectAttendanceIssues(entry.schedule, ti, entry.timeOut, attendance);
+    const otI = issues.find(i=>i.type==='ot');
+    const hadEntry = (state.otEntries||[]).some(e=>e._tsSync && e.emp===empName && e.date===date);
+    if(otI){ syncTimesheetOTToTracker(empName, date, entry, otI); changed = true; }
+    else if(hadEntry){ removeTimesheetOTFromTracker(empName, date); changed = true; }
+  });
+  return changed;
+}
+
 function renderOT(){
+  // Reconcile with Timesheet data first, so OT entries show up here even if the
+  // Timesheet page itself was never opened/rendered in this session — the sync
+  // used to only happen as a side effect of Timesheet rendering each row.
+  if(syncAllTimesheetOTToTracker()) scheduleSave();
   populateOTFilters();
   const deptF = document.getElementById('ot-dept-filter').value;
   const empF  = document.getElementById('ot-emp-filter').value;
@@ -8442,8 +8469,10 @@ function renderWeeklyRankings(weekIdx){
       <option value="HD">HD — Half Day</option>
       <option value="UT">UT — Undertime</option>
       <option value="L">L — Late</option>
-      <option value="VL">VL — Vacation</option>
-      <option value="SL">SL — Sick Leave</option>
+      <option value="VL">VL — Vacation (Paid)</option>
+      <option value="VL_UNPAID">VL — Vacation (Unpaid)</option>
+      <option value="SL">SL — Sick Leave (Paid)</option>
+      <option value="SL_UNPAID">SL — Sick Leave (Unpaid)</option>
       <option value="EL">EL — Emergency</option>
       <option value="BL">BL — Bereavement</option>
       <option value="Off">Off — Rest Day</option>
@@ -9235,7 +9264,9 @@ function renderBulkMarkPersonList(){
 }
 
 function applyBulkMark(){
-  const status = document.getElementById('bulk-mark-status').value;
+  const rawStatus = document.getElementById('bulk-mark-status').value;
+  const isUnpaid = rawStatus==='VL_UNPAID' || rawStatus==='SL_UNPAID';
+  const status = isUnpaid ? rawStatus.replace('_UNPAID','') : rawStatus; // real attendance status (VL/SL)
   const mode = document.querySelector('input[name="bulk-mark-mode"]:checked').value;
   const from = document.getElementById('bulk-mark-from').value;
   const to = document.getElementById('bulk-mark-to').value;
@@ -9267,21 +9298,34 @@ function applyBulkMark(){
       const k = gk(e.name, d);
       const existing = state.attendance[k];
       if(skipExisting && existing) return;
-      toApply.push(k);
+      toApply.push({emp:e.name, date:d, k});
     });
   });
 
   if(toApply.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ Nothing to apply (all cells already have a status and "skip existing" is checked)'; return; }
 
-  if(!confirm(`Mark ${emps.length} employee(s) × ${dates.length} date(s) as "${status}"?\n\nScope: ${scopeLabel}\nRange: ${from} → ${to}\nCells affected: ${toApply.length}${skipExisting ? ' (existing marks skipped)' : ' (this will overwrite any existing marks)'}\n\nThis cannot be undone in bulk — you'd need to fix cells individually.`)) return;
+  const displayLabel = isUnpaid ? (status+' (Unpaid)') : status;
+  if(!confirm(`Mark ${emps.length} employee(s) × ${dates.length} date(s) as "${displayLabel}"?\n\nScope: ${scopeLabel}\nRange: ${from} → ${to}\nCells affected: ${toApply.length}${skipExisting ? ' (existing marks skipped)' : ' (this will overwrite any existing marks)'}\n\nThis cannot be undone in bulk — you'd need to fix cells individually.`)) return;
 
-  toApply.forEach(k => { state.attendance[k] = status; });
+  const noteText = isUnpaid ? ('Unpaid '+status) : (status==='VL' ? 'Paid VL' : status==='SL' ? 'Paid SL' : '');
+  toApply.forEach(({emp,date,k})=>{
+    state.attendance[k] = status;
+    if(isUnpaid || status==='VL' || status==='SL'){
+      const _tk = tsk(emp, date);
+      if(!state.timesheet[_tk]) state.timesheet[_tk] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+      state.timesheet[_tk].timeIn = '';
+      state.timesheet[_tk].timeOut = '';
+      state.timesheet[_tk].nd = 0;
+      state.timesheet[_tk].notes = noteText;
+      state.timesheet[_tk]._notesManual = true;
+    }
+  });
 
   scheduleSave();
   renderTable();
   renderDash();
   document.getElementById('bulk-mark-modal').style.display='none';
-  toast(`✅ Marked ${toApply.length} cell(s) as ${status}`);
+  toast(`✅ Marked ${toApply.length} cell(s) as ${displayLabel}`);
 }
 
 function openReviewModal(id){
