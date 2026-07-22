@@ -175,10 +175,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 table{border-collapse:collapse;min-width:100%;font-size:12px;}
 th,td{border:1px solid var(--border);white-space:nowrap;}
 thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;color:#c4a8ff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-color:var(--border);position:sticky;top:0;z-index:15;}
-.nc{background:var(--surface);position:sticky;left:0;z-index:11;padding:0 10px;min-width:175px;border-right:1px solid var(--border);}
+.nc{background:var(--surface);position:sticky;left:34px;z-index:11;padding:0 10px;min-width:175px;border-right:1px solid var(--border);}
 .nc input{border:none;background:transparent;font-size:12px;font-weight:500;color:var(--text);width:100%;font-family:var(--font);outline:none;padding:8px 0;height:36px;}
 .nc input:focus{background:var(--surface);padding:8px 4px;border-radius:3px;}
-.tbc{background:var(--surface);padding:0 8px;font-size:10px;font-weight:600;text-align:center;position:sticky;left:175px;z-index:11;border-right:1px solid var(--border);min-width:72px;}
+.tbc{background:var(--surface);padding:0 8px;font-size:10px;font-weight:600;text-align:center;position:sticky;left:209px;z-index:11;border-right:1px solid var(--border);min-width:72px;}
 .sc{text-align:center;padding:0;min-width:52px;cursor:pointer;}
 .ci{display:flex;align-items:center;justify-content:center;height:36px;font-size:11px;font-weight:600;font-family:var(--mono);transition:filter .1s;}
 .sc:hover .ci{filter:brightness(.9);}
@@ -527,6 +527,26 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
       <button class="btn light" onclick="openManageDepts()" id="btn-manage-depts" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">🏢 Departments</button>
       <button class="btn light" onclick="openBulkMark()" id="btn-bulk-mark" style="display:none;background:rgba(255,193,7,.1);border-color:#FFC107;color:#FFC107">🖊️ Bulk Mark</button>
       <input type="file" id="xl-import-input" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
+    </div>
+    <div id="tracker-select-bar" style="display:none;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);align-items:center;gap:10px">
+      <span id="tracker-select-count" style="font-size:12px;color:var(--text2);font-weight:600"></span>
+      <select id="tracker-select-status" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px">
+        <option value="P">P — Present</option>
+        <option value="A">A — Absent</option>
+        <option value="HD">HD — Half Day</option>
+        <option value="UT">UT — Undertime</option>
+        <option value="L">L — Late</option>
+        <option value="VL">VL — Vacation (Paid)</option>
+        <option value="VL_UNPAID">VL — Vacation (Unpaid)</option>
+        <option value="SL">SL — Sick Leave (Paid)</option>
+        <option value="SL_UNPAID">SL — Sick Leave (Unpaid)</option>
+        <option value="EL">EL — Emergency</option>
+        <option value="BL">BL — Bereavement</option>
+        <option value="Off">Off — Rest Day</option>
+      </select>
+      <span style="font-size:11px;color:var(--text3)">for the visible date range on screen</span>
+      <button class="btn go" style="padding:6px 14px;font-size:12px;margin-left:auto" onclick="applyTrackerSelectStatus()">Apply to Selected</button>
+      <button class="btn light" style="padding:6px 14px;font-size:12px" onclick="toggleTrackerSelectAll(false)">Clear Selection</button>
     </div>
     <div class="tw"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
   </div>
@@ -2414,6 +2434,8 @@ function renderDash(){
 
 // ─── TABLE ───────────────────────────────────────────────────────────────────
 function renderTable(){
+  const _selBar = document.getElementById('tracker-select-bar');
+  if(_selBar) _selBar.style.display = 'none';
   const tf=document.getElementById('tf').value;
   const nf=document.getElementById('nf').value.toLowerCase();
   const sf=document.getElementById('sf').value;
@@ -2436,13 +2458,17 @@ function renderTable(){
   const thead=document.getElementById('thead');
   const tbody=document.getElementById('tbody');
   const r1=document.createElement('tr'),r2=document.createElement('tr');
+  const c0=document.createElement('th');
+  c0.style.cssText='min-width:34px;position:sticky;left:0;top:0;z-index:31;background:var(--bg);border-right:1px solid var(--border);text-align:center;';
+  c0.innerHTML = isEditMode ? `<input type="checkbox" id="chk-tracker-select-all" onchange="toggleTrackerSelectAll(this.checked)" title="Select all">` : '';
+  r1.appendChild(c0);
   const e0=document.createElement('th');
   e0.textContent='Employee';
-  e0.style.cssText='text-align:left;min-width:175px;position:sticky;left:0;top:0;z-index:30;background:var(--bg);border-right:1px solid var(--border);';
+  e0.style.cssText='text-align:left;min-width:175px;position:sticky;left:34px;top:0;z-index:30;background:var(--bg);border-right:1px solid var(--border);';
   r1.appendChild(e0);
   const t0=document.createElement('th');
   t0.textContent='Team / Role';
-  t0.style.cssText='min-width:72px;position:sticky;left:175px;top:0;z-index:30;background:var(--bg);border-right:1px solid var(--border);';
+  t0.style.cssText='min-width:72px;position:sticky;left:209px;top:0;z-index:30;background:var(--bg);border-right:1px solid var(--border);';
   r1.appendChild(t0);
 
   visibleDates.forEach(d=>{
@@ -2470,6 +2496,12 @@ function renderTable(){
 
   emps.forEach(emp=>{
     const tr=document.createElement('tr');
+    const ctd=document.createElement('td');
+    ctd.style.cssText='background:var(--surface);position:sticky;left:0;z-index:11;text-align:center;border-right:1px solid var(--border);min-width:34px;';
+    if(isEditMode){
+      ctd.innerHTML = `<input type="checkbox" class="chk-tracker-row" value="${emp.name.replace(/"/g,'&quot;')}" onchange="updateTrackerSelectAllState()">`;
+    }
+    tr.appendChild(ctd);
     const ntd=document.createElement('td');ntd.className='nc';
     const inp=document.createElement('input');inp.type='text';inp.value=emp.name;
     inp.readOnly = !isEditMode;
@@ -9240,6 +9272,72 @@ let _reviewingLeaveId=null;
 const _LEAD_OWN_LEAVE_QUIPS = [
   'Look at you, being efficient! But your own leave goes straight to Anna — she\'ll take good care of it. 🌸',
 ];
+function toggleTrackerSelectAll(checked){
+  document.querySelectorAll('.chk-tracker-row').forEach(cb=>{ cb.checked = checked; });
+  const sa = document.getElementById('chk-tracker-select-all');
+  if(sa) sa.checked = checked;
+  updateTrackerSelectAllState();
+}
+
+function updateTrackerSelectAllState(){
+  const all = document.querySelectorAll('.chk-tracker-row');
+  const checked = document.querySelectorAll('.chk-tracker-row:checked');
+  const bar = document.getElementById('tracker-select-bar');
+  const countEl = document.getElementById('tracker-select-count');
+  if(checked.length > 0){
+    bar.style.display = 'flex';
+    countEl.textContent = `${checked.length} selected`;
+  } else {
+    bar.style.display = 'none';
+  }
+  const sa = document.getElementById('chk-tracker-select-all');
+  if(sa) sa.checked = all.length > 0 && checked.length === all.length;
+}
+
+function applyTrackerSelectStatus(){
+  const rawStatus = document.getElementById('tracker-select-status').value;
+  const isUnpaid = rawStatus==='VL_UNPAID' || rawStatus==='SL_UNPAID';
+  const status = isUnpaid ? rawStatus.replace('_UNPAID','') : rawStatus;
+  const names = [...document.querySelectorAll('.chk-tracker-row:checked')].map(cb=>cb.value);
+  if(names.length===0){ toast('⚠ No employees selected'); return; }
+
+  // Use the same visible date range currently shown on the Tracker
+  const gf = document.getElementById('global-date-from');
+  const gt = document.getElementById('global-date-to');
+  const co = getCutoff();
+  const fromLimit = (gf&&gf.value) ? gf.value : co.start;
+  const toLimit = (gt&&gt.value) ? gt.value : co.end;
+  const dates = state.dates.filter(d => d >= fromLimit && d <= toLimit);
+
+  if(dates.length===0){ toast('⚠ No dates in the visible range'); return; }
+
+  const displayLabel = isUnpaid ? (status+' (Unpaid)') : status;
+  if(!confirm(`Mark ${names.length} employee(s) × ${dates.length} date(s) as "${displayLabel}"?\n\nThis will overwrite any existing marks for these cells. This cannot be undone in bulk.`)) return;
+
+  const noteText = isUnpaid ? ('Unpaid '+status) : (status==='VL' ? 'Paid VL' : status==='SL' ? 'Paid SL' : '');
+  let count = 0;
+  names.forEach(emp=>{
+    dates.forEach(d=>{
+      state.attendance[gk(emp, d)] = status;
+      if(isUnpaid || status==='VL' || status==='SL'){
+        const _tk = tsk(emp, d);
+        if(!state.timesheet[_tk]) state.timesheet[_tk] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+        state.timesheet[_tk].timeIn = '';
+        state.timesheet[_tk].timeOut = '';
+        state.timesheet[_tk].nd = 0;
+        state.timesheet[_tk].notes = noteText;
+        state.timesheet[_tk]._notesManual = true;
+      }
+      count++;
+    });
+  });
+
+  scheduleSave();
+  renderTable();
+  renderDash();
+  toast(`✅ Marked ${count} cell(s) as ${displayLabel}`);
+}
+
 function openBulkMark(){
   if(!isEditMode){ toast('🔒 Unlock editing first'); return; }
   document.getElementById('bulk-mark-msg').textContent='';
