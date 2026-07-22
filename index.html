@@ -2482,7 +2482,7 @@ function renderTable(){
   let _summaryUpdatedHtml = '';
   if(state._leaveCreditsUpdatedAt){
     const _d = new Date(state._leaveCreditsUpdatedAt);
-    const _co = getCutoff();
+    const _co = getCurrentCutoffByDate();
     const _coLabel = cutoffLabel(_co.start, _co.end);
     _summaryUpdatedHtml = `<div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px" title="Last leave credits import: ${_d.toLocaleString()}">Updated ${MONTHS[_d.getMonth()]} ${_d.getDate()} (${_coLabel} cutoff)</div>`;
   }
@@ -7166,6 +7166,20 @@ function renderLeaveAlertBanner(){
 
 function getCutoff(){
   return state.cutoff || {start:'2026-06-08', end:'2026-06-21'};
+}
+
+function getCurrentCutoffByDate(){
+  // Like getCutoff(), but calculates forward to whichever 14-day period actually
+  // contains today's date — used for display so it's always correct even if a
+  // lead hasn't manually clicked "Start New Cutoff" yet for the new period.
+  let co = getCutoff();
+  const todayStr = fmt(new Date());
+  let guard = 0;
+  while(co.end < todayStr && guard < 100){
+    co = getNextFortnight(co.end);
+    guard++;
+  }
+  return co;
 }
 
 function getNextFortnight(endDate){
