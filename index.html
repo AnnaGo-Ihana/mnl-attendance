@@ -6718,7 +6718,8 @@ function importExcel(input){
         const header = rows[1] || [];
         let vlBalCol = -1;
         for(let i=header.length-1;i>=0;i--){
-          if(header[i]&&String(header[i]).toLowerCase().includes('final')){
+          const h = header[i] ? String(header[i]).toLowerCase() : '';
+          if(h.includes('final') || h.includes('total') || h.includes('balance')){
             vlBalCol=i; break;
           }
         }
@@ -6748,7 +6749,8 @@ function importExcel(input){
         const header = rows[1] || [];
         let slBalCol = -1;
         for(let i=header.length-1;i>=0;i--){
-          if(header[i]&&String(header[i]).toLowerCase().includes('final')){
+          const h = header[i] ? String(header[i]).toLowerCase() : '';
+          if(h.includes('final') || h.includes('total') || h.includes('balance')){
             slBalCol=i; break;
           }
         }
