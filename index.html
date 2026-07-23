@@ -3569,7 +3569,7 @@ function filterLeaveList(){
 
 function renderLeaveList(filter){
   const emps = state.employees.filter(e =>
-    e.team !== 'Leadership' && e.name.toLowerCase().includes(filter)
+    e.name.toLowerCase().includes(filter)
   );
   const list = document.getElementById('leave-list');
   list.innerHTML = emps.map(e => {
