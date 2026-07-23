@@ -6739,6 +6739,8 @@ function importExcel(input){
             found++;
           }
           log.push(`📊 VL: read ${found} employees`);
+          if(vlUpdates['Anna Go']) log.push(`🔍 DEBUG - Anna Go VL: ${vlUpdates['Anna Go'].hrs} hrs = ${vlUpdates['Anna Go'].days} days`);
+          else log.push('🔍 DEBUG - Anna Go: NOT FOUND in VL sheet data');
         }
       } else { log.push('⚠️ Sheet "VL Monitoring" not found'); }
 
@@ -6923,6 +6925,7 @@ function importExcel(input){
 
       log.push(`
 🎯 Matched: ${matched} employees`);
+      log.push(`🔍 DEBUG - Anna Go VL_BASE after matching: ${VL_BASE['Anna Go']}, SL_BASE: ${SL_BASE['Anna Go']}`);
       if(unmatched.length) log.push(`⚠️ Not matched (${unmatched.length}): ${unmatched.join(', ')}`);
       if(Object.keys(infoUpdates).length){
         log.push(`
