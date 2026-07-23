@@ -2428,7 +2428,7 @@ function renderTable(){
   let _summaryUpdatedHtml = '';
   if(state._leaveCreditsUpdatedAt){
     const _d = new Date(state._leaveCreditsUpdatedAt);
-    _summaryUpdatedHtml = `<div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px" title="Last leave credits import: ${_d.toLocaleString()}">Updated ${MONTHS[_d.getMonth()]} ${_d.getDate()}</div>`;
+    _summaryUpdatedHtml = `<div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px" title="Last leave credits import: ${_d.toLocaleString()}">Updated ${MONTHS[_d.getMonth()]} ${_d.getDate()} (last cutoff)</div>`;
   }
   st.innerHTML = `<div>Summary</div>${_summaryUpdatedHtml}`;
   r1.appendChild(st);
