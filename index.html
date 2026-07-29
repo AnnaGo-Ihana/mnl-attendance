@@ -7955,9 +7955,22 @@ function applyScheduleFromEditModal(){
 function saveEditEmp(){
   const origName = document.getElementById('edit-emp-orig-name').value;
   const newName  = document.getElementById('edit-emp-name').value.trim();
-  const team     = document.getElementById('edit-emp-team').value;
+  let team       = document.getElementById('edit-emp-team').value;
   const role     = document.getElementById('edit-emp-role').value;
   const deptInp  = document.getElementById('edit-emp-dept').value.trim();
+
+  // If promoted to Team Lead / Deputy Team Lead (or similar supervisor title),
+  // automatically move them under Leadership and grant full access, matching
+  // every other lead - no separate manual step needed for this part.
+  const SUPERVISOR_TITLES = ['team lead','deputy team lead','manager','deputy manager'];
+  const isNowSupervisor = SUPERVISOR_TITLES.includes((role||'').trim().toLowerCase());
+  const wasSupervisorTeam = team === 'Leadership';
+  if(isNowSupervisor && !wasSupervisorTeam){
+    team = 'Leadership';
+    const accessSelEarly = document.getElementById('edit-emp-access');
+    if(accessSelEarly) accessSelEarly.value = 'full';
+  }
+
   const dept     = deptInp || team;
   const pw       = document.getElementById('edit-emp-pw').value.trim().toUpperCase();
   const msg      = document.getElementById('edit-emp-msg');
