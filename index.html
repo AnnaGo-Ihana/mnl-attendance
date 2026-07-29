@@ -1610,6 +1610,21 @@ async function pullLatestFromServer(){
     if(rows&&rows.length){
       const ns=rows[0].data;
       if(JSON.stringify(ns)!==JSON.stringify(state)){
+        // SAFETY: never adopt a server response that looks suspiciously emptier than
+        // what we already have — this could be a transient read glitch, not a real
+        // change. A real remote edit only ever ADDS or changes entries in normal use;
+        // it should never make attendance/timesheet drop to near-zero.
+        const curAttCount = Object.keys(state.attendance||{}).length;
+        const newAttCount = Object.keys(ns.attendance||{}).length;
+        const curTsCount = Object.keys(state.timesheet||{}).length;
+        const newTsCount = Object.keys(ns.timesheet||{}).length;
+        const looksSuspiciouslyEmpty =
+          (curAttCount > 20 && newAttCount < curAttCount * 0.5) ||
+          (curTsCount > 20 && newTsCount < curTsCount * 0.5);
+        if(looksSuspiciouslyEmpty){
+          console.warn(`SUSPICIOUS SYNC BLOCKED: server attendance/timesheet dropped sharply (att ${curAttCount}->${newAttCount}, ts ${curTsCount}->${newTsCount}). Refusing to adopt - this looks like a bad read, not a real change.`);
+          return false;
+        }
         state=ns;buildDateSel();applyLeaveOverrides();renderDash();renderTable();
         setSyncBaseline();
         const canSeeNames = isDirector();
