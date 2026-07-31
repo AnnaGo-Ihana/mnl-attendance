@@ -2818,19 +2818,22 @@ function renderAuditLog(){
   list.innerHTML = log.map(entry=>{
     const d = new Date(entry.ts);
     const ts = `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    const typeColor = entry.type==='attendance'?'#00cfff':'#c4b5fd';
-    const typeLabel = entry.type==='attendance'?'Tracker':'Timesheet';
+    const typeColor = entry.type==='attendance'?'#00cfff':entry.type==='bulk-mark'?'#f0b429':entry.type==='action'?'#9d6fff':'#c4b5fd';
+    const typeLabel = entry.type==='attendance'?'Tracker':entry.type==='bulk-mark'?'Bulk Mark':entry.type==='action'?'Action':'Timesheet';
     const fieldLabel = entry.field ? ` · ${entry.field}` : '';
     const dateLabel = entry.date ? entry.date.replace('2026-','').replace(/-/g,'/') : '';
-    return `<div style="display:flex;gap:10px;padding:8px 10px;border-radius:7px;margin-bottom:4px;background:var(--bg);border:1px solid var(--border)">
-      <span style="font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(0,207,255,.1);color:${typeColor};white-space:nowrap;align-self:flex-start;margin-top:2px">${typeLabel}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;color:var(--text)">${entry.emp} <span style="color:var(--text3);font-weight:400">· ${dateLabel}${fieldLabel}</span></div>
-        <div style="color:var(--text3);margin-top:2px">
+    const changeHtml = (entry.type==='action')
+      ? `<div style="color:var(--text2);margin-top:2px">${entry.from}${entry.to?' — '+entry.to:''}</div>`
+      : `<div style="color:var(--text3);margin-top:2px">
           <span style="color:#ef4444">${entry.from}</span>
           <span style="margin:0 4px">→</span>
           <span style="color:#00e896">${entry.to}</span>
-        </div>
+        </div>`;
+    return `<div style="display:flex;gap:10px;padding:8px 10px;border-radius:7px;margin-bottom:4px;background:var(--bg);border:1px solid var(--border)">
+      <span style="font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(0,207,255,.1);color:${typeColor};white-space:nowrap;align-self:flex-start;margin-top:2px">${typeLabel}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;color:var(--text)">${entry.emp} <span style="color:var(--text3);font-weight:400">${dateLabel?'· '+dateLabel:''}${fieldLabel}</span></div>
+        ${changeHtml}
       </div>
       <div style="text-align:right;white-space:nowrap">
         <div style="font-weight:600;color:var(--accent);font-size:10px">${entry.by.split(' ')[0]}</div>
@@ -3083,77 +3086,18 @@ function isDirector(){
 // Tracks: who did what, when, on whom
 function logAudit(action, detail, target){
   if(!currentUser) return;
-  if(!state.auditLog) state.auditLog = [];
-  state.auditLog.unshift({
+  if(!state._auditLog) state._auditLog = [];
+  state._auditLog.unshift({
     ts: new Date().toISOString(),
     by: currentUser.name,
-    role: currentUser.role || 'Agent',
-    action,
-    detail: detail || '',
-    target: target || '',
+    emp: target || '—',
+    date: '',
+    from: action,
+    to: detail || '',
+    type: 'action',
   });
-  // Keep last 500 entries
-  if(state.auditLog.length > 500) state.auditLog = state.auditLog.slice(0, 500);
+  if(state._auditLog.length > 500) state._auditLog = state._auditLog.slice(0, 500);
 }
-
-function renderAuditLog(){
-  const wrap = document.getElementById('audit-log-wrap');
-  if(!wrap) return;
-  const log = state.auditLog || [];
-  if(!log.length){
-    wrap.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">No activity recorded yet.</div>';
-    return;
-  }
-  const rows = log.map(e=>{
-    const d = new Date(e.ts);
-    const ts = d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'2-digit'})+' '+
-               d.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',hour12:true});
-    const roleColor = e.role&&e.role.toLowerCase().includes('dir') ? '#ffd700' :
-                      e.role&&(e.role.toLowerCase().includes('lead')||e.role.toLowerCase().includes('tl')) ? '#c4b5fd' : '#00e896';
-    return `<tr style="border-bottom:0.5px solid var(--border)">
-      <td style="padding:8px 12px;font-size:11px;color:var(--text3);white-space:nowrap">${ts}</td>
-      <td style="padding:8px 12px;font-size:11px;font-weight:600;color:${roleColor}">${e.by}</td>
-      <td style="padding:8px 12px;font-size:11px;color:var(--text2)">${e.action}</td>
-      <td style="padding:8px 12px;font-size:11px;color:var(--text3);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(e.detail||'').replace(/"/g,'&quot;')}">${e.detail||'—'}</td>
-      <td style="padding:8px 12px;font-size:11px;color:var(--text3)">${e.target||'—'}</td>
-    </tr>`;
-  }).join('');
-  wrap.innerHTML = `<div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead><tr style="border-bottom:1px solid var(--border)">
-        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">When</th>
-        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Who</th>
-        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Action</th>
-        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Detail</th>
-        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Target</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>`;
-}
-
-function openAuditLog(){
-  let modal = document.getElementById('audit-log-modal');
-  if(!modal){
-    modal = document.createElement('div');
-    modal.id = 'audit-log-modal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;width:min(900px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-        <div>
-          <div style="font-size:15px;font-weight:700;color:var(--text)">📋 Activity Log</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">Last 500 actions — who touched what and when</div>
-        </div>
-        <button onclick="document.getElementById('audit-log-modal').style.display='none'" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:12px">✕ Close</button>
-      </div>
-      <div id="audit-log-wrap" style="overflow-y:auto;flex:1;padding:0"></div>
-    </div>`;
-    document.body.appendChild(modal);
-  }
-  renderAuditLog();
-  modal.style.display = 'flex';
-}
-
 
 function healLeavesDept(){
   // Fix leaves filed with dept:"—" or missing dept due to the .team vs .dept bug
@@ -9368,6 +9312,17 @@ function applyTrackerSelectStatus(){
   renderTable();
   renderDash();
   toast(`✅ Marked ${count} cell(s) as ${displayLabel}`);
+  if(!state._auditLog) state._auditLog=[];
+  state._auditLog.unshift({
+    ts: new Date().toISOString(),
+    by: currentUser.name,
+    emp: `${names.length} employee(s): ${names.slice(0,5).join(', ')}${names.length>5?` +${names.length-5} more`:''}`,
+    date: `${from} → ${to}`,
+    from: 'various',
+    to: displayLabel,
+    type: 'bulk-mark',
+  });
+  if(state._auditLog.length > 500) state._auditLog = state._auditLog.slice(0,500);
 }
 
 function openBulkMark(){
@@ -9470,6 +9425,17 @@ function applyBulkMark(){
   renderDash();
   document.getElementById('bulk-mark-modal').style.display='none';
   toast(`✅ Marked ${toApply.length} cell(s) as ${displayLabel}`);
+  if(!state._auditLog) state._auditLog=[];
+  state._auditLog.unshift({
+    ts: new Date().toISOString(),
+    by: currentUser.name,
+    emp: `${emps.length} employee(s) — ${scopeLabel}`,
+    date: `${from} → ${to}`,
+    from: 'various',
+    to: displayLabel,
+    type: 'bulk-mark',
+  });
+  if(state._auditLog.length > 500) state._auditLog = state._auditLog.slice(0,500);
 }
 
 function openReviewModal(id){
