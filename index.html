@@ -8890,6 +8890,7 @@ function canManageLeaves(){
   if(!currentUser) return false;
   if(currentUser.accessLevel==='view_only') return false;
   if(currentUser.accessLevel==='full') return true;
+  if(currentUser.accessLevel==='leave_only') return true;
   // Fallback: check employee roster for role
   const empRole = (((state.employees||[]).find(e=>e.name===currentUser.name)||{}).role||'').toLowerCase();
   return ['admin','lead','manager','director'].some(r=>empRole.includes(r));
