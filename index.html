@@ -5915,29 +5915,21 @@ function importSchedExcel(input){
         const ws=wb.Sheets[sheetName];
         const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
         const rawRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
-        // Detect matrix format: look for a row where col0 is "Officer" or first non-null row with dates in columns
-        let matrixDateRow=-1, matrixEmpStart=-1;
+        // Detect matrix format: does this sheet have any real Date-header row at all?
+        let anyDateHeader=false;
         for(let ri=0;ri<Math.min(rows.length,10);ri++){
           const row=rawRows[ri];
           let dateCount=0;
           for(let ci=1;ci<Math.min(row.length,40);ci++){
             if(row[ci] instanceof Date || (typeof row[ci]==='number' && row[ci]>40000)) dateCount++;
           }
-          if(dateCount>=5){ matrixDateRow=ri; matrixEmpStart=ri+1; break; }
+          if(dateCount>=5){ anyDateHeader=true; break; }
         }
-        if(matrixDateRow>=0){
-          // Matrix format: row matrixDateRow has dates in cols 1+, rows below have employee names in col 0
-          const dateMap={};
-          const dateRawRow=rawRows[matrixDateRow];
-          for(let ci=1;ci<dateRawRow.length;ci++){
-            const v=dateRawRow[ci];
-            if(!v) continue;
-            let ds='';
-            if(v instanceof Date){ ds=v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0'); }
-            else if(typeof v==='number'){ const d=new Date(Math.round((v-25569)*86400*1000)); ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-            if(ds) dateMap[ci]=ds;
-          }
-          const SKIP_NAMES=new Set(['Daily workforce','DTL','Regular officers','Probationary Officers','Trainee Oficers','Officer','']);
+        if(anyDateHeader){
+          // Matrix format, possibly with MULTIPLE stacked weekly blocks in one sheet.
+          // Walk the whole sheet, re-detecting a fresh date-header row (and its own date map)
+          // every time one is found, instead of assuming only the first block exists.
+          const SKIP_NAMES=new Set(['Daily workforce','DTL','Regular officers','Probationary Officers','Trainee Oficers','Officer','CSM','TIME','']);
           const NAME_MAP={
             'Joshua Roiebel Dela Cruz':'Joshua Dela Cruz',
             'Joshua Dela Cruz':'Joshua Dela Cruz',
@@ -5948,34 +5940,64 @@ function importSchedExcel(input){
             'Kristine Joy Israel':'Kristine Joy Israel',
             'Alyssa Ahsley Anareta':'Alyssa Ahsley Anareta',
           };
-          let empDatesAdded=false;
-          for(let ri=matrixEmpStart;ri<rows.length;ri++){
+          const rowHasDates=(row)=>{
+            let c=0;
+            for(let ci=1;ci<Math.min(row.length,40);ci++){
+              if(row[ci] instanceof Date || (typeof row[ci]==='number' && row[ci]>40000)) c++;
+            }
+            return c>=5;
+          };
+          let ri=0;
+          while(ri<rawRows.length){
             const row=rawRows[ri];
-            if(!row||!row[0]) continue;
-            const rawName=String(row[0]).trim();
-            if(SKIP_NAMES.has(rawName)||!rawName) continue;
-            const cleanName=rawName.replace(/\s*\(Trainee\)\s*$/i,'').trim();
-            const empName=NAME_MAP[cleanName]||cleanName;
-            for(const [ci,ds] of Object.entries(dateMap)){
-              if(!state.dates.includes(ds)){
-                state.dates.push(ds); state.dates.sort(); datesAdded=true; empDatesAdded=true;
+            if(!row || !rowHasDates(row)){ ri++; continue; }
+            // Build this block's own date map from its own header row
+            const dateMap={};
+            for(let ci=1;ci<row.length;ci++){
+              const v=row[ci];
+              if(!v) continue;
+              let ds='';
+              if(v instanceof Date){ ds=v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0'); }
+              else if(typeof v==='number'){ const d=new Date(Math.round((v-25569)*86400*1000)); ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+              if(ds) dateMap[ci]=ds;
+            }
+            ri++;
+            // Skip a plain label row right under the header (e.g. "CSM | TIME | MON | TUE ...")
+            if(ri<rawRows.length){
+              const nextRow=rawRows[ri];
+              const firstCell = nextRow&&nextRow[0]!=null ? String(nextRow[0]).trim().toUpperCase() : '';
+              const thirdCell = nextRow&&nextRow[2]!=null ? String(nextRow[2]).trim().toUpperCase() : '';
+              if(firstCell==='CSM' || DAYS.includes(thirdCell)) ri++;
+            }
+            // Consume employee rows until a blank separator row or the next date-header row
+            while(ri<rawRows.length){
+              const erow=rawRows[ri];
+              if(!erow || erow.every(c=>c==null || String(c).trim()==='')){ ri++; break; }
+              if(rowHasDates(erow)) break; // next block starts here — let outer loop re-detect it
+              const rawName = erow[0]!=null ? String(erow[0]).trim() : '';
+              if(rawName && !SKIP_NAMES.has(rawName)){
+                const cleanName=rawName.replace(/\s*\(Trainee\)\s*$/i,'').trim();
+                const empName=NAME_MAP[cleanName]||cleanName;
+                Object.entries(dateMap).forEach(([ci,ds])=>{
+                  if(!state.dates.includes(ds)){ state.dates.push(ds); state.dates.sort(); datesAdded=true; }
+                  const val=erow[ci];
+                  if(!val) return;
+                  let sched=String(val).trim();
+                  if(sched==='Day off') sched='RD';
+                  if(!sched) return;
+                  if(!state.timesheet) state.timesheet={};
+                  const k=tsk(empName,ds);
+                  state.timesheet[k]={
+                    schedule: sched,
+                    timeIn: (getScheduleClockTimes(sched)||{}).timeIn||'',
+                    timeOut: (getScheduleClockTimes(sched)||{}).timeOut||'',
+                    nd: SCHEDULE_ND[sched]||0,
+                    notes: ''
+                  };
+                  imported++;
+                });
               }
-              const val=row[ci];
-              if(!val) continue;
-              let sched=String(val).trim();
-              if(sched==='Day off') sched='RD';
-              if(!sched) continue;
-              if(!state.timesheet) state.timesheet={};
-              const k=tsk(empName,ds);
-              if(!state.timesheet[k]) state.timesheet[k]={schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
-              if(!state.timesheet[k].schedule){
-                state.timesheet[k].schedule=sched;
-                state.timesheet[k].nd=SCHEDULE_ND[sched]||0;
-                const ct=getScheduleClockTimes(sched);
-                if(ct&&!state.timesheet[k].timeIn) state.timesheet[k].timeIn=ct.timeIn;
-                if(ct&&!state.timesheet[k].timeOut) state.timesheet[k].timeOut=ct.timeOut;
-                imported++;
-              }
+              ri++;
             }
           }
         } else {
