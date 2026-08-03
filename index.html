@@ -4883,6 +4883,7 @@ function applyWeeklyGridImport(){
   });
 
   scheduleSave();
+  renderSchedulePage();
   renderTimesheet();
   renderTable();
   closeWeeklyGridImportModal();
@@ -5883,6 +5884,31 @@ function importSchedExcel(input){
     try{
       const data=new Uint8Array(e.target.result);
       const wb=XLSX.read(data,{type:'array',cellDates:true});
+
+      // Plain Mon-Sat pattern grid (day-name header, no real Date header row anywhere) → dedicated
+      // "apply across a date range" modal, instead of requiring exact-dated columns.
+      let anyMatrixFound = false;
+      wb.SheetNames.forEach(sheetName=>{
+        const ws=wb.Sheets[sheetName];
+        const rawRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+        for(let ri=0; ri<Math.min(rawRows.length,10); ri++){
+          const row=rawRows[ri];
+          let dateCount=0;
+          for(let ci=1; ci<Math.min(row.length,40); ci++){
+            if(row[ci] instanceof Date || (typeof row[ci]==='number' && row[ci]>40000)) dateCount++;
+          }
+          if(dateCount>=5){ anyMatrixFound = true; break; }
+        }
+      });
+      if(!anyMatrixFound){
+        const weeklyGrid = parseWeeklyGridWorkbook(wb);
+        if(Object.keys(weeklyGrid).length>0){
+          hideLoading();
+          openWeeklyGridImportModal(weeklyGrid);
+          return;
+        }
+      }
+
       let imported=0;
       let datesAdded=false;
       wb.SheetNames.forEach(sheetName=>{
