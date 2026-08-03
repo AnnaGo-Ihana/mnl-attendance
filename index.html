@@ -472,6 +472,11 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
       <div class="leg"><div class="leg-dot" style="background:#ffaa5c"></div>SL — Sick Leave</div>
       <div class="leg"><div class="leg-dot" style="background:#8878b8"></div>Off — Rest Day</div>
     </div>
+    <div class="sec-lbl" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Manila Headcount</span>
+      <span id="manila-total-count" style="font-size:18px;font-weight:800;color:var(--purple);text-transform:none;letter-spacing:0"></span>
+    </div>
+    <div id="manila-dept-breakdown" style="display:flex;gap:16px;flex-wrap:wrap;padding:0 24px 12px;font-size:11px;color:var(--text3)"></div>
     <div class="sec-lbl">Overall Summary</div>
     <div class="overall-row" id="overall-row"></div>
     <div class="sec-lbl" style="padding-top:8px;display:flex;align-items:center;gap:8px">Leave Credits Summary <span id="leave-credits-updated" style="font-weight:400;text-transform:none;color:var(--text3);font-size:10px"></span></div>
@@ -2200,6 +2205,23 @@ function renderDash(){
   const dates=getActiveDates();
   const all=state.employees;
   const ov=calcStats(all,dates);
+
+  // Manila total headcount (active employees only) + per-department breakdown
+  const activeEmps = (state.employees||[]).filter(e=>!e.inactive);
+  const totalCountEl = document.getElementById('manila-total-count');
+  if(totalCountEl) totalCountEl.textContent = activeEmps.length + ' total';
+  const deptCounts = {};
+  activeEmps.forEach(e=>{
+    const d = e.team==='Leadership' ? (e.dept && e.dept!=='Leadership' ? e.dept : 'Leadership') : (e.team||'Other');
+    deptCounts[d] = (deptCounts[d]||0) + 1;
+  });
+  const breakdownEl = document.getElementById('manila-dept-breakdown');
+  if(breakdownEl){
+    breakdownEl.innerHTML = Object.entries(deptCounts)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([dept,count])=>`<span><b style="color:var(--text2)">${count}</b> ${dept}</span>`)
+      .join('');
+  }
 
   const items=[
     {k:'P',l:'Present'},{k:'A',l:'Absent'},{k:'HD',l:'Half Day'},
