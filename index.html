@@ -4765,6 +4765,137 @@ function convertTo12(t24){
   } catch(e){ return t24; }
 }
 
+// ─── WEEKLY GRID SCHEDULE IMPORT (Name × Mon-Sat pattern applied across a date range) ──
+let _pendingWeeklyGrid = null;
+
+function normalizeShiftCode(raw){
+  if(!raw) return {schedule:'', absent:false};
+  let s = String(raw).trim();
+  let absent = false;
+  const absentMatch = s.match(/^(.*?)\s+ABSENT\s*$/i);
+  if(absentMatch){ s = absentMatch[1].trim(); absent = true; }
+  s = s.toUpperCase().replace(/12MN\b/g,'12AM').replace(/12NN\b/g,'12PM');
+  return {schedule: s, absent};
+}
+
+function detectWeeklyGridHeader(row){
+  // A header row has 3+ cells matching day-of-week abbreviations (SUN..SAT)
+  if(!row) return null;
+  const map = {};
+  let hits = 0;
+  row.forEach((cell,idx)=>{
+    if(cell==null) return;
+    const v = String(cell).trim().toUpperCase();
+    if(DAYS.includes(v)){ map[idx]=v; hits++; }
+  });
+  return hits>=3 ? map : null;
+}
+
+function parseWeeklyGridWorkbook(wb){
+  // Merges every Mon-Sat block found across the workbook into {name:{MON:'4AM-1PM',...}}
+  const grid = {};
+  wb.SheetNames.forEach(sheetName=>{
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    let colMap = null;
+    rows.forEach(row=>{
+      const hdr = detectWeeklyGridHeader(row);
+      if(hdr){ colMap = hdr; return; }
+      if(!colMap) return;
+      const name = row[0]!=null ? String(row[0]).trim() : '';
+      if(!name) return;
+      const entry = grid[name] || (grid[name]={});
+      Object.entries(colMap).forEach(([colIdx,day])=>{
+        const cell = row[colIdx];
+        if(cell!=null && String(cell).trim()!==''){
+          entry[day] = String(cell).trim();
+        }
+      });
+    });
+  });
+  return grid;
+}
+
+function openWeeklyGridImportModal(grid){
+  _pendingWeeklyGrid = grid;
+  const names = Object.keys(grid);
+  document.getElementById('wgi-summary').textContent = `Found ${names.length} row(s) in the uploaded file.`;
+  document.getElementById('wgi-from').value = '';
+  document.getElementById('wgi-to').value = '';
+  document.getElementById('wgi-msg').textContent = '';
+  document.getElementById('weekly-grid-import-modal').style.display = 'flex';
+}
+
+function closeWeeklyGridImportModal(){
+  document.getElementById('weekly-grid-import-modal').style.display = 'none';
+  _pendingWeeklyGrid = null;
+}
+
+function applyWeeklyGridImport(){
+  const grid = _pendingWeeklyGrid;
+  const msg = document.getElementById('wgi-msg');
+  if(!grid){ msg.style.color='#ef4444'; msg.textContent='⚠ No file data — reupload and try again'; return; }
+  const from = document.getElementById('wgi-from').value;
+  const to = document.getElementById('wgi-to').value;
+  if(!from || !to){ msg.style.color='#ef4444'; msg.textContent='⚠ Pick a From and To date'; return; }
+  if(from > to){ msg.style.color='#ef4444'; msg.textContent='⚠ From date must be before To date'; return; }
+
+  const dates = [];
+  let cursor = new Date(from+'T00:00:00');
+  const endD = new Date(to+'T00:00:00');
+  let addedDates = 0;
+  while(cursor <= endD){
+    const ds = cursor.getFullYear()+'-'+String(cursor.getMonth()+1).padStart(2,'0')+'-'+String(cursor.getDate()).padStart(2,'0');
+    dates.push(ds);
+    if(!state.dates.includes(ds)){ state.dates.push(ds); addedDates++; }
+    cursor.setDate(cursor.getDate()+1);
+  }
+  if(addedDates) state.dates.sort();
+
+  const empByLower = {};
+  (state.employees||[]).forEach(e=>{ empByLower[e.name.trim().toLowerCase()] = e.name; });
+
+  const matchedNames = [], unmatchedNames = [];
+  Object.keys(grid).forEach(n=>{
+    const canon = empByLower[n.trim().toLowerCase()];
+    if(canon) matchedNames.push({raw:n, canon});
+    else unmatchedNames.push(n);
+  });
+
+  if(matchedNames.length===0){ msg.style.color='#ef4444'; msg.textContent='⚠ None of the names in the file matched an existing employee'; return; }
+
+  if(!confirm(`Apply this weekly pattern for ${matchedNames.length} employee(s) from ${from} to ${to} (${dates.length} day(s))?\n\nThis will overwrite existing schedule entries in that range.${unmatchedNames.length?`\n\n${unmatchedNames.length} name(s) in the file didn't match an employee and will be skipped:\n${unmatchedNames.slice(0,10).join(', ')}${unmatchedNames.length>10?' …':''}`:''}`)) return;
+
+  let cellsWritten = 0;
+  matchedNames.forEach(({raw,canon})=>{
+    dates.forEach(d=>{
+      const dayAbbrev = dow(d);
+      const rawVal = grid[raw][dayAbbrev];
+      if(!rawVal) return;
+      const {schedule, absent} = normalizeShiftCode(rawVal);
+      if(!schedule) return;
+      state.timesheet[tsk(canon, d)] = {
+        schedule,
+        timeIn: '',
+        timeOut: '',
+        nd: SCHEDULE_ND[schedule]||0,
+        notes: ''
+      };
+      if(absent) state.attendance[gk(canon, d)] = 'A';
+      cellsWritten++;
+    });
+  });
+
+  scheduleSave();
+  renderTimesheet();
+  renderTable();
+  closeWeeklyGridImportModal();
+  toast(`✅ Applied schedule to ${cellsWritten} cell(s) across ${matchedNames.length} employee(s)`+
+        (addedDates?` · ${addedDates} new date(s) added to tracker`:'')+
+        (unmatchedNames.length?` · ${unmatchedNames.length} unmatched name(s) skipped`:''));
+  if(unmatchedNames.length) console.warn('Weekly grid import — unmatched names:', unmatchedNames);
+}
+
 function importScheduleExcel(input){
   const file=input.files[0]; if(!file) return; input.value='';
   showLoading('Reading schedule file…');
@@ -4774,6 +4905,24 @@ function importScheduleExcel(input){
       const data=new Uint8Array(e.target.result);
       // cellDates:true ensures dates come back as Date objects, not serial numbers
       const wb=XLSX.read(data,{type:'array',cellDates:true});
+
+      // Detect format: "Employee:" marker rows (long/per-date format) vs a Mon-Sat weekly grid
+      let hasEmployeeMarkers = false;
+      wb.SheetNames.forEach(sheetName=>{
+        const ws=wb.Sheets[sheetName];
+        const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+        rows.forEach(row=>{ if(row[0]==='Employee:' && row[1]) hasEmployeeMarkers = true; });
+      });
+
+      if(!hasEmployeeMarkers){
+        const grid = parseWeeklyGridWorkbook(wb);
+        if(Object.keys(grid).length>0){
+          hideLoading();
+          openWeeklyGridImportModal(grid);
+          return;
+        }
+      }
+
       let imported=0, skipped=0;
       wb.SheetNames.forEach(sheetName=>{
         const ws=wb.Sheets[sheetName];
@@ -8561,6 +8710,34 @@ function renderWeeklyRankings(weekIdx){
     <div style="display:flex;gap:8px">
       <button onclick="applyBulkMark()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#FFC107;color:#000;font-size:12px;font-weight:700;cursor:pointer">Apply</button>
       <button onclick="document.getElementById('bulk-mark-modal').style.display='none'" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="weekly-grid-import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:440px;max-width:95vw">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">📋 Apply Weekly Schedule Pattern</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Your file has one Mon–Sat pattern per person. Pick the date range to repeat it across.</div>
+    <div id="wgi-summary" style="font-size:11px;color:var(--text2);margin-bottom:14px"></div>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1">
+        <label style="font-size:11px;color:var(--text3)">Start applying from</label>
+        <input type="date" id="wgi-from" style="width:100%;box-sizing:border-box">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:11px;color:var(--text3)">Until (inclusive)</label>
+        <input type="date" id="wgi-to" style="width:100%;box-sizing:border-box">
+      </div>
+    </div>
+
+    <div style="font-size:10px;color:var(--text3);margin-bottom:12px">Blank cells for a given weekday (no shift listed) are left untouched. Cells marked "ABSENT" in the file are recorded as an Absent status for that day. Any date in this range not already in the tracker will be added automatically.</div>
+
+    <div id="wgi-msg" style="font-size:11px;min-height:16px;margin-bottom:8px"></div>
+
+    <div style="display:flex;gap:8px">
+      <button onclick="applyWeeklyGridImport()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#00e896;color:#000;font-size:12px;font-weight:700;cursor:pointer">Apply</button>
+      <button onclick="closeWeeklyGridImportModal()" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer">Cancel</button>
     </div>
   </div>
 </div>
