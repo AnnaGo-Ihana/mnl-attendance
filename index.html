@@ -573,6 +573,7 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
       <div class="so so-EL"   onclick="setSt('EL')">EL — Emergency</div>
       <div class="so so-BL"   onclick="setSt('BL')">BL — Bereavement</div>
       <div class="so so-Off"   onclick="setSt('Off')">Off — Rest Day</div>
+      <div class="so so-CLR" onclick="setSt('CLR')" style="grid-column:span 2;border-style:dashed">✕ Clear (reset to blank)</div>
     </div>
 
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
@@ -2692,6 +2693,25 @@ function tagHDType(tag){
 function savePopup(){
   if(!pEmp||!pDate)return;
   const prevSt = state.attendance[gk(pEmp,pDate)]||'';
+  if(pCurSt==='CLR'){
+    // Reset this cell back to blank, as if no status was ever set
+    delete state.attendance[gk(pEmp,pDate)];
+    if(state.notes) delete state.notes[noteKey(pEmp,pDate)];
+    if(state.onsite) delete state.onsite[onsiteKey(pEmp,pDate)];
+    if(currentUser && currentUser.accessLevel==='full' && !isDirector() && prevSt){
+      if(!state._auditLog) state._auditLog=[];
+      state._auditLog.unshift({
+        ts: new Date().toISOString(), by: currentUser.name, emp: pEmp, date: pDate,
+        from: prevSt||'blank', to: 'blank (cleared)', type: 'attendance'
+      });
+      if(state._auditLog.length > 500) state._auditLog = state._auditLog.slice(0,500);
+    }
+    closePop();renderTable();renderDash();
+    const activePage=document.querySelector('.page.active');
+    if(activePage && activePage.id==='page-timesheet') renderTimesheet();
+    scheduleSave();
+    return;
+  }
   // Save status
   if(pCurSt) state.attendance[gk(pEmp,pDate)]=pCurSt;
   // Audit trail — log who changed what (visible to Anna only)
