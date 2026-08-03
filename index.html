@@ -4878,6 +4878,10 @@ function applyWeeklyGridImport(){
         nd: SCHEDULE_ND[schedule]||0,
         notes: ''
       };
+      // This is the new normal pattern going forward — update the baseline too, so it
+      // doesn't get flagged as "Adjusted" against the old (now outdated) default.
+      if(!WEEKLY_SCHEDULES[canon]) WEEKLY_SCHEDULES[canon] = {};
+      WEEKLY_SCHEDULES[canon][dayAbbrev] = schedule;
       cellsWritten++;
     });
   });
@@ -5994,6 +5998,10 @@ function importSchedExcel(input){
                     nd: SCHEDULE_ND[sched]||0,
                     notes: ''
                   };
+                  // New normal pattern going forward — update the baseline so it isn't
+                  // flagged as "Adjusted" against the old (now outdated) default.
+                  if(!WEEKLY_SCHEDULES[empName]) WEEKLY_SCHEDULES[empName] = {};
+                  WEEKLY_SCHEDULES[empName][dow(ds)] = sched;
                   imported++;
                 });
               }
