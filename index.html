@@ -4769,13 +4769,10 @@ function convertTo12(t24){
 let _pendingWeeklyGrid = null;
 
 function normalizeShiftCode(raw){
-  if(!raw) return {schedule:'', absent:false};
+  if(!raw) return {schedule:''};
   let s = String(raw).trim();
-  let absent = false;
-  const absentMatch = s.match(/^(.*?)\s+ABSENT\s*$/i);
-  if(absentMatch){ s = absentMatch[1].trim(); absent = true; }
   s = s.toUpperCase().replace(/12MN\b/g,'12AM').replace(/12NN\b/g,'12PM');
-  return {schedule: s, absent};
+  return {schedule: s};
 }
 
 function detectWeeklyGridHeader(row){
@@ -4872,7 +4869,7 @@ function applyWeeklyGridImport(){
       const dayAbbrev = dow(d);
       const rawVal = grid[raw][dayAbbrev];
       if(!rawVal) return;
-      const {schedule, absent} = normalizeShiftCode(rawVal);
+      const {schedule} = normalizeShiftCode(rawVal);
       if(!schedule) return;
       state.timesheet[tsk(canon, d)] = {
         schedule,
@@ -4881,7 +4878,6 @@ function applyWeeklyGridImport(){
         nd: SCHEDULE_ND[schedule]||0,
         notes: ''
       };
-      if(absent) state.attendance[gk(canon, d)] = 'A';
       cellsWritten++;
     });
   });
@@ -8731,7 +8727,7 @@ function renderWeeklyRankings(weekIdx){
       </div>
     </div>
 
-    <div style="font-size:10px;color:var(--text3);margin-bottom:12px">Blank cells for a given weekday (no shift listed) are left untouched. Cells marked "ABSENT" in the file are recorded as an Absent status for that day. Any date in this range not already in the tracker will be added automatically.</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:12px">Blank cells for a given weekday (no shift listed) are left untouched. This only writes the schedule text — attendance status (Absent, Late, etc.) is still marked separately by leads in the Tracker tab. Any date in this range not already in the tracker will be added automatically.</div>
 
     <div id="wgi-msg" style="font-size:11px;min-height:16px;margin-bottom:8px"></div>
 
