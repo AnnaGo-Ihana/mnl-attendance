@@ -9065,8 +9065,12 @@ function renderLeaves(){
     const now=new Date(); now.setHours(0,0,0,0);
     const daysAhead=Math.floor((new Date(l.from)-now)/(1000*60*60*24));
     const shortNotice=daysAhead>=0&&daysAhead<14;
-    // Review permission: director can review all; leads can review dept leaves (but not own)
-    const isLeadOfDept = canReview && !isDirectorUser && getDeptLeads(l.dept).includes((currentUser||{}).name);
+    // Review permission: director can review all; leads can review dept leaves (but not own).
+    // A person can also qualify by dept-scoped access alone (e.g. Leave Only access set to a
+    // specific team) without needing a formal Team Lead/Manager role title.
+    const visibleDeptsForMe = getVisibleDepts(myDeptForLeaves);
+    const isDeptScopedReviewer = !!myDeptForLeaves && (visibleDeptsForMe ? visibleDeptsForMe.includes(l.dept) : l.dept===myDeptForLeaves);
+    const isLeadOfDept = canReview && !isDirectorUser && (getDeptLeads(l.dept).includes((currentUser||{}).name) || isDeptScopedReviewer);
     const isOwnLeave = (currentUser||{}).name === l.agent;
     // Check if the leave agent is a lead/manager — only Anna can approve leads' leaves
     const agentEmp = (state.employees||[]).find(e=>e.name===l.agent)||{};
