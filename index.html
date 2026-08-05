@@ -1046,7 +1046,7 @@ thead th{background:var(--bg);padding:8px 9px;font-weight:700;text-align:center;
     <div id="import-summary" style="display:none;margin-top:12px;padding:12px;background:rgba(52,211,153,.1);border:1px solid #34d399;border-radius:8px;font-size:13px;color:#34d399;text-align:center"></div>
     <div class="ma" style="margin-top:16px">
       <button class="btn go" id="import-confirm-btn" onclick="confirmImport()" style="display:none;flex:1;padding:9px">✓ Apply Updates</button>
-      <button class="btn light" onclick="document.getElementById('import-modal').classList.remove('open')" style="flex:1;padding:9px">Close</button>
+      <button class="btn light" onclick="closeImportModalSafe()" style="flex:1;padding:9px">Close</button>
     </div>
   </div>
 </div>
@@ -7140,7 +7140,7 @@ function importExcel(input){
       _lastImportHadCredits = matched > 0;
       document.getElementById('import-progress').innerHTML = log.map(l=>`<div>${l}</div>`).join('');
       document.getElementById('import-summary').style.display='block';
-      document.getElementById('import-summary').innerHTML = `✅ Ready to apply — ${matched} employees updated`;
+      document.getElementById('import-summary').innerHTML = `⏳ Preview only — nothing saved yet. Click "Apply Updates" below to save ${matched} employee update${matched===1?'':'s'}.`;
       document.getElementById('import-confirm-btn').style.display='';
 
     } catch(err){
@@ -7150,6 +7150,13 @@ function importExcel(input){
   reader.readAsArrayBuffer(file);
 }
 
+function closeImportModalSafe(){
+  if(pendingLeaveImport){
+    if(!confirm('These updates have NOT been saved yet. Close without applying them?')) return;
+  }
+  document.getElementById('import-modal').classList.remove('open');
+  pendingLeaveImport=null; _lastImportHadCredits=false;
+}
 function confirmImport(){
   if(!pendingLeaveImport) return;
   if(_lastImportHadCredits){
