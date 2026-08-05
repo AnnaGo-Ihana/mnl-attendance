@@ -2050,6 +2050,10 @@ async function syncNow(){
   const btn=document.getElementById('btn-sync');
   if(btn){btn.textContent='⟳ Syncing…';btn.disabled=true;}
   try{
+    // Make sure any pending local change (e.g. just clicked "Apply Updates") is actually
+    // saved BEFORE pulling from the server — otherwise this could overwrite a fresh local
+    // change with stale server data if a save was still debounced/in-flight.
+    await flushSave();
     await loadFromDB();
     applyLeaveOverrides();
     buildDateSel();
@@ -2544,8 +2548,8 @@ function renderTable(){
     const su=document.createElement('td');su.className='sumc';
     const vlBase=VL_BASE[emp.name];
     const slBase=SL_BASE[emp.name];
-    const vlBal=vlBase!==undefined?vlBase:0;
-    const slBal=slBase!==undefined?slBase:0;
+    const vlBal=vlBase!==undefined?getLeaveBalance(emp.name,'VL'):0;
+    const slBal=slBase!==undefined?getLeaveBalance(emp.name,'SL'):0;
     // Count notes and missed onsite
     const noteCount=visibleDates.filter(d=>state.notes&&state.notes[noteKey(emp.name,d)]).length;
     const totalOnsite=visibleDates.reduce((s,d)=>{
