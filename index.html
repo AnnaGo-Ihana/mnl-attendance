@@ -1353,9 +1353,16 @@ const SL_BASE = {"Rachelle Singh":1.0,"Anna Go":8.0,"Ann Cruz":0.0,"Kirsten Masi
 
 function getLeaveBalance(name, type) {
   const base = type==='VL' ? (VL_BASE[name]||0) : (SL_BASE[name]||0);
-  // Count usages in attendance tracker AFTER the base date (Apr 15, 2026)
+  // If this balance came from a Credits import/edit, it's already net of everything
+  // taken up to that point — counting usage from the old fixed April-15 baseline on
+  // top of that double-subtracts anything taken between April 15 and the real "as of"
+  // date, silently shorting the displayed balance. Use the actual update date instead.
+  const overrideKey = type==='VL' ? 'vl' : 'sl';
+  const hasOverride = state._leaveOverrides && state._leaveOverrides[name] && state._leaveOverrides[name][overrideKey] !== undefined;
+  const cutoff = (hasOverride && state._leaveCreditsUpdatedAt) ? state._leaveCreditsUpdatedAt.slice(0,10) : '2026-04-15';
+  // Count usages in attendance tracker AFTER the base/cutoff date
   const used = state.dates
-    .filter(d => d > '2026-04-15')
+    .filter(d => d > cutoff)
     .filter(d => state.attendance[gk(name,d)] === type)
     .length;
   return Math.max(base - used, 0);
@@ -3612,6 +3619,7 @@ function saveLeaveEdits(){
     if(vals.sl !== undefined) state._leaveOverrides[name].sl = vals.sl;
   });
   leaveEdits = {};
+  state._leaveCreditsUpdatedAt = new Date().toISOString();
   document.getElementById('leave-edit-m').classList.remove('open');
   renderDash();
   renderTable();
