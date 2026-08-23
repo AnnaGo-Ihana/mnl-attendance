@@ -4602,7 +4602,8 @@ function switchLoginTab(tab){} // unified login - no tabs needed
 function enableEditMode(showToast=true){
   isEditMode = true;
   ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
-   'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range'].forEach(id=>{
+   'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range',
+   'btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='';
   });
   const lb=document.getElementById('btn-lock');
@@ -4615,6 +4616,8 @@ function enableEditMode(showToast=true){
   }
   if(showToast) toast('🔓 Welcome '+( currentUser?currentUser.name:'')+'!');
   renderTable();
+  renderDash();
+  scheduleSave();
 }
 
 function enableOTMode(showToast=true){
