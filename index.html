@@ -4614,10 +4614,10 @@ function enableEditMode(showToast=true){
     lb.style.borderColor='#c4a8ff';
     lb.style.color='#c4a8ff';
   }
-  if(showToast) toast('🔓 Welcome '+( currentUser?currentUser.name:'')+'!');
+  if(showToast) toast('🔓 Welcome '+(currentUser?currentUser.name:'')+'!');
+  showPage('tracker');
   renderTable();
   renderDash();
-  scheduleSave();
 }
 
 function enableOTMode(showToast=true){
