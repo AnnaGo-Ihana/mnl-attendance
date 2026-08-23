@@ -1651,6 +1651,8 @@ function noteKey(emp,date){return emp+'||'+date+'||note';}
 function onsiteKey(emp,date){return emp+'||'+date+'||onsite';}
 
 function openPop(emp,date,cur){
+  // Re-check edit mode from session in case it was reset
+  if(!isEditMode && sessionStorage.getItem('att_is_edit')==='1') isEditMode=true;
   pEmp=emp;pDate=date;pCurSt=cur;
   document.getElementById('pop-n').textContent=emp;
   document.getElementById('pop-d').textContent=dd(date)+' · '+dow(date);
@@ -4601,6 +4603,7 @@ function switchLoginTab(tab){} // unified login - no tabs needed
 
 function enableEditMode(showToast=true){
   isEditMode = true;
+  try{sessionStorage.setItem('att_is_edit','1');}catch(e){}
   ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range',
    'btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
@@ -4639,6 +4642,7 @@ function enableOTMode(showToast=true){
 
 function disableEditMode(){
   isEditMode = false;
+  try{sessionStorage.removeItem('att_is_edit');}catch(e){}
   currentUser = null;
   localStorage.removeItem(PIN_STORAGE_KEY);
   localStorage.removeItem(OT_PIN_STORAGE_KEY);
