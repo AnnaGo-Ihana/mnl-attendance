@@ -4873,6 +4873,8 @@ function startApp(){
 (function init(){
   SB_URL = 'https://cswcozccjklbggegehni.supabase.co';
   SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzd2NvemNjamtsYmdnZWdlaG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTM3NTYsImV4cCI6MjA5MzYyOTc1Nn0.dD2R_xs7iwikHXwyEFUseYb2CEdfmc3OjRTkY2fk_Bc';
+  // Always clear auth on load - force fresh login every session
+  try{ localStorage.removeItem('att_edit_unlocked'); localStorage.removeItem('att_ot_unlocked'); }catch(e){}
   document.getElementById('setup-screen').style.display='none';
   // Clear old PIN format that stored plain base64 string (not JSON)
   try {
