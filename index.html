@@ -2145,6 +2145,11 @@ function saveLeaveEdits(){
 }
 
 function applyLeaveOverrides(){
+  // Ensure Aug 17-23 2026 dates exist
+  const missingDates = ['2026-08-17','2026-08-18','2026-08-19','2026-08-20',
+    '2026-08-21','2026-08-22','2026-08-23'];
+  missingDates.forEach(d=>{ if(!state.dates.includes(d)) state.dates.push(d); });
+  state.dates.sort();
   updateAllDeptSelects();
   // Pre-load contacts from Excel if not already set
   if(!state._contacts || Object.keys(state._contacts).length === 0){
