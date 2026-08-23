@@ -1161,9 +1161,9 @@ async function loadFromDB(){
   }
 }
 
+let _saveCount = 0;
 async function saveToDB(){
   setSyncStatus('syncing');
-  // Tag who saved
   if(currentUser) state._lastEditedBy = currentUser.name.split(' ')[0];
   try{
     await sbFetch('attendance?id=eq.state', {
@@ -1172,6 +1172,17 @@ async function saveToDB(){
       body: JSON.stringify({data: state, updated_at: new Date().toISOString()})
     });
     setSyncStatus('ok');
+    // Auto-backup every 10 saves
+    _saveCount++;
+    if(_saveCount % 10 === 0){
+      try{
+        await sbFetch('attendance?id=eq.backup', {
+          method:'PATCH',
+          prefer:'return=minimal',
+          body: JSON.stringify({data: state, updated_at: new Date().toISOString()})
+        });
+      }catch(e){}
+    }
   } catch(e){
     setSyncStatus('error');
     toast('⚠️ Save failed — check connection');
