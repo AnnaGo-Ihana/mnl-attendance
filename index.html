@@ -4870,6 +4870,11 @@ function startApp(){
       try { JSON.parse(atob(old)); } // valid new format
       catch(e) { localStorage.removeItem('att_edit_unlocked'); } // old format - clear it
     }
+    const old2 = localStorage.getItem('att_ot_unlocked');
+    if(old2) {
+      try { JSON.parse(atob(old2)); }
+      catch(e) { localStorage.removeItem('att_ot_unlocked'); }
+    }
   } catch(e) {}
   startApp();
 })();
