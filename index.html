@@ -2339,6 +2339,9 @@ function recalcAllNDNotes(){
 }
 
 function toggleAllComplete(checked, emps, dates){
+  // Re-check edit mode
+  if(!isEditMode && sessionStorage.getItem('att_is_edit')==='1') isEditMode=true;
+  if(!isEditMode){ toast('🔒 Sign in to edit'); return; }
   if(checked && !confirm('Mark ALL '+emps.length+' employees as complete attendance for '+dates.length+' date(s)?\n\nThis will auto-fill Time In/Out from their schedules.')) {
     const sa=document.getElementById('chk-select-all');
     if(sa)sa.checked=false; return;
