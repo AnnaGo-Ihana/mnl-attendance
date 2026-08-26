@@ -1664,7 +1664,7 @@ function openPop(emp,date,cur){
   document.getElementById('pop-onsite').value=existingOnsite;
 
   // Read-only mode — disable inputs and status buttons
-  const ro = !isEditMode;
+  const ro = !(isEditMode || sessionStorage.getItem('att_is_edit')==='1');
   document.getElementById('pop-notes').disabled=ro;
   document.getElementById('pop-notes').style.opacity=ro?'.6':'1';
   document.getElementById('pop-onsite').disabled=ro;
