@@ -1064,6 +1064,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <button onclick="setLeavesWeek(0)" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Week</button>
     <button onclick="setLeavesWeek(-1)" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Last Week</button>
     <button onclick="setLeavesMonth()" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Month</button>
+    <button onclick="setLeavesAll()" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">All</button>
     <button id="btn-file-leave" onclick="openFileLeave()" style="background:rgba(0,232,150,.1);border:1px solid #00e896;color:#00e896;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600">📝 File Leave</button>
     <div style="display:flex;gap:4px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:2px">
       <button id="leaves-view-list" onclick="setLeavesView('list')" style="background:transparent;border:none;color:var(--text2);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">☰ List</button>
@@ -4626,15 +4627,15 @@ let _reviewingLeaveId = null;
 
 function initLeavesPage(){
   if(!state.leaveRequests) state.leaveRequests = [];
-  // Always reset to current month so calendar always shows correct dates
+  // Default: current month for calendar
   const lf = document.getElementById('leaves-date-from');
   const lt = document.getElementById('leaves-date-to');
   if(lf && lt){
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth(), 1);
     const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
-    lf.value = from.toISOString().slice(0,10);
-    lt.value = to.toISOString().slice(0,10);
+    if(!lf.value) lf.value = from.toISOString().slice(0,10);
+    if(!lt.value) lt.value = to.toISOString().slice(0,10);
   }
   // Populate employee dropdown
   const sel = document.getElementById('leave-emp-name');
@@ -4667,6 +4668,14 @@ function setLeavesMonth(){
   document.getElementById('leaves-date-from').value = from.toISOString().slice(0,10);
   document.getElementById('leaves-date-to').value   = to.toISOString().slice(0,10);
   renderLeaves();
+}
+
+function setLeavesAll(){
+  // Clear date filters to show all
+  document.getElementById('leaves-date-from').value = '';
+  document.getElementById('leaves-date-to').value = '';
+  // Switch to list view for all records
+  setLeavesView('list');
 }
 
 function checkLeaveNotice(){
@@ -4782,8 +4791,8 @@ function renderLeaves(){
   let reqs = state.leaveRequests.filter(r=>{
     if(deptF && r.dept!==deptF) return false;
     if(statF && r.status!==statF) return false;
-    if(dateF && r.to < dateF) return false;
-    if(dateT && r.from > dateT) return false;
+    if(dateF && r.to && r.to < dateF) return false;
+    if(dateT && r.from && r.from > dateT) return false;
     return true;
   }).sort((a,b)=>b.filedAt.localeCompare(a.filedAt));
 
@@ -4815,7 +4824,9 @@ function renderLeaves(){
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
   const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff'};
 
-  wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+  const totalCount = reqs.length;
+  wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px 0;margin-bottom:8px">Showing <strong style="color:#c4a8ff">'+totalCount+'</strong> leave request'+(totalCount!==1?'s':'')+'</div>';
+  wrap.innerHTML += '<table style="width:100%;border-collapse:collapse;font-size:12px">'
     +'<thead><tr>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Employee</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Dept</th>'
