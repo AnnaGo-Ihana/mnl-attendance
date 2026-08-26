@@ -4573,6 +4573,13 @@ let isEditMode = false;
 let currentUser = null; // {name, role, dept, accessLevel: 'full'|'ot_only', otDept}
 
 function checkEditAccess(){
+  // Check sessionStorage first (survives re-renders within same session)
+  try {
+    if(sessionStorage.getItem('att_is_edit')==='1'){
+      const saved = localStorage.getItem(PIN_STORAGE_KEY);
+      if(saved){ const data=JSON.parse(atob(saved)); if(data&&data.accessLevel==='full'){ currentUser=data; enableEditMode(false); return true; } }
+    }
+  } catch(e){}
   try {
     // Clear any old-format PIN storage
     const saved = localStorage.getItem(PIN_STORAGE_KEY);
@@ -4899,13 +4906,7 @@ function startApp(){
 (function init(){
   SB_URL = 'https://cswcozccjklbggegehni.supabase.co';
   SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzd2NvemNjamtsYmdnZWdlaG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTM3NTYsImV4cCI6MjA5MzYyOTc1Nn0.dD2R_xs7iwikHXwyEFUseYb2CEdfmc3OjRTkY2fk_Bc';
-  // Restore auth from localStorage if valid
-  try{
-    const old = localStorage.getItem('att_edit_unlocked');
-    if(old){ try{ JSON.parse(atob(old)); }catch(e){ localStorage.removeItem('att_edit_unlocked'); } }
-    const old2 = localStorage.getItem('att_ot_unlocked');
-    if(old2){ try{ JSON.parse(atob(old2)); }catch(e){ localStorage.removeItem('att_ot_unlocked'); } }
-  }catch(e){}
+  // Keep auth intact - do not clear on load
   document.getElementById('setup-screen').style.display='none';
   // Clear old PIN format that stored plain base64 string (not JSON)
   try {
