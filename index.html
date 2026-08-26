@@ -18,7 +18,11 @@
   --UT:#c49eff;--UT-bg:#1e0845;
   --L:#5db8ff;--L-bg:#001838;
   --VL:#00cfff;--VL-bg:#003040;
+  --UVL:#0088aa;--UVL-bg:#00232e;
+  --UHD:#c9960f;--UHD-bg:#2e1e00;
   --SL:#ffaa5c;--SL-bg:#3d1800;
+  --EL:#ff8f5c;--EL-bg:#3d1200;
+  --BL:#9d6fff;--BL-bg:#241344;
   --Off:#8878b8;--Off-bg:#180d30;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -139,10 +143,14 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .ci-P{background:#003d28;color:#00e896;font-weight:700;}
 .ci-A{background:#3d0818;color:#ff5c7a;font-weight:700;}
 .ci-HD{background:#3d2800;color:#ffcf3d;font-weight:700;}
+.ci-UHD{background:#2e1e00;color:#c9960f;font-weight:700;}
 .ci-UT{background:#1e0845;color:#c49eff;font-weight:700;}
 .ci-L{background:#001838;color:#5db8ff;font-weight:700;}
 .ci-VL{background:#003040;color:#00cfff;font-weight:700;}
+.ci-UVL{background:#00232e;color:#0088aa;font-weight:700;}
 .ci-SL{background:#3d1800;color:#ffaa5c;font-weight:700;}
+.ci-EL{background:#3d1200;color:#ff8f5c;font-weight:700;}
+.ci-BL{background:#241344;color:#9d6fff;font-weight:700;}
 .ci-Off{background:#180d30;color:#8878b8;font-weight:700;}
 .ci-blank{background:transparent;color:transparent;}
 .sumc{text-align:center;padding:5px 8px;background:#160d2e;font-size:11px;font-family:var(--mono);}
@@ -152,7 +160,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 /* POPUP / MODAL */
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
 .ov.open{display:flex;}
-.popup{background:#1a1035;border-radius:14px;border:1px solid #3a2868;padding:22px;width:300px;box-shadow:0 24px 80px rgba(124,58,237,.3);}
+.popup{background:#1a1035;border-radius:14px;border:1px solid #3a2868;padding:22px;width:300px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(124,58,237,.3);}
 .popup h3{font-size:14px;margin-bottom:3px;}
 .pop-sub{font-size:12px;color:var(--text2);margin-bottom:14px;}
 .sg2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
@@ -165,6 +173,10 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .so-UT{background:#1e0845;color:#c49eff;}
 .so-L{background:#001838;color:#5db8ff;}
 .so-VL{background:#003040;color:#00cfff;}
+.so-UVL{background:#00232e;color:#0088aa;}
+.so-UHD{background:#2e1e00;color:#c9960f;}
+.so-EL{background:#3d1200;color:#ff8f5c;}
+.so-BL{background:#241344;color:#9d6fff;}
 .so-SL{background:#3d1800;color:#ffaa5c;}
 .so-Off{background:#180d30;color:#8878b8;}
 .pa{display:flex;gap:8px;margin-top:14px;}
@@ -441,11 +453,15 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <option value="">All statuses</option>
         <option value="P">Present (P)</option>
         <option value="A">Absent (A)</option>
-        <option value="HD">Half Day (HD)</option>
+        <option value="HD">Paid Half Day (HD)</option>
+        <option value="UHD">Unpaid Half Day (UHD)</option>
         <option value="L">Late (L)</option>
         <option value="UT">Undertime (UT)</option>
-        <option value="VL">Vacation Leave (VL)</option>
+        <option value="VL">Paid Vacation Leave (VL)</option>
+        <option value="UVL">Unpaid Vacation Leave (UVL)</option>
         <option value="SL">Sick Leave (SL)</option>
+        <option value="EL">Emergency Leave (EL)</option>
+        <option value="BL">Bereavement Leave (BL)</option>
         <option value="Off">Off</option>
       </select>
       <button class="btn light" onclick="openAddEmp()" id="btn-add-emp" style="display:none">+ Employee</button>
@@ -466,11 +482,15 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <div class="sg2">
       <div class="so so-P"   onclick="setSt('P')">P — Present</div>
       <div class="so so-A"   onclick="setSt('A')">A — Absent</div>
-      <div class="so so-HD"  onclick="setSt('HD')">HD — Half Day</div>
+      <div class="so so-HD"  onclick="setSt('HD')">HD — Paid Half Day</div>
+      <div class="so so-UHD" onclick="setSt('UHD')">UHD — Unpaid Half Day</div>
       <div class="so so-UT"  onclick="setSt('UT')">UT — Undertime</div>
       <div class="so so-L"   onclick="setSt('L')">L — Late</div>
-      <div class="so so-VL"  onclick="setSt('VL')">VL — Vacation</div>
+      <div class="so so-VL"  onclick="setSt('VL')">VL — Paid Vacation</div>
+      <div class="so so-UVL" onclick="setSt('UVL')">UVL — Unpaid Vacation</div>
       <div class="so so-SL"  onclick="setSt('SL')">SL — Sick Leave</div>
+      <div class="so so-EL"  onclick="setSt('EL')">EL — Emergency Leave</div>
+      <div class="so so-BL"  onclick="setSt('BL')">BL — Bereavement Leave</div>
       <div class="so so-Off" onclick="setSt('Off')">Off — Rest Day</div>
     </div>
 
@@ -1284,9 +1304,9 @@ function getLeaveUsed(name, type) {
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const STATUSES=['P','A','HD','UT','L','VL','SL','Off'];
-const SC={P:'var(--P)',A:'var(--A)',HD:'var(--HD)',UT:'var(--UT)',L:'var(--L)',VL:'var(--VL)',SL:'var(--SL)',Off:'var(--Off)'};
-const SC_BG={P:'var(--P-bg)',A:'var(--A-bg)',HD:'var(--HD-bg)',UT:'var(--UT-bg)',L:'var(--L-bg)',VL:'var(--VL-bg)',SL:'var(--SL-bg)',Off:'var(--Off-bg)'};
+const STATUSES=['P','A','HD','UHD','UT','L','VL','UVL','SL','EL','BL','Off'];
+const SC={P:'var(--P)',A:'var(--A)',HD:'var(--HD)',UHD:'var(--UHD)',UT:'var(--UT)',L:'var(--L)',VL:'var(--VL)',UVL:'var(--UVL)',SL:'var(--SL)',EL:'var(--EL)',BL:'var(--BL)',Off:'var(--Off)'};
+const SC_BG={P:'var(--P-bg)',A:'var(--A-bg)',HD:'var(--HD-bg)',UHD:'var(--UHD-bg)',UT:'var(--UT-bg)',L:'var(--L-bg)',VL:'var(--VL-bg)',UVL:'var(--UVL-bg)',SL:'var(--SL-bg)',EL:'var(--EL-bg)',BL:'var(--BL-bg)',Off:'var(--Off-bg)'};
 
 const INIT_DATA = {
   dates: ['2025-05-01','2025-05-02','2025-05-03','2025-05-04','2025-05-05'],
@@ -1573,8 +1593,8 @@ function getActiveDates(){
 }
 
 function calcStats(emps,dates){
-  const c={P:0,A:0,HD:0,UT:0,L:0,VL:0,SL:0,Off:0,_t:0};
-  emps.forEach(e=>dates.forEach(d=>{const st=state.attendance[gk(e.name,d)]||'';c[st]++;c._t++;}));
+  const c={P:0,A:0,HD:0,UHD:0,UT:0,L:0,VL:0,UVL:0,SL:0,EL:0,BL:0,Off:0,_t:0};
+  emps.forEach(e=>dates.forEach(d=>{const st=state.attendance[gk(e.name,d)]||''; if(st){ c[st]=(c[st]||0)+1; } c._t++;}));
   return c;
 }
 
@@ -1585,9 +1605,9 @@ function renderDash(){
   const ov=calcStats(all,dates);
 
   const items=[
-    {k:'P',l:'Present'},{k:'A',l:'Absent'},{k:'HD',l:'Half Day'},
-    {k:'L',l:'Late'},{k:'UT',l:'Undertime'},{k:'VL',l:'Vac. Leave'},
-    {k:'SL',l:'Sick Leave'},{k:'Off',l:'Rest Day'}
+    {k:'P',l:'Present'},{k:'A',l:'Absent'},{k:'HD',l:'Half Day'},{k:'UHD',l:'Unpaid HD'},
+    {k:'L',l:'Late'},{k:'UT',l:'Undertime'},{k:'VL',l:'Vac. Leave'},{k:'UVL',l:'Unpaid VL'},
+    {k:'SL',l:'Sick Leave'},{k:'EL',l:'Emergency'},{k:'BL',l:'Bereavement'},{k:'Off',l:'Rest Day'}
   ];
 
   document.getElementById('overall-row').innerHTML=items.map(it=>`
@@ -2021,9 +2041,10 @@ function renderTable(){
     }
     tr.appendChild(btd);
 
-    const cnts={P:0,A:0,HD:0,UT:0,L:0,VL:0,SL:0,Off:0,blank:0};
+    const cnts={P:0,A:0,HD:0,UHD:0,UT:0,L:0,VL:0,UVL:0,SL:0,EL:0,BL:0,Off:0,blank:0};
     state.dates.forEach(d=>{
-      const s=state.attendance[gk(emp.name,d)]||'';cnts[s]++;
+      const s=state.attendance[gk(emp.name,d)]||'';
+      if(s){ cnts[s]=(cnts[s]||0)+1; } else { cnts.blank++; }
       const td=document.createElement('td');td.className='sc';
       const ci=document.createElement('div');ci.className='ci '+(s?'ci-'+s:'ci-blank');
       const hasNote=state.notes&&state.notes[noteKey(emp.name,d)];
@@ -2046,10 +2067,14 @@ function renderTable(){
     },0);
     su.innerHTML=`<span style="color:var(--P)">P:${cnts.P}</span> <span style="color:var(--A)">A:${cnts.A}</span>`
       +(cnts.HD?` <span style="color:var(--HD)">HD:${cnts.HD}</span>`:'')
+      +(cnts.UHD?` <span style="color:var(--UHD)">UHD:${cnts.UHD}</span>`:'')
       +(cnts.L?` <span style="color:var(--L)">L:${cnts.L}</span>`:'')
       +(cnts.UT?` <span style="color:var(--UT)">UT:${cnts.UT}</span>`:'')
       +(cnts.VL?` <span style="color:var(--VL)">VL:${cnts.VL}</span>`:'')
+      +(cnts.UVL?` <span style="color:var(--UVL)">UVL:${cnts.UVL}</span>`:'')
       +(cnts.SL?` <span style="color:var(--SL)">SL:${cnts.SL}</span>`:'')
+      +(cnts.EL?` <span style="color:var(--EL)">EL:${cnts.EL}</span>`:'')
+      +(cnts.BL?` <span style="color:var(--BL)">BL:${cnts.BL}</span>`:'')
       +(vlBase!==undefined?`<br><span style="color:var(--VL);font-size:10px" title="VL balance">🏖️${vlBal.toFixed(1)}d</span>`:'')
       +(slBase!==undefined?` <span style="color:var(--SL);font-size:10px" title="SL balance">🤒${slBal.toFixed(1)}d</span>`:'')
       +(noteCount?`<br><span style="color:#a78bfa;font-size:10px" title="${noteCount} note(s)">📝${noteCount}</span>`:'')
