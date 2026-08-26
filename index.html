@@ -2830,7 +2830,8 @@ function renderTimesheet(){
     + '</tr>';
 
   tbody.innerHTML = '';
-  const canEdit = isEditMode;
+  const canEdit = isEditMode || sessionStorage.getItem('att_is_edit')==='1';
+  if(canEdit&&!isEditMode)isEditMode=true;
 
   emps.forEach(emp => {
     let empTotalND = 0;
@@ -3468,7 +3469,8 @@ function renderOT(){
   const empF  = document.getElementById('ot-emp-filter').value;
   const from  = document.getElementById('ot-date-from').value;
   const to    = document.getElementById('ot-date-to').value;
-  const canEdit = isEditMode;
+  const canEdit = isEditMode || sessionStorage.getItem('att_is_edit')==='1';
+  if(canEdit&&!isEditMode)isEditMode=true;
 
   let entries = getOTEntries().filter(e=>{
     if(deptF && e.dept!==deptF) return false;
