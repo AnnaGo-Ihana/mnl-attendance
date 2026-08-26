@@ -1065,6 +1065,10 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <button onclick="setLeavesWeek(-1)" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Last Week</button>
     <button onclick="setLeavesMonth()" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Month</button>
     <button id="btn-file-leave" onclick="openFileLeave()" style="background:rgba(0,232,150,.1);border:1px solid #00e896;color:#00e896;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600">📝 File Leave</button>
+    <div style="display:flex;gap:4px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:2px">
+      <button id="leaves-view-list" onclick="setLeavesView('list')" style="background:#9d6fff;border:none;color:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font);font-weight:600">☰ List</button>
+      <button id="leaves-view-cal" onclick="setLeavesView('cal')" style="background:transparent;border:none;color:var(--text2);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">📅 Calendar</button>
+    </div>
     <button onclick="exportLeavesCSV()" style="margin-left:auto;background:rgba(0,207,255,.1);border:1px solid #00cfff;color:#00cfff;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:var(--font)">📤 Export</button>
   </div>
   <div id="leaves-urgent-banner" style="display:none;margin:10px 20px 0;padding:10px 16px;background:rgba(255,92,122,.1);border:1px solid #ff5c7a;border-radius:8px;font-size:12px;color:#ff5c7a"></div>
@@ -4803,6 +4807,8 @@ function renderLeaves(){
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
   const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff'};
 
+  if(_leavesView==='cal'){ renderLeavesCalendar(reqs); return; }
+
   wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
     +'<thead><tr>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Employee</th>'
@@ -4838,6 +4844,103 @@ function renderLeaves(){
         +'</tr>';
     }).join('')
     +'</tbody></table>';
+}
+
+let _leavesView = 'list';
+
+function setLeavesView(v){
+  _leavesView = v;
+  const lb = document.getElementById('leaves-view-list');
+  const cb = document.getElementById('leaves-view-cal');
+  if(lb){ lb.style.background = v==='list'?'#9d6fff':'transparent'; lb.style.color = v==='list'?'#fff':'var(--text2)'; }
+  if(cb){ cb.style.background = v==='cal'?'#9d6fff':'transparent'; cb.style.color = v==='cal'?'#fff':'var(--text2)'; }
+  renderLeaves();
+}
+
+function renderLeavesCalendar(reqs){
+  const wrap = document.getElementById('leaves-content');
+  const dateF = document.getElementById('leaves-date-from').value;
+  const dateT = document.getElementById('leaves-date-to').value;
+  if(!dateF||!dateT){ wrap.innerHTML='<div style="padding:20px;color:var(--text3)">Select a date range to view calendar</div>'; return; }
+
+  const start = new Date(dateF+'T00:00:00');
+  const end   = new Date(dateT+'T00:00:00');
+
+  // Build days array
+  const days = [];
+  const cur = new Date(start);
+  while(cur <= end){ days.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
+  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff'};
+
+  // Build map: date -> list of leaves
+  const leaveMap = {};
+  reqs.forEach(r=>{
+    const s=new Date(r.from+'T00:00:00'), e=new Date(r.to+'T00:00:00');
+    const d=new Date(s);
+    while(d<=e){
+      const k=d.toISOString().slice(0,10);
+      if(!leaveMap[k]) leaveMap[k]=[];
+      leaveMap[k].push(r);
+      d.setDate(d.getDate()+1);
+    }
+  });
+
+  let html = '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:700px">';
+  // Header
+  html += '<tr>';
+  DAYS.forEach(d=> html+='<th style="padding:8px;background:#1a1035;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;text-align:center;width:14.28%">'+d+'</th>');
+  html += '</tr>';
+
+  // Pad start to Sunday
+  const firstDay = new Date(start).getDay();
+  let dayIdx = 0;
+  html += '<tr>';
+  for(let p=0;p<firstDay;p++){
+    html += '<td style="padding:4px;border:1px solid #2d1f55;background:#0a0618;min-height:80px;vertical-align:top;height:80px"></td>';
+  }
+  dayIdx = firstDay;
+
+  days.forEach((d,i)=>{
+    const leaves = leaveMap[d]||[];
+    const isToday = d===new Date().toISOString().slice(0,10);
+    const dow = new Date(d+'T00:00:00').getDay();
+    if(dow===0 && i>0) html += '</tr><tr>';
+    html += '<td style="padding:4px;border:1px solid #2d1f55;background:'+(isToday?'rgba(157,111,255,.1)':'#0d0818')+';vertical-align:top;min-height:80px;height:80px">';
+    html += '<div style="font-size:11px;font-weight:700;color:'+(isToday?'#9d6fff':'var(--text3)')+';margin-bottom:3px">'+parseInt(d.slice(8))+'</div>';
+    leaves.slice(0,3).forEach(r=>{
+      const sc = statusColors[r.status]||'#c4a8ff';
+      const tc = typeColors[r.type]||'#c4a8ff';
+      const _rid=r.id,_rn=r.name.split(' ')[0],_rt=r.type,_rs=r.status;
+      html += (function(rid,rn,rt,rs,sc2,tc2){
+        return '<div style="font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;background:rgba(0,0,0,.3);border-left:3px solid '+sc2+';cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" onclick="openReviewLeave(\"'+rid+'\")" title="'+rn+' - '+rt+' ('+rs+')">'
+          +'<span style="color:'+tc2+';font-weight:700">'+rt+'</span> <span style="color:var(--text2)">'+rn+'</span></div>';
+      })(_rid,_rn,_rt,_rs,sc,tc);
+    });
+    if(leaves.length>3) html += '<div style="font-size:9px;color:var(--text3);padding-left:4px">+' +(leaves.length-3)+' more</div>';
+    html += '</td>';
+    dayIdx++;
+  });
+
+  // Pad end
+  const lastDow = new Date(days[days.length-1]+'T00:00:00').getDay();
+  for(let p=lastDow+1;p<7;p++){
+    html += '<td style="padding:4px;border:1px solid #2d1f55;background:#0a0618;min-height:80px;height:80px"></td>';
+  }
+  html += '</tr></table></div>';
+
+  // Legend
+  html += '<div style="display:flex;gap:16px;padding:12px 0;font-size:11px">';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#00e896;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Approved</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ffcf3d;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Pending</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ff5c7a;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Declined</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#00cfff;border-radius:2px;margin-right:4px;vertical-align:middle"></span>VL</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ffaa5c;border-radius:2px;margin-right:4px;vertical-align:middle"></span>SL</span>';
+  html += '</div>';
+
+  wrap.innerHTML = html;
 }
 
 function exportLeavesCSV(){
