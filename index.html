@@ -410,6 +410,16 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <div style="padding:0 24px 16px" id="lead-section-wrap"></div>
     <div class="sec-lbl">By Team</div>
     <div class="team-grid" id="team-grid"></div>
+
+    <!-- WEEKLY PERFORMANCE RANKINGS -->
+    <div style="padding:0 24px 24px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-top:4px;flex-wrap:wrap">
+        <div class="sec-lbl" style="margin:0">🏆 Weekly Performance Rankings</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="week-selector-wrap"></div>
+        <span style="font-size:10px;color:var(--text3);margin-left:4px">Top 2 best ✅ &amp; bottom 2 ⚠ per dept</span>
+      </div>
+      <div id="weekly-rankings-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>
+    </div>
   </div>
 
   <!-- TRACKER -->
@@ -1152,6 +1162,8 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
           <option value="VL">Vacation Leave (VL)</option>
           <option value="SL">Sick Leave (SL)</option>
           <option value="EL">Emergency Leave (EL)</option>
+          <option value="ML">Maternity Leave (ML)</option>
+          <option value="PL">Paternity Leave (PL)</option>
         </select>
       </div>
     </div>
@@ -1697,6 +1709,114 @@ function renderDash(){
         </div>
       </div>
       <div class="emp-preview" style="padding:4px 14px 10px">${prev}${emps.length>4?`<div style="font-size:11px;color:var(--text3);padding-top:6px">+${emps.length-4} more</div>`:''}</div>
+    </div>`;
+  }).join('');
+
+  renderWeeklyRankings(0);
+}
+
+// ─── WEEKLY PERFORMANCE RANKINGS ───────────────────────────────────────────
+// Weeks are derived directly from state.dates (no cutoff/archive dependency).
+function getWeekRanges(){
+  const sorted = [...(state.dates||[])].sort();
+  if(!sorted.length) return [];
+  const weeks = [];
+  const first = pd(sorted[0]);
+  const last  = pd(sorted[sorted.length-1]);
+  let d = new Date(first);
+  let wk = 1;
+  while(d <= last && weeks.length < 8){
+    const wStart = new Date(d);
+    const wEnd   = new Date(d); wEnd.setDate(wEnd.getDate()+6);
+    if(wEnd > last) wEnd.setTime(last.getTime());
+    weeks.push({label: dd(fmt(wStart))+' – '+dd(fmt(wEnd)), start: fmt(wStart), end: fmt(wEnd)});
+    d.setDate(d.getDate()+7);
+    wk++;
+  }
+  return weeks.reverse(); // most recent week first
+}
+
+function renderWeeklyRankings(weekIdx){
+  const wrap    = document.getElementById('weekly-rankings-grid');
+  const selWrap = document.getElementById('week-selector-wrap');
+  if(!wrap) return;
+
+  const weeks = getWeekRanges();
+  if(!weeks.length){ wrap.innerHTML='<div style="color:var(--text3);font-size:12px">No weekly data yet — add dates to see rankings.</div>'; if(selWrap) selWrap.innerHTML=''; return; }
+
+  weekIdx = Math.min(weekIdx||0, weeks.length-1);
+
+  if(selWrap){
+    selWrap.innerHTML = weeks.map((w,i)=>
+      '<button onclick="renderWeeklyRankings('+i+')" style="padding:4px 12px;border-radius:20px;border:1px solid '+(i===weekIdx?'#9d6fff':'var(--border)')+';background:'+(i===weekIdx?'rgba(157,111,255,.2)':'var(--surface)')+';color:'+(i===weekIdx?'#c4b5fd':'var(--text3)')+';font-size:11px;font-weight:'+(i===weekIdx?'700':'400')+';cursor:pointer;white-space:nowrap">'+w.label+'</button>'
+    ).join('');
+  }
+
+  const week = weeks[weekIdx];
+  const weekDates = (state.dates||[]).filter(d=>d>=week.start&&d<=week.end).sort();
+  const weekAttendance = state.attendance||{};
+  const weekEmployees = state.employees;
+
+  if(!weekDates.length){
+    wrap.innerHTML='<div style="color:var(--text3);font-size:12px;padding:12px">No attendance data for '+week.label+'.</div>';
+    return;
+  }
+
+  const depts = [...new Set(weekEmployees.map(e=>e.team).filter(Boolean))].sort();
+
+  function empScore(emp){
+    const statuses = weekDates.map(d=>weekAttendance[gk(emp.name,d)]||'');
+    const tracked  = statuses.filter(s=>s!=='').length;
+    const present  = statuses.filter(s=>s==='P').length;
+    const absent   = statuses.filter(s=>s==='A').length;
+    const late     = statuses.filter(s=>s==='L').length;
+    const leave    = statuses.filter(s=>s==='VL'||s==='SL').length;
+    const pct      = tracked>0 ? Math.round(present/tracked*100) : null;
+    return {name:emp.name, tracked, present, absent, late, leave, pct};
+  }
+
+  wrap.innerHTML = depts.map(dept=>{
+    const emps = weekEmployees.filter(e=>e.team===dept);
+    if(!emps.length) return '';
+
+    const scored = emps.map(empScore).filter(s=>s.tracked>0).sort((a,b)=>b.pct-a.pct);
+
+    if(!scored.length) return `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#c4b5fd;margin-bottom:8px">${dept} <span style="color:var(--text3);font-weight:400">(${emps.length})</span></div>
+        <div style="font-size:11px;color:var(--text3)">No tracked data this week</div>
+      </div>`;
+
+    const top2    = scored.slice(0,2);
+    const bottom2 = scored.length>2 ? scored.slice(-2).reverse() : [];
+    const bottom2Filtered = bottom2.filter(b=>!top2.find(t=>t.name===b.name));
+
+    function empRow(s, isTop){
+      const bar = s.pct!==null ? s.pct : 0;
+      const color = isTop ? '#22c55e' : (s.pct!==null&&s.pct<70 ? '#ef4444' : '#f97316');
+      const icon  = isTop ? '⭐' : '⚠';
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:10px">${icon}</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">${s.name.split(' ').slice(0,2).join(' ')}</span>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:${color};font-family:var(--mono)">${s.pct!==null?s.pct+'%':'—'}</span>
+        </div>
+        <div style="height:4px;background:#1e1240;border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${bar}%;background:${color};border-radius:2px;transition:width .3s"></div>
+        </div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">${s.present}P ${s.absent>0?s.absent+'A ':''} ${s.late>0?s.late+'L ':''} ${s.leave>0?s.leave+'L ':''} / ${s.tracked} days</div>
+      </div>`;
+    }
+
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;color:#c4b5fd">${dept}</span>
+        <span style="font-size:10px;color:var(--text3)">${scored.length}/${emps.length} tracked</span>
+      </div>
+      ${top2.length ? '<div style="font-size:9px;color:#22c55e;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">TOP ATTENDERS</div>'+top2.map(s=>empRow(s,true)).join('') : ''}
+      ${bottom2Filtered.length ? '<div style="font-size:9px;color:#f97316;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:8px 0 6px">NEEDS ATTENTION</div>'+bottom2Filtered.map(s=>empRow(s,false)).join('') : ''}
     </div>`;
   }).join('');
 }
@@ -4739,6 +4859,22 @@ function initLeavesPage(){
     // Pre-select current user if logged in
     if(currentUser && currentUser.name) sel.value = currentUser.name;
   }
+  // If logged in but not found in the dropdown (e.g. credentialed but not yet
+  // in the employee roster), add them so they can still select themselves.
+  if(sel && currentUser && currentUser.name && sel.value !== currentUser.name){
+    const o = document.createElement('option');
+    o.value = currentUser.name; o.textContent = currentUser.name;
+    sel.appendChild(o);
+    sel.value = currentUser.name;
+  }
+  // leave_only accounts file under their own identity only — lock the field
+  if(sel){
+    if(currentUser && currentUser.accessLevel==='leave_only'){
+      sel.disabled = true;
+    } else {
+      sel.disabled = false;
+    }
+  }
 }
 
 function setLeavesWeek(offset){
@@ -4926,7 +5062,7 @@ function renderLeaves(){
   }
 
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
-  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff'};
+  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff',ML:'#ff8fc9',PL:'#8fb8ff'};
 
   const totalCount = reqs.length;
   wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px 0;margin-bottom:8px">Showing <strong style="color:#c4a8ff">'+totalCount+'</strong> leave request'+(totalCount!==1?'s':'')+'</div>';
@@ -4994,7 +5130,7 @@ function renderLeavesCalendar(reqs){
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
-  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff'};
+  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff',ML:'#ff8fc9',PL:'#8fb8ff'};
 
   // Build map: date -> list of leaves
   const leaveMap = {};
@@ -5063,6 +5199,8 @@ function renderLeavesCalendar(reqs){
   html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ff5c7a;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Declined</span>';
   html += '<span><span style="display:inline-block;width:10px;height:10px;background:#00cfff;border-radius:2px;margin-right:4px;vertical-align:middle"></span>VL</span>';
   html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ffaa5c;border-radius:2px;margin-right:4px;vertical-align:middle"></span>SL</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ff8fc9;border-radius:2px;margin-right:4px;vertical-align:middle"></span>ML</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#8fb8ff;border-radius:2px;margin-right:4px;vertical-align:middle"></span>PL</span>';
   html += '</div>';
 
   wrap.innerHTML = html;
@@ -5083,6 +5221,7 @@ function exportLeavesCSV(){
 // ─── ACCESS CONTROL ──────────────────────────────────────────────────────────
 const PIN_STORAGE_KEY = 'att_edit_unlocked';
 const OT_PIN_STORAGE_KEY = 'att_ot_unlocked';
+const LEAVE_STORAGE_KEY = 'att_leave_unlocked';
 
 const ALL_CREDENTIALS = {
   'Anna Go': {pw:'CARE001', access:'full', admin:true},
@@ -5117,6 +5256,59 @@ const ALL_CREDENTIALS = {
   'Alyssa Ahsley Anareta': {pw:'CARE073', access:'ot_only:Funding'},
   'Kristine Joy Israel': {pw:'CARE073', access:'ot_only:Funding'},
   'Jax Tan': {pw:'CARE042', access:'ot_only:Funding'},
+  'Aaron Vigilla': {pw:'CARE100', access:'leave_only'},
+  'Abby Salanguit': {pw:'CARE101', access:'leave_only'},
+  'Abigael Callos': {pw:'CARE034', access:'leave_only'},
+  'Alain Sebastian': {pw:'CARE026', access:'leave_only'},
+  'Andreas Schmidt': {pw:'CARE067', access:'leave_only'},
+  'Angelica Labajo': {pw:'CARE045', access:'leave_only'},
+  'Angeline Amamio': {pw:'CARE007', access:'leave_only'},
+  'Antonio Raymundo': {pw:'CARE074', access:'leave_only'},
+  'Arielle Jesena': {pw:'CARE065', access:'leave_only'},
+  'Blesilda Lutchavez': {pw:'CARE014', access:'leave_only'},
+  'Brian Caramonte': {pw:'CARE102', access:'leave_only'},
+  'Camelle Dumayas': {pw:'CARE129', access:'leave_only'},
+  'Carlos Dimailig': {pw:'CARE096', access:'leave_only'},
+  'Cecille Verano': {pw:'CARE018', access:'leave_only'},
+  'Charina Silva': {pw:'CARE015', access:'leave_only'},
+  'Charmea Cruz': {pw:'CARE098', access:'leave_only'},
+  'Danilo Tabontabon': {pw:'CARE071', access:'leave_only'},
+  'Dexter Yatco': {pw:'CARE068', access:'leave_only'},
+  'Diana Santiago': {pw:'CARE022', access:'leave_only'},
+  'Earl Insierto': {pw:'CARE066', access:'leave_only'},
+  'Evangeline De Ocampo': {pw:'CARE019', access:'leave_only'},
+  'Ferlene Rafael': {pw:'CARE069', access:'leave_only'},
+  'Geraldine Gallano': {pw:'CARE131', access:'leave_only'},
+  'Gretchen Liao': {pw:'CARE016', access:'leave_only'},
+  'Hannah Tampoc': {pw:'CARE004', access:'leave_only'},
+  'Ivy Madrigal': {pw:'CARE057', access:'leave_only'},
+  'Jay-Ann Oteros': {pw:'CARE033', access:'leave_only'},
+  'Jenieme Antong': {pw:'CARE072', access:'leave_only'},
+  'Jervin Tan': {pw:'CARE041', access:'leave_only'},
+  'Jessamae Candongo': {pw:'CARE049', access:'leave_only'},
+  'Jessica Solneo': {pw:'CARE047', access:'leave_only'},
+  'Jonnel Ulit': {pw:'CARE031', access:'leave_only'},
+  'Karen Orcales': {pw:'CARE055', access:'leave_only'},
+  'Kiesha Pastrana': {pw:'CARE058', access:'leave_only'},
+  'Lailani Palle': {pw:'CARE104', access:'leave_only'},
+  'Lemuel Yu': {pw:'CARE044', access:'leave_only'},
+  'Leomar Papa': {pw:'CARE064', access:'leave_only'},
+  'Lorenzo Bayana': {pw:'CARE046', access:'leave_only'},
+  'Lorilyn Cuanan': {pw:'CARE099', access:'leave_only'},
+  'Maria Patrisha Lopez': {pw:'CARE095', access:'leave_only'},
+  'Mark Francis Obias': {pw:'CARE103', access:'leave_only'},
+  'Mark Jabez Ninonuevo': {pw:'CARE035', access:'leave_only'},
+  'Merry Datul': {pw:'CARE017', access:'leave_only'},
+  'Michelle Anne Barcelona': {pw:'CARE012', access:'leave_only'},
+  'Niccorey Colina': {pw:'CARE070', access:'leave_only'},
+  'Rachel Ann Dadivas': {pw:'CARE028', access:'leave_only'},
+  'Rachelle Sierra': {pw:'CARE003', access:'leave_only'},
+  'Rachelle Singh': {pw:'CARE032', access:'leave_only'},
+  'Reigne Buccat': {pw:'CARE020', access:'leave_only'},
+  'Riana Nakamoto': {pw:'CARE075', access:'leave_only'},
+  'Yuri Bulahan': {pw:'CARE013', access:'leave_only'},
+  'Yvonne Tang': {pw:'CARE097', access:'leave_only'},
+  'Zan Juanes': {pw:'CARE059', access:'leave_only'},
 };
 
 // Helper: get access level for a user
@@ -5165,6 +5357,18 @@ function checkEditAccess(){
         }
       } catch(e){ localStorage.removeItem(OT_PIN_STORAGE_KEY); }
     }
+    const leaveSaved = localStorage.getItem(LEAVE_STORAGE_KEY);
+    if(leaveSaved){
+      try {
+        const data = JSON.parse(atob(leaveSaved));
+        if(data && data.name) {
+          currentUser = data;
+          enableLeaveMode(false); return true;
+        } else {
+          localStorage.removeItem(LEAVE_STORAGE_KEY);
+        }
+      } catch(e){ localStorage.removeItem(LEAVE_STORAGE_KEY); }
+    }
   } catch(e){}
   return false;
 }
@@ -5198,6 +5402,34 @@ function enableEditMode(showToast=true){
   renderDash();
 }
 
+function enableLeaveMode(showToast=true){
+  isEditMode = false;
+  try{sessionStorage.removeItem('att_is_edit');}catch(e){}
+  // Make sure no edit/admin buttons are visible
+  ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
+   'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
+   'sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  const settingsTab = document.getElementById('nav-tab-settings');
+  if(settingsTab) settingsTab.style.display = 'none';
+  // Restrict nav to the Leaves tab only — leave_only accounts exist so staff
+  // file leave requests under their own identity instead of picking any name.
+  document.querySelectorAll('.nav-tab').forEach(t=>{
+    t.style.display = (t.dataset.page==='leaves') ? '' : 'none';
+  });
+  const lb=document.getElementById('btn-lock');
+  if(lb){
+    const name = currentUser?currentUser.name:'';
+    lb.innerHTML='🔓 '+name.split(' ')[0];
+    lb.style.background='rgba(93,184,255,.15)';
+    lb.style.borderColor='#5db8ff';
+    lb.style.color='#5db8ff';
+  }
+  if(showToast) toast('👋 Welcome '+(currentUser?currentUser.name:'')+'! File and track your leave requests here.');
+  showPage('leaves');
+}
+
 function enableOTMode(showToast=true){
   isEditMode = false; // not full edit
   // Only show OT add button
@@ -5221,11 +5453,14 @@ function disableEditMode(){
   currentUser = null;
   localStorage.removeItem(PIN_STORAGE_KEY);
   localStorage.removeItem(OT_PIN_STORAGE_KEY);
+  localStorage.removeItem(LEAVE_STORAGE_KEY);
   ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
    'sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
+  // Restore all nav tabs (leave_only mode hides everything but Leaves)
+  document.querySelectorAll('.nav-tab').forEach(t=>{ t.style.display=''; });
   const lb=document.getElementById('btn-lock');
   if(lb){
     lb.textContent='🔒 Sign In';
@@ -5272,6 +5507,7 @@ function checkRoleLogin(){
     const userData = {name, accessLevel:'full', isAdmin: !!(ALL_CREDENTIALS[name] && ALL_CREDENTIALS[name].admin)};
     localStorage.setItem(PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(OT_PIN_STORAGE_KEY);
+    localStorage.removeItem(LEAVE_STORAGE_KEY);
     currentUser = userData;
     document.getElementById('pin-modal').classList.remove('open');
     enableEditMode(true);
@@ -5280,9 +5516,18 @@ function checkRoleLogin(){
     const userData = {name, accessLevel:'ot_only', otDept:dept};
     localStorage.setItem(OT_PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(PIN_STORAGE_KEY);
+    localStorage.removeItem(LEAVE_STORAGE_KEY);
     currentUser = userData;
     document.getElementById('pin-modal').classList.remove('open');
     enableOTMode(true);
+  } else if(access==='leave_only'){
+    const userData = {name, accessLevel:'leave_only'};
+    localStorage.setItem(LEAVE_STORAGE_KEY, btoa(JSON.stringify(userData)));
+    localStorage.removeItem(PIN_STORAGE_KEY);
+    localStorage.removeItem(OT_PIN_STORAGE_KEY);
+    currentUser = userData;
+    document.getElementById('pin-modal').classList.remove('open');
+    enableLeaveMode(true);
   }
 }
 
