@@ -1066,8 +1066,8 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <button onclick="setLeavesMonth()" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Month</button>
     <button id="btn-file-leave" onclick="openFileLeave()" style="background:rgba(0,232,150,.1);border:1px solid #00e896;color:#00e896;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600">📝 File Leave</button>
     <div style="display:flex;gap:4px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:2px">
-      <button id="leaves-view-list" onclick="setLeavesView('list')" style="background:#9d6fff;border:none;color:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font);font-weight:600">☰ List</button>
-      <button id="leaves-view-cal" onclick="setLeavesView('cal')" style="background:transparent;border:none;color:var(--text2);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">📅 Calendar</button>
+      <button id="leaves-view-list" onclick="setLeavesView('list')" style="background:transparent;border:none;color:var(--text2);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">☰ List</button>
+      <button id="leaves-view-cal" onclick="setLeavesView('cal')" style="background:#9d6fff;border:none;color:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font);font-weight:600">📅 Calendar</button>
     </div>
     <button onclick="exportLeavesCSV()" style="margin-left:auto;background:rgba(0,207,255,.1);border:1px solid #00cfff;color:#00cfff;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:var(--font)">📤 Export</button>
   </div>
@@ -4626,16 +4626,15 @@ let _reviewingLeaveId = null;
 
 function initLeavesPage(){
   if(!state.leaveRequests) state.leaveRequests = [];
-  // Set default date range to current week
+  // Always set default date range to current month so calendar always has data
   const lf = document.getElementById('leaves-date-from');
   const lt = document.getElementById('leaves-date-to');
   if(lf && !lf.value){
     const now = new Date();
-    const day = now.getDay();
-    const mon = new Date(now); mon.setDate(now.getDate() - (day===0?6:day-1));
-    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    lf.value = mon.toISOString().slice(0,10);
-    lt.value = sun.toISOString().slice(0,10);
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+    lf.value = from.toISOString().slice(0,10);
+    lt.value = to.toISOString().slice(0,10);
   }
   // Populate employee dropdown
   const sel = document.getElementById('leave-emp-name');
@@ -4846,7 +4845,7 @@ function renderLeaves(){
     +'</tbody></table>';
 }
 
-let _leavesView = 'list';
+let _leavesView = 'cal';
 
 function setLeavesView(v){
   _leavesView = v;
