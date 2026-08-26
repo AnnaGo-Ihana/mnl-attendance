@@ -4623,6 +4623,12 @@ function enableEditMode(showToast=true){
   showPage('tracker');
   renderTable();
   renderDash();
+  // Show edit buttons AFTER page switch so they're visible
+  ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
+   'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range',
+   'btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='';
+  });
 }
 
 function enableOTMode(showToast=true){
