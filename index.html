@@ -519,6 +519,26 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <label style="font-size:10px;color:var(--text3);display:block;margin-top:5px">Department (for leadership)</label>
       <input type="text" id="pop-dept" placeholder="e.g. CS, KYC, All Departments" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-top:4px">
     </div>
+    <div id="pop-inactive-section" style="display:none;margin-bottom:10px;padding:10px 12px;background:rgba(255,92,122,.06);border:1px solid rgba(255,92,122,.25);border-radius:8px">
+      <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ff5c7a;display:block;margin-bottom:6px">🚫 Employee Status</label>
+      <div id="pop-active-status-view">
+        <select id="pop-inactive-reason" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);margin-bottom:6px">
+          <option value="">— Select reason —</option>
+          <option value="Resigned">Resigned</option>
+          <option value="Terminated">Terminated</option>
+          <option value="Did Not Finish Contract">Did Not Finish Contract</option>
+          <option value="End of Contract">End of Contract</option>
+          <option value="Other">Other</option>
+        </select>
+        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">Effective Date (last working day + 1, or exact date)</label>
+        <input type="date" id="pop-inactive-date" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:8px">
+        <button class="btn danger" onclick="markEmpInactive()" style="width:100%">Mark Inactive</button>
+      </div>
+      <div id="pop-inactive-status-view" style="display:none">
+        <div style="font-size:12px;color:#ff5c7a;margin-bottom:8px" id="pop-inactive-summary"></div>
+        <button class="btn light" onclick="reactivateEmp()" style="width:100%">✅ Reactivate Employee</button>
+      </div>
+    </div>
     <div class="pa">
       <button class="btn go" id="pop-save-btn" onclick="savePopup()" style="flex:2">Save</button>
       <button class="btn danger" id="pop-remove-btn" onclick="delEmp()">Remove</button>
@@ -1301,6 +1321,10 @@ let saveTimeout = null;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const gk=(n,d)=>n+'||'+d;
+// Active roster only — excludes employees marked Inactive (resigned/terminated/etc).
+// Timesheet intentionally does NOT use this, so historical worked days remain
+// visible/exportable for payroll even after someone leaves.
+function activeEmployees(){ return (state.employees||[]).filter(e=>e.status!=='Inactive'); }
 const fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const pd=s=>new Date(s+'T00:00:00');
 const dd=s=>{const d=pd(s);return d.getDate()+'-'+MONTHS[d.getMonth()];};
@@ -1552,7 +1576,7 @@ function calcStats(emps,dates){
 function renderDash(){
   buildDateSel();
   const dates=getActiveDates();
-  const all=state.employees;
+  const all=activeEmployees();
   const ov=calcStats(all,dates);
 
   const items=[
@@ -1575,7 +1599,7 @@ function renderDash(){
   renderLeaveSummary();
 
   // Leadership cards
-  const leaders=state.employees.filter(e=>e.team==='Leadership');
+  const leaders=activeEmployees().filter(e=>e.team==='Leadership');
   const ROLE_CLASS={Director:'role-Director','Team Lead':'role-TL','Deputy Team Lead':'role-Deputy',Manager:'role-TL','Deputy Manager':'role-Deputy'};
   const ROLE_SHORT={Director:'DIR','Team Lead':'TL','Deputy Team Lead':'DTL',Manager:'TL','Deputy Manager':'DTL','Deputy Team Lead':'DTL'};
   const leaderCards=leaders.map(e=>{
@@ -1635,7 +1659,7 @@ function renderDash(){
     {id:'Operations',label:'Operations'},{id:'Finance',label:'Finance'}
   ];
   document.getElementById('team-grid').innerHTML=teams.map(td=>{
-    const emps=state.employees.filter(e=>e.team===td.id);
+    const emps=activeEmployees().filter(e=>e.team===td.id);
     if(!emps.length)return'';
     const st=calcStats(emps,dates);
     const pr=pct(st.P,st._t);
@@ -1851,7 +1875,7 @@ function renderWeeklyRankings(weekIdx){
   const week = weeks[weekIdx];
   const weekDates = (state.dates||[]).filter(d=>d>=week.start&&d<=week.end).sort();
   const weekAttendance = state.attendance||{};
-  const weekEmployees = state.employees;
+  const weekEmployees = activeEmployees();
 
   if(!weekDates.length){
     wrap.innerHTML='<div style="color:var(--text3);font-size:12px;padding:12px">No attendance data for '+week.label+'.</div>';
@@ -1922,7 +1946,7 @@ function renderTable(){
   const tf=document.getElementById('tf').value;
   const nf=document.getElementById('nf').value.toLowerCase();
   const sf=document.getElementById('sf').value;
-  let emps=state.employees.filter(e=>{
+  let emps=activeEmployees().filter(e=>{
     if(tf&&e.team!==tf)return false;
     if(nf&&!e.name.toLowerCase().includes(nf))return false;
     if(sf)return state.dates.some(d=>state.attendance[gk(e.name,d)]===sf);
@@ -2069,6 +2093,26 @@ function openPop(emp,date,cur){
       document.getElementById('pop-dept').value = empObj.dept||'';
     }
   }
+  // Show inactive/reactivate section in edit mode
+  const inactiveSection = document.getElementById('pop-inactive-section');
+  if(inactiveSection){
+    inactiveSection.style.display = ro?'none':'block';
+    const empObj = state.employees.find(e=>e.name===emp);
+    const activeView = document.getElementById('pop-active-status-view');
+    const inactiveView = document.getElementById('pop-inactive-status-view');
+    if(empObj && empObj.status==='Inactive'){
+      activeView.style.display='none';
+      inactiveView.style.display='block';
+      document.getElementById('pop-inactive-summary').innerHTML =
+        '<strong>'+(empObj.inactiveReason||'Inactive')+'</strong>'
+        +(empObj.inactiveDate?' — effective '+dd(empObj.inactiveDate):'');
+    } else {
+      activeView.style.display='block';
+      inactiveView.style.display='none';
+      document.getElementById('pop-inactive-reason').value='';
+      document.getElementById('pop-inactive-date').value='';
+    }
+  }
   document.getElementById('spop').classList.add('open');
 }
 function closePop(){document.getElementById('spop').classList.remove('open');}
@@ -2118,6 +2162,34 @@ function delEmp(){
   if(!confirm('Remove '+pEmp+' from roster?'))return;
   state.employees=state.employees.filter(e=>e.name!==pEmp);
   closePop();renderTable();renderDash();scheduleSave();
+}
+function markEmpInactive(){
+  if(!pEmp)return;
+  const reason = document.getElementById('pop-inactive-reason').value;
+  const effDate = document.getElementById('pop-inactive-date').value;
+  if(!reason){toast('Select a reason');return;}
+  if(!effDate){toast('Select an effective date');return;}
+  const empObj = state.employees.find(e=>e.name===pEmp);
+  if(!empObj)return;
+  empObj.status = 'Inactive';
+  empObj.inactiveReason = reason;
+  empObj.inactiveDate = effDate;
+  closePop();renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
+  toast('🚫 '+pEmp+' marked inactive');
+}
+function reactivateEmp(){
+  if(!pEmp)return;
+  const empObj = state.employees.find(e=>e.name===pEmp);
+  if(!empObj)return;
+  empObj.status = 'Active';
+  delete empObj.inactiveReason;
+  delete empObj.inactiveDate;
+  closePop();renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
+  toast('✅ '+pEmp+' reactivated');
+}
+function renderTimesheet_ifOpen(){
+  const activePage=document.querySelector('.page.active');
+  if(activePage && activePage.id==='page-timesheet') renderTimesheet();
 }
 function renameEmp(old,next){
   next=next.trim();if(!next||next===old)return;
@@ -3699,7 +3771,7 @@ function populateOTEmpSelect(){
   const dept = document.getElementById('ot-new-dept').value;
   const sel = document.getElementById('ot-new-emp');
   const mapped = Object.entries(OT_DEPT_MAP).filter(([k,v])=>v===dept).map(([k])=>k);
-  const emps = state.employees.filter(e=>mapped.includes(e.team)||e.team===dept);
+  const emps = activeEmployees().filter(e=>mapped.includes(e.team)||e.team===dept);
   sel.innerHTML = emps.map(e=>'<option value="'+e.name+'">'+e.name+'</option>').join('');
 }
 
@@ -4239,7 +4311,7 @@ function renderSchedulePage(){
   const dateFrom = document.getElementById('sched-date-from')?document.getElementById('sched-date-from').value:'';
   const dateTo   = document.getElementById('sched-date-to')?document.getElementById('sched-date-to').value:'';
 
-  let emps = state.employees.filter(e=>!teamF||e.team===teamF);
+  let emps = activeEmployees().filter(e=>!teamF||e.team===teamF);
   let dates = [...state.dates].sort();
   if(dateFrom) dates=dates.filter(d=>d>=dateFrom);
   if(dateTo)   dates=dates.filter(d=>d<=dateTo);
@@ -4515,7 +4587,7 @@ function exportScheduleCSV(){
   const teamF = document.getElementById('sched-team-filter').value;
   const dateFrom = document.getElementById('sched-date-from').value;
   const dateTo = document.getElementById('sched-date-to').value;
-  let emps = state.employees.filter(e=>!teamF||e.team===teamF);
+  let emps = activeEmployees().filter(e=>!teamF||e.team===teamF);
   let dates = [...state.dates].sort();
   if(dateFrom) dates=dates.filter(d=>d>=dateFrom);
   if(dateTo) dates=dates.filter(d=>d<=dateTo);
@@ -4947,7 +5019,7 @@ function initLeavesPage(){
   // Populate employee dropdown
   const sel = document.getElementById('leave-emp-name');
   if(sel && sel.options.length <= 1){
-    state.employees.forEach(e=>{
+    activeEmployees().forEach(e=>{
       const o = document.createElement('option');
       o.value = e.name; o.textContent = e.name;
       sel.appendChild(o);
@@ -4956,12 +5028,16 @@ function initLeavesPage(){
     if(currentUser && currentUser.name) sel.value = currentUser.name;
   }
   // If logged in but not found in the dropdown (e.g. credentialed but not yet
-  // in the employee roster), add them so they can still select themselves.
+  // in the employee roster), add them so they can still select themselves —
+  // but never do this for someone marked Inactive.
   if(sel && currentUser && currentUser.name && sel.value !== currentUser.name){
-    const o = document.createElement('option');
-    o.value = currentUser.name; o.textContent = currentUser.name;
-    sel.appendChild(o);
-    sel.value = currentUser.name;
+    const empObj = state.employees.find(e=>e.name===currentUser.name);
+    if(!empObj || empObj.status!=='Inactive'){
+      const o = document.createElement('option');
+      o.value = currentUser.name; o.textContent = currentUser.name;
+      sel.appendChild(o);
+      sel.value = currentUser.name;
+    }
   }
   // leave_only accounts file under their own identity only — lock the field
   if(sel){
