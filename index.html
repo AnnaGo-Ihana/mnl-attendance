@@ -1203,9 +1203,14 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <div>
         <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Leave Type</label>
         <select id="leave-type" style="width:100%;margin-bottom:0">
-          <option value="VL">Vacation Leave (VL)</option>
+          <optgroup label="Vacation Leave">
+            <option value="VL">Paid Vacation Leave (VL)</option>
+            <option value="UVL">Unpaid Vacation Leave</option>
+            <option value="HDVL">Half Day Vacation Leave</option>
+          </optgroup>
           <option value="SL">Sick Leave (SL)</option>
           <option value="EL">Emergency Leave (EL)</option>
+          <option value="BL">Bereavement Leave (BL)</option>
           <option value="ML">Maternity Leave (ML)</option>
           <option value="PL">Paternity Leave (PL)</option>
         </select>
@@ -5234,7 +5239,7 @@ function renderLeaves(){
   }
 
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
-  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff',ML:'#ff8fc9',PL:'#8fb8ff'};
+  const typeColors = {VL:'#00cfff',UVL:'#0088aa',HDVL:'#5cd6ff',SL:'#ffaa5c',EL:'#c49eff',BL:'#9d6fff',ML:'#ff8fc9',PL:'#8fb8ff'};
 
   const totalCount = reqs.length;
   wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px 0;margin-bottom:8px">Showing <strong style="color:#c4a8ff">'+totalCount+'</strong> leave request'+(totalCount!==1?'s':'')+'</div>';
@@ -5302,7 +5307,7 @@ function renderLeavesCalendar(reqs){
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
-  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff',ML:'#ff8fc9',PL:'#8fb8ff'};
+  const typeColors = {VL:'#00cfff',UVL:'#0088aa',HDVL:'#5cd6ff',SL:'#ffaa5c',EL:'#c49eff',BL:'#9d6fff',ML:'#ff8fc9',PL:'#8fb8ff'};
 
   // Build map: date -> list of leaves
   const leaveMap = {};
@@ -5373,6 +5378,7 @@ function renderLeavesCalendar(reqs){
   html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ffaa5c;border-radius:2px;margin-right:4px;vertical-align:middle"></span>SL</span>';
   html += '<span><span style="display:inline-block;width:10px;height:10px;background:#ff8fc9;border-radius:2px;margin-right:4px;vertical-align:middle"></span>ML</span>';
   html += '<span><span style="display:inline-block;width:10px;height:10px;background:#8fb8ff;border-radius:2px;margin-right:4px;vertical-align:middle"></span>PL</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#9d6fff;border-radius:2px;margin-right:4px;vertical-align:middle"></span>BL</span>';
   html += '</div>';
 
   wrap.innerHTML = html;
