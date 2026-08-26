@@ -1260,7 +1260,12 @@ async function loadFromDB(){
     state = JSON.parse(JSON.stringify(INIT_DATA));
     await saveToDB();
   }
-  normalizeLeaveRequests();
+  const fixedCount = normalizeLeaveRequests();
+  if(fixedCount > 0){
+    // Persist the repair permanently so the DB itself is clean and this
+    // doesn't need to be re-patched client-side on every future load.
+    try{ await saveToDB(); }catch(e){}
+  }
 }
 
 let _saveCount = 0;
@@ -4638,19 +4643,20 @@ let _reviewingLeaveId = null;
 // code path (duplicate checks, CSV export, contract lookups) works too.
 function leaveEmpName(r){
   if(!r) return '(Unknown)';
-  const n = r.name || r.employee || r.employeeName || r.empName || r.fullName || r.emp_name || r.emp;
+  const n = r.name || r.agent || r.employee || r.employeeName || r.empName || r.fullName || r.emp_name || r.emp;
   return n || '(Unknown)';
 }
 function normalizeLeaveRequests(){
-  if(!state.leaveRequests) return;
+  if(!state.leaveRequests) return 0;
   let fixed = 0;
   state.leaveRequests.forEach(r=>{
     if(!r.name){
-      const n = r.employee || r.employeeName || r.empName || r.fullName || r.emp_name || r.emp;
+      const n = r.agent || r.employee || r.employeeName || r.empName || r.fullName || r.emp_name || r.emp;
       if(n){ r.name = n; fixed++; }
     }
   });
   if(fixed>0) console.warn('[leaves] backfilled name on', fixed, 'legacy leave records');
+  return fixed;
 }
 
 function initLeavesPage(){
