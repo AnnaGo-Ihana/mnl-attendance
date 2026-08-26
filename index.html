@@ -336,12 +336,13 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <!-- RIGHT: Nav tabs + actions -->
     <div style="flex:0 0 auto;display:flex;align-items:center;gap:0;height:60px">
       <div class="nav-tabs">
-        <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
-        <div class="nav-tab" onclick="showPage('tracker')">Tracker</div>
-        <div class="nav-tab" onclick="showPage('timesheet')">Timesheet</div>
-        <div class="nav-tab" onclick="showPage('overtime')">Overtime</div>
-        <div class="nav-tab" onclick="showPage('schedule')">Schedule</div>
-        <div class="nav-tab" onclick="showPage('leaves')">Leaves</div>
+        <div class="nav-tab active" data-page="dashboard" onclick="showPage('dashboard')">Dashboard</div>
+        <div class="nav-tab" data-page="tracker" onclick="showPage('tracker')">Tracker</div>
+        <div class="nav-tab" data-page="timesheet" onclick="showPage('timesheet')">Timesheet</div>
+        <div class="nav-tab" data-page="overtime" onclick="showPage('overtime')">Overtime</div>
+        <div class="nav-tab" data-page="schedule" onclick="showPage('schedule')">Schedule</div>
+        <div class="nav-tab" data-page="leaves" onclick="showPage('leaves')">Leaves</div>
+        <div class="nav-tab" id="nav-tab-settings" data-page="settings" onclick="showPage('settings')" style="display:none">⚙️ Settings</div>
       </div>
       <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;max-width:100%">
         <button class="btn" id="btn-lock" onclick="toggleLock()" style="flex:0 0 auto;background:rgba(251,146,60,.15);border-color:#fb923c;color:#fb923c;min-width:80px">🔒 Sign In</button>
@@ -1082,6 +1083,60 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
   <div style="padding:16px 20px;overflow-x:auto" id="leaves-content"></div>
 </div>
 
+<!-- SETTINGS PAGE (admin-only) -->
+<div class="page" id="page-settings" style="display:none;padding:24px 20px">
+  <div style="font-size:16px;font-weight:700;color:#c4a8ff;margin-bottom:4px">⚙️ Settings</div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Only visible to your account. Manage employees, departments, schedules and more from here.</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;max-width:1000px">
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">👤 Employees</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Add, edit, or remove team members</div>
+      <button class="btn light" onclick="showPage('tracker');openAddEmp()" style="width:100%">+ Add Employee</button>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🏢 Departments</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Add or rename departments</div>
+      <button class="btn light" onclick="openManageDepts()" style="width:100%">Manage Departments</button>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🗓️ Schedules</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Add a date or import a schedule file</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn light" onclick="showPage('schedule');openSchedAddDate()" style="flex:1">+ Date</button>
+        <button class="btn light" onclick="showPage('schedule');document.getElementById('sched-xl-input').click()" style="flex:1">Import</button>
+      </div>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">👥 Contacts</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">WhatsApp numbers & emails for notifications</div>
+      <button class="btn light" onclick="openContactsManager()" style="width:100%">Manage Contacts</button>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">✏️ Leave Credits</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Update VL/SL balances for any employee</div>
+      <button class="btn light" onclick="openLeaveEdit()" style="width:100%">Edit Leave Credits</button>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📋 Contracts</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Track status & contract milestones</div>
+      <button class="btn light" onclick="openContractManager()" style="width:100%">Open Contracts</button>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📥 Import Attendance</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Bulk-import from Excel</div>
+      <button class="btn light" onclick="showPage('tracker');document.getElementById('xl-import-input').click()" style="width:100%">Import Excel</button>
+    </div>
+
+  </div>
+</div>
+
 <!-- FILE LEAVE MODAL -->
 <div class="ov" id="file-leave-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" style="width:460px">
@@ -1381,6 +1436,7 @@ function launchApp(){
 
 // ─── PAGES ───────────────────────────────────────────────────────────────────
 function showPage(id){
+  if(id==='settings' && !(currentUser && currentUser.isAdmin)){ id='dashboard'; }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
@@ -1391,7 +1447,8 @@ function showPage(id){
   document.getElementById('page-overtime').style.display = (id==='overtime') ? 'block' : 'none';
   document.getElementById('page-schedule').style.display = (id==='schedule') ? 'block' : 'none';
   if(document.getElementById('page-leaves')) document.getElementById('page-leaves').style.display = (id==='leaves') ? 'block' : 'none';
-  document.querySelectorAll('.nav-tab').forEach(t=>{if(t.textContent.toLowerCase().trim()===id)t.classList.add('active');});
+  if(document.getElementById('page-settings')) document.getElementById('page-settings').style.display = (id==='settings') ? 'block' : 'none';
+  document.querySelectorAll('.nav-tab').forEach(t=>{if(t.dataset.page===id)t.classList.add('active');});
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
   if(id==='timesheet'){
@@ -5028,7 +5085,7 @@ const PIN_STORAGE_KEY = 'att_edit_unlocked';
 const OT_PIN_STORAGE_KEY = 'att_ot_unlocked';
 
 const ALL_CREDENTIALS = {
-  'Anna Go': {pw:'CARE001', access:'full'},
+  'Anna Go': {pw:'CARE001', access:'full', admin:true},
   'Ann Cruz': {pw:'CARE002', access:'full'},
   'Kirsten Masilang': {pw:'CARE005', access:'full'},
   'Catherine Rivera': {pw:'CARE008', access:'full'},
@@ -5134,6 +5191,8 @@ function enableEditMode(showToast=true){
     lb.style.color='#c4a8ff';
   }
   if(showToast) toast('🔓 Welcome '+(currentUser?currentUser.name:'')+'!');
+  const settingsTab = document.getElementById('nav-tab-settings');
+  if(settingsTab) settingsTab.style.display = (currentUser && currentUser.isAdmin) ? '' : 'none';
   showPage('tracker');
   renderTable();
   renderDash();
@@ -5175,6 +5234,10 @@ function disableEditMode(){
     lb.style.color='#fb923c';
     lb.style.fontWeight='700';
   }
+  const settingsTab = document.getElementById('nav-tab-settings');
+  if(settingsTab) settingsTab.style.display = 'none';
+  // If they were on the Settings page, bounce to Dashboard since it's gone
+  if(document.getElementById('page-settings') && document.getElementById('page-settings').classList.contains('active')) showPage('dashboard');
   toast('🔒 Signed out');
   renderTable();
 }
@@ -5206,7 +5269,7 @@ function checkRoleLogin(){
     return;
   }
   if(access==='full'){
-    const userData = {name, accessLevel:'full'};
+    const userData = {name, accessLevel:'full', isAdmin: !!(ALL_CREDENTIALS[name] && ALL_CREDENTIALS[name].admin)};
     localStorage.setItem(PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(OT_PIN_STORAGE_KEY);
     currentUser = userData;
