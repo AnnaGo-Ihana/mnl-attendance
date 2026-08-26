@@ -343,20 +343,22 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <div class="nav-tab" onclick="showPage('schedule')">Schedule</div>
         <div class="nav-tab" onclick="showPage('leaves')">Leaves</div>
       </div>
-      <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap">
-        <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.07);border:1px solid rgba(196,168,255,.3);border-radius:6px;padding:4px 8px">
-          <span style="font-size:10px;color:rgba(196,168,255,.7)">📅</span>
-          <input type="date" id="global-date-from" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#c4a8ff;font-size:11px;outline:none;padding:0;width:88px">
-          <span style="font-size:10px;color:rgba(196,168,255,.5)">→</span>
-          <input type="date" id="global-date-to" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#c4a8ff;font-size:11px;outline:none;padding:0;width:88px">
-          <button onclick="clearGlobalDates()" style="background:none;border:none;color:rgba(196,168,255,.5);cursor:pointer;font-size:10px;padding:0">✕</button>
+      <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;max-width:100%">
+        <button class="btn" id="btn-lock" onclick="toggleLock()" style="flex:0 0 auto;background:rgba(251,146,60,.15);border-color:#fb923c;color:#fb923c;min-width:80px">🔒 Sign In</button>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin">
+          <div style="display:flex;align-items:center;gap:5px;flex:0 0 auto;background:rgba(255,255,255,.07);border:1px solid rgba(196,168,255,.3);border-radius:6px;padding:4px 8px">
+            <span style="font-size:10px;color:rgba(196,168,255,.7)">📅</span>
+            <input type="date" id="global-date-from" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#c4a8ff;font-size:11px;outline:none;padding:0;width:88px">
+            <span style="font-size:10px;color:rgba(196,168,255,.5)">→</span>
+            <input type="date" id="global-date-to" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#c4a8ff;font-size:11px;outline:none;padding:0;width:88px">
+            <button onclick="clearGlobalDates()" style="background:none;border:none;color:rgba(196,168,255,.5);cursor:pointer;font-size:10px;padding:0">✕</button>
+          </div>
+          <button class="btn" onclick="openAddDate()" id="btn-add-date" style="display:none;flex:0 0 auto">📅 + Date</button>
+          <button class="btn" onclick="openAddDateRange()" id="btn-add-date-range" style="display:none;flex:0 0 auto;background:rgba(0,207,255,.1);border-color:#00cfff;color:#00cfff">📅 + Date Range</button>
+          <button class="btn" onclick="exportCSV()" style="flex:0 0 auto;font-size:11px;padding:5px 8px">Export</button>
+          <button class="btn" id="btn-contracts" onclick="openContractManager()" style="display:none;flex:0 0 auto;font-size:11px;padding:5px 8px;background:rgba(255,207,61,.1);border-color:#ffcf3d;color:#ffcf3d">📋 Contracts</button>
+          <button class="btn go" id="btn-sync" onclick="syncNow()" style="flex:0 0 auto;font-size:11px;padding:5px 8px">⟳ Sync</button>
         </div>
-        <button class="btn" onclick="openAddDate()" id="btn-add-date" style="display:none">📅 + Date</button>
-        <button class="btn" onclick="openAddDateRange()" id="btn-add-date-range" style="display:none;background:rgba(0,207,255,.1);border-color:#00cfff;color:#00cfff">📅 + Date Range</button>
-        <button class="btn" onclick="exportCSV()" style="font-size:11px;padding:5px 8px">Export</button>
-        <button class="btn" id="btn-contracts" onclick="openContractManager()" style="display:none;font-size:11px;padding:5px 8px;background:rgba(255,207,61,.1);border-color:#ffcf3d;color:#ffcf3d">📋 Contracts</button>
-        <button class="btn go" id="btn-sync" onclick="syncNow()" style="font-size:11px;padding:5px 8px">⟳ Sync</button>
-        <button class="btn" id="btn-lock" onclick="toggleLock()" style="background:rgba(251,146,60,.15);border-color:#fb923c;color:#fb923c;min-width:80px">🔒 Sign In</button>
       </div>
     </div>
 
@@ -1258,6 +1260,7 @@ async function loadFromDB(){
     state = JSON.parse(JSON.stringify(INIT_DATA));
     await saveToDB();
   }
+  normalizeLeaveRequests();
 }
 
 let _saveCount = 0;
@@ -1406,7 +1409,7 @@ function showPage(id){
   if(id==='overtime'){populateOTFilters();renderOT();}
   if(id==='leaves'){
     initLeavesPage();
-    renderLeaves();
+    setLeavesView('cal');
   }
   if(id==='schedule'){
     const sf=document.getElementById('sched-date-from');
@@ -4629,6 +4632,27 @@ function autoCheckContractReminders(){
 // ─── LEAVES ──────────────────────────────────────────────────────────────────
 let _reviewingLeaveId = null;
 
+// Some legacy/imported leave records may use a different key for the employee's
+// name (e.g. bulk Excel imports done outside this app). Normalize on read so
+// nothing ever renders as "undefined", and backfill r.name so every other
+// code path (duplicate checks, CSV export, contract lookups) works too.
+function leaveEmpName(r){
+  if(!r) return '(Unknown)';
+  const n = r.name || r.employee || r.employeeName || r.empName || r.fullName || r.emp_name || r.emp;
+  return n || '(Unknown)';
+}
+function normalizeLeaveRequests(){
+  if(!state.leaveRequests) return;
+  let fixed = 0;
+  state.leaveRequests.forEach(r=>{
+    if(!r.name){
+      const n = r.employee || r.employeeName || r.empName || r.fullName || r.emp_name || r.emp;
+      if(n){ r.name = n; fixed++; }
+    }
+  });
+  if(fixed>0) console.warn('[leaves] backfilled name on', fixed, 'legacy leave records');
+}
+
 function initLeavesPage(){
   if(!state.leaveRequests) state.leaveRequests = [];
   // Default: current month for calendar
@@ -4638,8 +4662,8 @@ function initLeavesPage(){
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth(), 1);
     const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
-    if(!lf.value) lf.value = from.toISOString().slice(0,10);
-    if(!lt.value) lt.value = to.toISOString().slice(0,10);
+    if(!lf.value) lf.value = fmt(from);
+    if(!lt.value) lt.value = fmt(to);
   }
   // Populate employee dropdown
   const sel = document.getElementById('leave-emp-name');
@@ -4660,8 +4684,8 @@ function setLeavesWeek(offset){
   const day = now.getDay();
   const mon = new Date(now); mon.setDate(now.getDate()-(day===0?6:day-1));
   const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-  document.getElementById('leaves-date-from').value = mon.toISOString().slice(0,10);
-  document.getElementById('leaves-date-to').value = sun.toISOString().slice(0,10);
+  document.getElementById('leaves-date-from').value = fmt(mon);
+  document.getElementById('leaves-date-to').value = fmt(sun);
   renderLeaves();
 }
 
@@ -4669,8 +4693,8 @@ function setLeavesMonth(){
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth(), 1);
   const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
-  document.getElementById('leaves-date-from').value = from.toISOString().slice(0,10);
-  document.getElementById('leaves-date-to').value   = to.toISOString().slice(0,10);
+  document.getElementById('leaves-date-from').value = fmt(from);
+  document.getElementById('leaves-date-to').value   = fmt(to);
   renderLeaves();
 }
 
@@ -4681,8 +4705,8 @@ function shiftLeavesMonth(dir){
   const base = lf.value ? new Date(lf.value+'T00:00:00') : new Date();
   const from = new Date(base.getFullYear(), base.getMonth()+dir, 1);
   const to   = new Date(base.getFullYear(), base.getMonth()+dir+1, 0);
-  lf.value = from.toISOString().slice(0,10);
-  lt.value = to.toISOString().slice(0,10);
+  lf.value = fmt(from);
+  lt.value = fmt(to);
   _leavesView = 'cal';
   renderLeaves();
 }
@@ -4816,14 +4840,14 @@ function renderLeaves(){
   // Urgent banner
   const urgentBanner = document.getElementById('leaves-urgent-banner');
   if(urgentBanner){
-    const today = new Date().toISOString().slice(0,10);
+    const today = fmt(new Date());
     const in3 = new Date(); in3.setDate(in3.getDate()+3);
-    const in3str = in3.toISOString().slice(0,10);
+    const in3str = fmt(in3);
     const urgent = state.leaveRequests.filter(r=>r.status==='Pending'&&r.from>=today&&r.from<=in3str);
     if(urgent.length>0){
       urgentBanner.style.display='';
       urgentBanner.innerHTML='⚠️ <strong>'+urgent.length+' pending leave'+(urgent.length>1?'s':'')+' starting within 3 days:</strong> '
-        +urgent.map(r=>r.name+' ('+dd(r.from)+', '+r.type+')').join(', ');
+        +urgent.map(r=>leaveEmpName(r)+' ('+dd(r.from)+', '+r.type+')').join(', ');
     } else { urgentBanner.style.display='none'; }
   }
 
@@ -4859,7 +4883,7 @@ function renderLeaves(){
       const sc = statusColors[r.status]||'#c4a8ff';
       const tc = typeColors[r.type]||'#c4a8ff';
       return '<tr style="border-bottom:1px solid #2d1f55">'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;font-weight:600;color:var(--text)">'+r.name+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;font-weight:600;color:var(--text)">'+leaveEmpName(r)+'</td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2)">'+r.dept+'</td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868"><span style="color:'+tc+';font-weight:700">'+r.type+'</span></td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);white-space:nowrap">'+days+'</td>'
@@ -4903,7 +4927,7 @@ function renderLeavesCalendar(reqs){
   // Build days array
   const days = [];
   const cur = new Date(start);
-  while(cur <= end){ days.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+  while(cur <= end){ days.push(fmt(cur)); cur.setDate(cur.getDate()+1); }
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
@@ -4915,7 +4939,7 @@ function renderLeavesCalendar(reqs){
     const s=new Date(r.from+'T00:00:00'), e=new Date(r.to+'T00:00:00');
     const d=new Date(s);
     while(d<=e){
-      const k=d.toISOString().slice(0,10);
+      const k=fmt(d);
       if(!leaveMap[k]) leaveMap[k]=[];
       leaveMap[k].push(r);
       d.setDate(d.getDate()+1);
@@ -4943,7 +4967,7 @@ function renderLeavesCalendar(reqs){
 
   days.forEach((d,i)=>{
     const leaves = leaveMap[d]||[];
-    const isToday = d===new Date().toISOString().slice(0,10);
+    const isToday = d===fmt(new Date());
     const dow = new Date(d+'T00:00:00').getDay();
     if(dow===0 && i>0) html += '</tr><tr>';
     html += '<td style="padding:4px;border:1px solid #2d1f55;background:'+(isToday?'rgba(157,111,255,.1)':'#0d0818')+';vertical-align:top;min-height:80px;height:80px">';
@@ -4951,7 +4975,7 @@ function renderLeavesCalendar(reqs){
     leaves.slice(0,3).forEach(r=>{
       const sc = statusColors[r.status]||'#c4a8ff';
       const tc = typeColors[r.type]||'#c4a8ff';
-      const _rid=r.id,_rn=r.name.split(' ')[0],_rt=r.type,_rs=r.status;
+      const _rid=r.id,_rn=leaveEmpName(r).split(' ')[0],_rt=r.type,_rs=r.status;
       html += (function(rid,rn,rt,rs,sc2,tc2){
         return '<div style="font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;background:rgba(0,0,0,.3);border-left:3px solid '+sc2+';cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" onclick="openReviewLeave(\"'+rid+'\")" title="'+rn+' - '+rt+' ('+rs+')">'
           +'<span style="color:'+tc2+';font-weight:700">'+rt+'</span> <span style="color:var(--text2)">'+rn+'</span></div>';
@@ -4985,7 +5009,7 @@ function exportLeavesCSV(){
   if(!state.leaveRequests||!state.leaveRequests.length){toast('No leave requests to export');return;}
   const rows=['Employee,Dept,Type,From,To,Reason,Status,Lead Notes,Filed At'];
   state.leaveRequests.forEach(r=>{
-    rows.push(['"'+r.name+'"',r.dept,r.type,r.from,r.to,'"'+(r.reason||'')+'"',r.status,'"'+(r.leadNotes||'')+'"',r.filedAt.slice(0,10)].join(','));
+    rows.push(['"'+leaveEmpName(r)+'"',r.dept,r.type,r.from,r.to,'"'+(r.reason||'')+'"',r.status,'"'+(r.leadNotes||'')+'"',(r.filedAt||'').slice(0,10)].join(','));
   });
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([rows.join('%0A')],{type:'text/csv'}));
@@ -5133,7 +5157,8 @@ function disableEditMode(){
   localStorage.removeItem(PIN_STORAGE_KEY);
   localStorage.removeItem(OT_PIN_STORAGE_KEY);
   ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
-   'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range'].forEach(id=>{
+   'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
+   'sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   const lb=document.getElementById('btn-lock');
