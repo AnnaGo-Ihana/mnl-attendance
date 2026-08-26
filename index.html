@@ -4798,6 +4798,9 @@ function renderLeaves(){
   const wrap = document.getElementById('leaves-content');
   if(!wrap) return;
 
+  // Calendar view first - always show even if no requests
+  if(_leavesView==='cal'){ renderLeavesCalendar(reqs); return; }
+
   if(reqs.length===0){
     wrap.innerHTML='<div style="text-align:center;color:var(--text3);padding:40px;font-size:14px">No leave requests found for this period.</div>';
     return;
@@ -4805,8 +4808,6 @@ function renderLeaves(){
 
   const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
   const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff'};
-
-  if(_leavesView==='cal'){ renderLeavesCalendar(reqs); return; }
 
   wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
     +'<thead><tr>'
