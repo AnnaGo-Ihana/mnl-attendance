@@ -1123,8 +1123,8 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Lead Notes</label>
     <textarea id="review-lead-notes" rows="2" placeholder="Add notes for the employee…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:14px"></textarea>
     <div class="ma">
-      <button onclick="reviewLeave('Approved')" style="flex:1;padding:9px;background:rgba(0,232,150,.2);border:1px solid #00e896;color:#00e896;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">✅ Approve</button>
-      <button onclick="reviewLeave('Declined')" style="flex:1;padding:9px;background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">❌ Decline</button>
+      <button onclick="reviewLeave('Approved')" id="btn-approve-leave" style="flex:1;padding:9px;background:rgba(0,232,150,.2);border:1px solid #00e896;color:#00e896;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">✅ Approve</button>
+      <button onclick="reviewLeave('Declined')" id="btn-decline-leave" style="flex:1;padding:9px;background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">❌ Decline</button>
       <button onclick="document.getElementById('review-leave-modal').classList.remove('open')" style="flex:1;padding:9px;background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;cursor:pointer;font-family:var(--font)">Close</button>
     </div>
   </div>
@@ -4626,10 +4626,10 @@ let _reviewingLeaveId = null;
 
 function initLeavesPage(){
   if(!state.leaveRequests) state.leaveRequests = [];
-  // Always set default date range to current month so calendar always has data
+  // Always reset to current month so calendar always shows correct dates
   const lf = document.getElementById('leaves-date-from');
   const lt = document.getElementById('leaves-date-to');
-  if(lf && !lf.value){
+  if(lf && lt){
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth(), 1);
     const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
@@ -4726,7 +4726,7 @@ function submitLeaveRequest(){
 }
 
 function openReviewLeave(id){
-  if(!isEditMode && sessionStorage.getItem('att_is_edit')!=='1'){toast('🔒 Sign in to review');return;}
+  // Anyone can view leave details; approve/decline requires edit mode
   _reviewingLeaveId = id;
   const req = (state.leaveRequests||[]).find(r=>r.id===id);
   if(!req) return;
@@ -4742,6 +4742,12 @@ function openReviewLeave(id){
     +'<div style="font-size:10px;color:var(--text3);margin-top:4px">Filed: '+new Date(req.filedAt).toLocaleDateString('en-PH')+'</div>'
     +'</div>';
   document.getElementById('review-lead-notes').value = req.leadNotes||'';
+  // Show approve/decline only for leads
+  const canReview = isEditMode || sessionStorage.getItem('att_is_edit')==='1';
+  const appBtn = document.getElementById('btn-approve-leave');
+  const decBtn = document.getElementById('btn-decline-leave');
+  if(appBtn) appBtn.style.display = canReview ? '' : 'none';
+  if(decBtn) decBtn.style.display = canReview ? '' : 'none';
   document.getElementById('review-leave-modal').classList.add('open');
 }
 
