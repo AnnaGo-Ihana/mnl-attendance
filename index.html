@@ -341,6 +341,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <div class="nav-tab" onclick="showPage('timesheet')">Timesheet</div>
         <div class="nav-tab" onclick="showPage('overtime')">Overtime</div>
         <div class="nav-tab" onclick="showPage('schedule')">Schedule</div>
+        <div class="nav-tab" onclick="showPage('leaves')">Leaves</div>
       </div>
       <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap">
         <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.07);border:1px solid rgba(196,168,255,.3);border-radius:6px;padding:4px 8px">
@@ -1036,6 +1037,95 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
   </div>
 </div>
 
+<!-- LEAVES PAGE -->
+<div class="page" id="page-leaves" style="display:none">
+  <div class="tctrl" style="gap:8px;flex-wrap:wrap;align-items:center">
+    <select id="leaves-dept-filter" onchange="renderLeaves()" style="min-width:130px">
+      <option value="">All Departments</option>
+      <option value="CS">CS</option>
+      <option value="KYC">KYC</option>
+      <option value="Funding">Funding</option>
+      <option value="Leadership">Leadership</option>
+      <option value="Marketing">Marketing</option>
+      <option value="Operations">Operations</option>
+      <option value="Finance">Finance</option>
+    </select>
+    <select id="leaves-status-filter" onchange="renderLeaves()" style="min-width:120px">
+      <option value="">All Status</option>
+      <option value="Pending">Pending</option>
+      <option value="Approved">Approved</option>
+      <option value="Declined">Declined</option>
+    </select>
+    <div style="display:flex;align-items:center;gap:4px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 10px">
+      <input type="date" id="leaves-date-from" onchange="renderLeaves()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;outline:none;padding:0">
+      <span style="color:var(--text3);font-size:11px">→</span>
+      <input type="date" id="leaves-date-to" onchange="renderLeaves()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;outline:none;padding:0">
+    </div>
+    <button onclick="setLeavesWeek(0)" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Week</button>
+    <button onclick="setLeavesWeek(-1)" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Last Week</button>
+    <button onclick="setLeavesMonth()" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Month</button>
+    <button id="btn-file-leave" onclick="openFileLeave()" style="background:rgba(0,232,150,.1);border:1px solid #00e896;color:#00e896;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600">📝 File Leave</button>
+    <button onclick="exportLeavesCSV()" style="margin-left:auto;background:rgba(0,207,255,.1);border:1px solid #00cfff;color:#00cfff;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:var(--font)">📤 Export</button>
+  </div>
+  <div id="leaves-urgent-banner" style="display:none;margin:10px 20px 0;padding:10px 16px;background:rgba(255,92,122,.1);border:1px solid #ff5c7a;border-radius:8px;font-size:12px;color:#ff5c7a"></div>
+  <div style="padding:16px 20px;overflow-x:auto" id="leaves-content"></div>
+</div>
+
+<!-- FILE LEAVE MODAL -->
+<div class="ov" id="file-leave-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:460px">
+    <h3>📝 File Leave Request</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Your Name</label>
+        <select id="leave-emp-name" style="width:100%;margin-bottom:0"></select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Leave Type</label>
+        <select id="leave-type" style="width:100%;margin-bottom:0">
+          <option value="VL">Vacation Leave (VL)</option>
+          <option value="SL">Sick Leave (SL)</option>
+          <option value="EL">Emergency Leave (EL)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">From Date</label>
+        <input type="date" id="leave-from" onchange="checkLeaveNotice()" style="width:100%;margin-bottom:0">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">To Date</label>
+        <input type="date" id="leave-to" onchange="checkLeaveNotice()" style="width:100%;margin-bottom:0">
+      </div>
+    </div>
+    <div id="leave-notice-warn" style="display:none;padding:8px 12px;background:rgba(255,92,122,.1);border:1px solid #ff5c7a;border-radius:6px;font-size:12px;color:#ff5c7a;margin-bottom:10px"></div>
+    <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Reason</label>
+    <textarea id="leave-reason" rows="2" placeholder="Reason for leave…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:10px"></textarea>
+    <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Supporting Document Link <span style="color:var(--text3)">(optional — Google Drive/OneDrive)</span></label>
+    <input type="text" id="leave-doc-link" placeholder="https://drive.google.com/…" style="width:100%;margin-bottom:14px">
+    <div class="ma">
+      <button class="btn go" onclick="submitLeaveRequest()" style="flex:1;padding:9px">Submit Request</button>
+      <button class="btn light" onclick="document.getElementById('file-leave-modal').classList.remove('open')" style="flex:1;padding:9px">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW LEAVE MODAL -->
+<div class="ov" id="review-leave-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:440px">
+    <h3>📋 Review Leave Request</h3>
+    <div id="review-leave-content" style="margin-bottom:14px"></div>
+    <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Lead Notes</label>
+    <textarea id="review-lead-notes" rows="2" placeholder="Add notes for the employee…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:14px"></textarea>
+    <div class="ma">
+      <button onclick="reviewLeave('Approved')" style="flex:1;padding:9px;background:rgba(0,232,150,.2);border:1px solid #00e896;color:#00e896;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">✅ Approve</button>
+      <button onclick="reviewLeave('Declined')" style="flex:1;padding:9px;background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">❌ Decline</button>
+      <button onclick="document.getElementById('review-leave-modal').classList.remove('open')" style="flex:1;padding:9px;background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;cursor:pointer;font-family:var(--font)">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1283,6 +1373,7 @@ function showPage(id){
   document.getElementById('page-timesheet').style.display = (id==='timesheet') ? 'block' : 'none';
   document.getElementById('page-overtime').style.display = (id==='overtime') ? 'block' : 'none';
   document.getElementById('page-schedule').style.display = (id==='schedule') ? 'block' : 'none';
+  if(document.getElementById('page-leaves')) document.getElementById('page-leaves').style.display = (id==='leaves') ? 'block' : 'none';
   document.querySelectorAll('.nav-tab').forEach(t=>{if(t.textContent.toLowerCase().trim()===id)t.classList.add('active');});
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
@@ -1304,6 +1395,10 @@ function showPage(id){
     renderTimesheet();
   }
   if(id==='overtime'){populateOTFilters();renderOT();}
+  if(id==='leaves'){
+    initLeavesPage();
+    renderLeaves();
+  }
   if(id==='schedule'){
     const sf=document.getElementById('sched-date-from');
     const st=document.getElementById('sched-date-to');
@@ -4520,6 +4615,241 @@ function autoCheckContractReminders(){
       toast('⚠️ '+reminders.length+' contract milestone'+(reminders.length>1?'s':'')+' coming up! Check 📋 Contracts');
     }, 3000);
   }
+}
+
+// ─── LEAVES ──────────────────────────────────────────────────────────────────
+let _reviewingLeaveId = null;
+
+function initLeavesPage(){
+  if(!state.leaveRequests) state.leaveRequests = [];
+  // Set default date range to current week
+  const lf = document.getElementById('leaves-date-from');
+  const lt = document.getElementById('leaves-date-to');
+  if(lf && !lf.value){
+    const now = new Date();
+    const day = now.getDay();
+    const mon = new Date(now); mon.setDate(now.getDate() - (day===0?6:day-1));
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    lf.value = mon.toISOString().slice(0,10);
+    lt.value = sun.toISOString().slice(0,10);
+  }
+  // Populate employee dropdown
+  const sel = document.getElementById('leave-emp-name');
+  if(sel && sel.options.length <= 1){
+    state.employees.forEach(e=>{
+      const o = document.createElement('option');
+      o.value = e.name; o.textContent = e.name;
+      sel.appendChild(o);
+    });
+    // Pre-select current user if logged in
+    if(currentUser && currentUser.name) sel.value = currentUser.name;
+  }
+}
+
+function setLeavesWeek(offset){
+  const now = new Date();
+  now.setDate(now.getDate() + offset*7);
+  const day = now.getDay();
+  const mon = new Date(now); mon.setDate(now.getDate()-(day===0?6:day-1));
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  document.getElementById('leaves-date-from').value = mon.toISOString().slice(0,10);
+  document.getElementById('leaves-date-to').value = sun.toISOString().slice(0,10);
+  renderLeaves();
+}
+
+function setLeavesMonth(){
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  document.getElementById('leaves-date-from').value = from.toISOString().slice(0,10);
+  document.getElementById('leaves-date-to').value   = to.toISOString().slice(0,10);
+  renderLeaves();
+}
+
+function checkLeaveNotice(){
+  const from = document.getElementById('leave-from').value;
+  const warn = document.getElementById('leave-notice-warn');
+  if(!from || !warn) return;
+  const days = Math.ceil((new Date(from+'T00:00:00') - new Date()) / (1000*60*60*24));
+  const to = document.getElementById('leave-to').value;
+  if(to && to < from){ warn.style.display=''; warn.textContent='⚠️ End date must be after start date'; return; }
+  if(days > 90){ warn.style.display=''; warn.textContent='❌ Cannot file more than 3 months in advance ('+days+' days away)'; return; }
+  if(days >= 0 && days < 14){ warn.style.display=''; warn.textContent='⚠️ Less than 2 weeks notice ('+days+' days). Please coordinate with your lead.'; return; }
+  warn.style.display='none';
+}
+
+function openFileLeave(){
+  initLeavesPage();
+  document.getElementById('leave-from').value='';
+  document.getElementById('leave-to').value='';
+  document.getElementById('leave-reason').value='';
+  document.getElementById('leave-doc-link').value='';
+  document.getElementById('leave-notice-warn').style.display='none';
+  document.getElementById('file-leave-modal').classList.add('open');
+}
+
+function submitLeaveRequest(){
+  if(!state.leaveRequests) state.leaveRequests=[];
+  const name = document.getElementById('leave-emp-name').value;
+  const type = document.getElementById('leave-type').value;
+  const from = document.getElementById('leave-from').value;
+  const to   = document.getElementById('leave-to').value||from;
+  const reason = document.getElementById('leave-reason').value.trim();
+  const docLink = document.getElementById('leave-doc-link').value.trim();
+
+  if(!name){toast('Select your name');return;}
+  if(!from){toast('Select a date');return;}
+  if(to < from){toast('End date must be after start date');return;}
+
+  const days = Math.ceil((new Date(from+'T00:00:00')-new Date())/(1000*60*60*24));
+  if(days > 90){toast('❌ Cannot file more than 3 months in advance');return;}
+
+  // Check duplicate
+  const dup = state.leaveRequests.find(r=>r.name===name && r.status!=='Declined' &&
+    r.from<=to && r.to>=from);
+  if(dup){toast('⚠️ Duplicate: you already have a '+dup.status+' '+dup.type+' leave on overlapping dates');return;}
+
+  const emp = state.employees.find(e=>e.name===name);
+  const req = {
+    id: Date.now()+'_'+Math.random().toString(36).slice(2),
+    name, dept: emp?emp.team:'', type, from, to, reason, docLink,
+    status:'Pending', filedAt: new Date().toISOString(), leadNotes:''
+  };
+  state.leaveRequests.push(req);
+  document.getElementById('file-leave-modal').classList.remove('open');
+  scheduleSave();
+  renderLeaves();
+  toast('✅ Leave request submitted!');
+}
+
+function openReviewLeave(id){
+  if(!isEditMode && sessionStorage.getItem('att_is_edit')!=='1'){toast('🔒 Sign in to review');return;}
+  _reviewingLeaveId = id;
+  const req = (state.leaveRequests||[]).find(r=>r.id===id);
+  if(!req) return;
+  const days = req.from===req.to ? dd(req.from) : dd(req.from)+' → '+dd(req.to);
+  const statusColor = req.status==='Approved'?'#00e896':req.status==='Declined'?'#ff5c7a':'#ffcf3d';
+  document.getElementById('review-leave-content').innerHTML =
+    '<div style="background:#1a1035;border:1px solid #3a2868;border-radius:8px;padding:12px;font-size:12px">'
+    +'<div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:6px">'+req.name+'<span style="margin-left:8px;font-size:10px;background:rgba(93,184,255,.2);color:#5db8ff;padding:2px 8px;border-radius:10px">'+req.dept+'</span></div>'
+    +'<div style="color:var(--text2);margin-bottom:4px">'+req.type+' &nbsp;·&nbsp; '+days+'</div>'
+    +(req.reason?'<div style="color:var(--text2);margin-bottom:4px">Reason: '+req.reason+'</div>':'')
+    +(req.docLink?'<div style="margin-bottom:4px"><a href="'+req.docLink+'" target="_blank" style="color:#5db8ff">📎 View Document</a></div>':'')
+    +'<div>Status: <span style="color:'+statusColor+';font-weight:700">'+req.status+'</span></div>'
+    +'<div style="font-size:10px;color:var(--text3);margin-top:4px">Filed: '+new Date(req.filedAt).toLocaleDateString('en-PH')+'</div>'
+    +'</div>';
+  document.getElementById('review-lead-notes').value = req.leadNotes||'';
+  document.getElementById('review-leave-modal').classList.add('open');
+}
+
+function reviewLeave(status){
+  if(!_reviewingLeaveId) return;
+  const req = (state.leaveRequests||[]).find(r=>r.id===_reviewingLeaveId);
+  if(!req) return;
+  req.status = status;
+  req.leadNotes = document.getElementById('review-lead-notes').value.trim();
+  req.reviewedBy = currentUser?currentUser.name:'Lead';
+  req.reviewedAt = new Date().toISOString();
+  document.getElementById('review-leave-modal').classList.remove('open');
+  scheduleSave();
+  renderLeaves();
+  toast((status==='Approved'?'✅':'❌')+' Leave '+status.toLowerCase()+'!');
+}
+
+function deleteLeave(id){
+  if(!confirm('Delete this leave request?')) return;
+  state.leaveRequests = (state.leaveRequests||[]).filter(r=>r.id!==id);
+  scheduleSave(); renderLeaves(); toast('Leave request deleted');
+}
+
+function renderLeaves(){
+  if(!state.leaveRequests) state.leaveRequests=[];
+  const deptF = document.getElementById('leaves-dept-filter').value;
+  const statF = document.getElementById('leaves-status-filter').value;
+  const dateF = document.getElementById('leaves-date-from').value;
+  const dateT = document.getElementById('leaves-date-to').value;
+  const canManage = isEditMode || sessionStorage.getItem('att_is_edit')==='1';
+
+  let reqs = state.leaveRequests.filter(r=>{
+    if(deptF && r.dept!==deptF) return false;
+    if(statF && r.status!==statF) return false;
+    if(dateF && r.to < dateF) return false;
+    if(dateT && r.from > dateT) return false;
+    return true;
+  }).sort((a,b)=>b.filedAt.localeCompare(a.filedAt));
+
+  // Urgent banner
+  const urgentBanner = document.getElementById('leaves-urgent-banner');
+  if(urgentBanner){
+    const today = new Date().toISOString().slice(0,10);
+    const in3 = new Date(); in3.setDate(in3.getDate()+3);
+    const in3str = in3.toISOString().slice(0,10);
+    const urgent = state.leaveRequests.filter(r=>r.status==='Pending'&&r.from>=today&&r.from<=in3str);
+    if(urgent.length>0){
+      urgentBanner.style.display='';
+      urgentBanner.innerHTML='⚠️ <strong>'+urgent.length+' pending leave'+(urgent.length>1?'s':'')+' starting within 3 days:</strong> '
+        +urgent.map(r=>r.name+' ('+dd(r.from)+', '+r.type+')').join(', ');
+    } else { urgentBanner.style.display='none'; }
+  }
+
+  const wrap = document.getElementById('leaves-content');
+  if(!wrap) return;
+
+  if(reqs.length===0){
+    wrap.innerHTML='<div style="text-align:center;color:var(--text3);padding:40px;font-size:14px">No leave requests found for this period.</div>';
+    return;
+  }
+
+  const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a'};
+  const typeColors = {VL:'#00cfff',SL:'#ffaa5c',EL:'#c49eff'};
+
+  wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    +'<thead><tr>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Employee</th>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Dept</th>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Type</th>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Dates</th>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Reason</th>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Status</th>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Lead Notes</th>'
+    +(canManage?'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Action</th>':'')
+    +'</tr></thead><tbody>'
+    +reqs.map(r=>{
+      const days = r.from===r.to ? dd(r.from) : dd(r.from)+' → '+dd(r.to);
+      const sc = statusColors[r.status]||'#c4a8ff';
+      const tc = typeColors[r.type]||'#c4a8ff';
+      return '<tr style="border-bottom:1px solid #2d1f55">'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;font-weight:600;color:var(--text)">'+r.name+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2)">'+r.dept+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868"><span style="color:'+tc+';font-weight:700">'+r.type+'</span></td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);white-space:nowrap">'+days+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);max-width:200px">'
+          +(r.reason||'—')
+          +(r.docLink?'<br><a href="'+r.docLink+'" target="_blank" style="color:#5db8ff;font-size:10px">📎 View doc</a>':'')
+        +'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;text-align:center"><span style="color:'+sc+';font-weight:700;font-size:11px;background:rgba(0,0,0,.2);padding:3px 10px;border-radius:10px;border:1px solid '+sc+'">'+r.status+'</span></td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);font-size:11px">'+(r.leadNotes||'—')+'</td>'
+        +(canManage?'<td style="padding:6px 10px;border:1px solid #3a2868;text-align:center;white-space:nowrap">'
+          +(function(rid){
+            return '<button onclick="openReviewLeave(\"'+rid+'\")" style="background:rgba(196,168,255,.2);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font);margin-right:4px">Review</button>'
+              +'<button onclick="deleteLeave(\"'+rid+'\")" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>';
+          })(r.id)
+          +'</td>':'')
+        +'</tr>';
+    }).join('')
+    +'</tbody></table>';
+}
+
+function exportLeavesCSV(){
+  if(!state.leaveRequests||!state.leaveRequests.length){toast('No leave requests to export');return;}
+  const rows=['Employee,Dept,Type,From,To,Reason,Status,Lead Notes,Filed At'];
+  state.leaveRequests.forEach(r=>{
+    rows.push(['"'+r.name+'"',r.dept,r.type,r.from,r.to,'"'+(r.reason||'')+'"',r.status,'"'+(r.leadNotes||'')+'"',r.filedAt.slice(0,10)].join(','));
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('%0A')],{type:'text/csv'}));
+  a.download='leave_requests_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
 }
 
 // ─── ACCESS CONTROL ──────────────────────────────────────────────────────────
