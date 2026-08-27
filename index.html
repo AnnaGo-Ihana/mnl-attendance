@@ -482,16 +482,22 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     <div class="sg2">
       <div class="so so-P"   onclick="setSt('P')">P — Present</div>
       <div class="so so-A"   onclick="setSt('A')">A — Absent</div>
-      <div class="so so-HD"  onclick="setSt('HD')">HD — Paid Half Day</div>
-      <div class="so so-UHD" onclick="setSt('UHD')">UHD — Unpaid Half Day</div>
+      <div class="so so-HD"  onclick="setSt('HD')">HD — Half Day</div>
       <div class="so so-UT"  onclick="setSt('UT')">UT — Undertime</div>
       <div class="so so-L"   onclick="setSt('L')">L — Late</div>
-      <div class="so so-VL"  onclick="setSt('VL')">VL — Paid Vacation</div>
-      <div class="so so-UVL" onclick="setSt('UVL')">UVL — Unpaid Vacation</div>
+      <div class="so so-VL"  onclick="setSt('VL')">VL — Vacation Leave</div>
       <div class="so so-SL"  onclick="setSt('SL')">SL — Sick Leave</div>
       <div class="so so-EL"  onclick="setSt('EL')">EL — Emergency Leave</div>
       <div class="so so-BL"  onclick="setSt('BL')">BL — Bereavement Leave</div>
       <div class="so so-Off" onclick="setSt('Off')">Off — Rest Day</div>
+    </div>
+
+    <div id="pop-paytype-section" style="display:none;margin-top:10px;padding:10px;background:rgba(157,111,255,.08);border:1px solid #3a2868;border-radius:8px">
+      <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa;display:block;margin-bottom:6px" id="pop-paytype-label">Paid or Unpaid?</label>
+      <div style="display:flex;gap:8px">
+        <div class="so" id="pop-paytype-paid" onclick="setPayType('Paid')" style="flex:1;background:#003d28;color:#00e896">💰 Paid</div>
+        <div class="so" id="pop-paytype-unpaid" onclick="setPayType('Unpaid')" style="flex:1;background:#3d0818;color:#ff5c7a">🚫 Unpaid</div>
+      </div>
     </div>
 
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
@@ -2095,7 +2101,28 @@ function openPop(emp,date,cur){
   pEmp=emp;pDate=date;pCurSt=cur;
   document.getElementById('pop-n').textContent=emp;
   document.getElementById('pop-d').textContent=dd(date)+' · '+dow(date);
-  document.querySelectorAll('.so').forEach(el=>{el.classList.remove('sel');if(el.classList.contains('so-'+cur))el.classList.add('sel');});
+
+  const payWrap = document.getElementById('pop-paytype-section');
+  if(cur==='VL'||cur==='UVL'||cur==='HD'||cur==='UHD'){
+    pBaseType = cur.replace('U','');
+    const payType = cur.startsWith('U') ? 'Unpaid' : 'Paid';
+    payWrap.style.display='block';
+    document.getElementById('pop-paytype-label').textContent = (pBaseType==='VL'?'Vacation Leave':'Half Day')+' — Paid or Unpaid?';
+    updatePayTypeUI(payType);
+    document.querySelectorAll('.so').forEach(el=>{
+      if(el.id==='pop-paytype-paid'||el.id==='pop-paytype-unpaid') return;
+      el.classList.remove('sel');
+      if(el.classList.contains('so-'+pBaseType))el.classList.add('sel');
+    });
+  } else {
+    pBaseType = null;
+    payWrap.style.display='none';
+    document.querySelectorAll('.so').forEach(el=>{
+      if(el.id==='pop-paytype-paid'||el.id==='pop-paytype-unpaid') return;
+      el.classList.remove('sel');
+      if(el.classList.contains('so-'+cur))el.classList.add('sel');
+    });
+  }
   // Load existing notes + onsite
   const existingNote=state.notes&&state.notes[noteKey(emp,date)]||'';
   const existingOnsite=state.onsite&&state.onsite[onsiteKey(emp,date)]||'';
@@ -2146,9 +2173,34 @@ function openPop(emp,date,cur){
   document.getElementById('spop').classList.add('open');
 }
 function closePop(){document.getElementById('spop').classList.remove('open');}
+let pBaseType=null; // 'VL' or 'HD' when the paytype sub-choice is active
 function setSt(st){
-  pCurSt=st;
-  document.querySelectorAll('.so').forEach(el=>{el.classList.remove('sel');if(el.classList.contains('so-'+st))el.classList.add('sel');});
+  const payWrap = document.getElementById('pop-paytype-section');
+  if(st==='VL' || st==='HD'){
+    pBaseType = st;
+    pCurSt = st; // defaults to Paid until they pick Unpaid
+    payWrap.style.display='block';
+    document.getElementById('pop-paytype-label').textContent = (st==='VL'?'Vacation Leave':'Half Day')+' — Paid or Unpaid?';
+    updatePayTypeUI('Paid');
+  } else {
+    pBaseType = null;
+    pCurSt = st;
+    payWrap.style.display='none';
+  }
+  document.querySelectorAll('.so').forEach(el=>{
+    if(el.id==='pop-paytype-paid'||el.id==='pop-paytype-unpaid') return;
+    el.classList.remove('sel');
+    if(el.classList.contains('so-'+st))el.classList.add('sel');
+  });
+}
+function setPayType(type){
+  if(!pBaseType) return;
+  pCurSt = (type==='Unpaid') ? ('U'+pBaseType) : pBaseType;
+  updatePayTypeUI(type);
+}
+function updatePayTypeUI(type){
+  document.getElementById('pop-paytype-paid').classList.toggle('sel', type==='Paid');
+  document.getElementById('pop-paytype-unpaid').classList.toggle('sel', type==='Unpaid');
 }
 function savePopup(){
   if(!pEmp||!pDate)return;
