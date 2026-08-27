@@ -465,12 +465,78 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <option value="Off">Off</option>
       </select>
       <button class="btn light" onclick="openAddEmp()" id="btn-add-emp" style="display:none">+ Employee</button>
+      <button class="btn light" onclick="openBulkMark()" id="btn-bulk-mark" style="display:none;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">🗂️ Bulk Mark</button>
       <button class="btn light" onclick="openLeaveEdit()" id="btn-edit-leave" style="display:none">✏️ Edit Credits</button>
       <button class="btn light" onclick="document.getElementById('xl-import-input').click()" id="btn-import-xl" style="display:none;background:rgba(52,211,153,.1);border-color:#34d399;color:#34d399">📥 Import Excel</button>
       <button class="btn light" onclick="openManageDepts()" id="btn-manage-depts" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">🏢 Departments</button>
       <input type="file" id="xl-import-input" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
     </div>
     <div class="tw"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- BULK MARK MODAL -->
+<div class="ov" id="bulk-mark-modal" onclick="if(event.target===this)closeBulkMark()">
+  <div class="popup" style="width:380px">
+    <h3>🗂️ Bulk Mark Attendance</h3>
+    <div class="pop-sub">Mark all days for one employee, or a whole department, in one action.</div>
+
+    <label style="font-size:10px;color:var(--text3);display:block;margin:12px 0 5px">Scope</label>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div class="so" id="bm-scope-emp" onclick="setBulkScope('employee')" style="flex:1;background:#1a1035;color:var(--text2)">👤 Individual</div>
+      <div class="so" id="bm-scope-dept" onclick="setBulkScope('dept')" style="flex:1;background:#1a1035;color:var(--text2)">🏢 Department</div>
+    </div>
+
+    <div id="bm-emp-wrap" style="display:none;margin-bottom:12px">
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Employee</label>
+      <select id="bm-emp-select" style="width:100%"></select>
+    </div>
+    <div id="bm-dept-wrap" style="display:none;margin-bottom:12px">
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Department</label>
+      <select id="bm-dept-select" style="width:100%"></select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">From</label>
+        <input type="date" id="bm-date-from" style="width:100%">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">To</label>
+        <input type="date" id="bm-date-to" style="width:100%">
+      </div>
+    </div>
+
+    <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Status to apply</label>
+    <select id="bm-status-select" style="width:100%;margin-bottom:6px">
+      <optgroup label="Vacation Leave">
+        <option value="VL">Paid Vacation Leave (VL)</option>
+        <option value="UVL">Unpaid Vacation Leave (UVL)</option>
+      </optgroup>
+      <optgroup label="Half Day">
+        <option value="HD">Paid Half Day (HD)</option>
+        <option value="UHD">Unpaid Half Day (UHD)</option>
+      </optgroup>
+      <option value="P">Present (P)</option>
+      <option value="A">Absent (A)</option>
+      <option value="UT">Undertime (UT)</option>
+      <option value="L">Late (L)</option>
+      <option value="SL">Sick Leave (SL)</option>
+      <option value="EL">Emergency Leave (EL)</option>
+      <option value="BL">Bereavement Leave (BL)</option>
+      <option value="Off">Off — Rest Day</option>
+    </select>
+    <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:14px">
+      <input type="checkbox" id="bm-skip-filled" checked style="width:auto">
+      Only fill empty days (don't overwrite already-marked days)
+    </label>
+
+    <div id="bm-preview" style="font-size:11px;color:var(--text3);margin-bottom:12px"></div>
+
+    <div class="pa">
+      <button class="btn go" onclick="applyBulkMark()" style="flex:2">Apply</button>
+      <button class="btn light" onclick="closeBulkMark()">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -4287,6 +4353,77 @@ function updateAllDeptSelects(){
   }
 }
 
+// ─── BULK MARK ───────────────────────────────────────────────────────────────
+let bulkScope = 'employee';
+function setBulkScope(scope){
+  bulkScope = scope;
+  document.getElementById('bm-scope-emp').classList.toggle('sel', scope==='employee');
+  document.getElementById('bm-scope-dept').classList.toggle('sel', scope==='dept');
+  document.getElementById('bm-emp-wrap').style.display = scope==='employee' ? 'block' : 'none';
+  document.getElementById('bm-dept-wrap').style.display = scope==='dept' ? 'block' : 'none';
+  updateBulkPreview();
+}
+function openBulkMark(){
+  const empSel = document.getElementById('bm-emp-select');
+  empSel.innerHTML = activeEmployees().map(e=>`<option value="${e.name}">${e.name}</option>`).join('');
+  const deptSel = document.getElementById('bm-dept-select');
+  const teams = [...new Set(activeEmployees().map(e=>e.team).filter(Boolean))].sort();
+  deptSel.innerHTML = teams.map(t=>`<option value="${t}">${t}</option>`).join('');
+  const sorted = [...state.dates].sort();
+  document.getElementById('bm-date-from').value = sorted[0] || '';
+  document.getElementById('bm-date-to').value = sorted[sorted.length-1] || '';
+  setBulkScope('employee');
+  document.getElementById('bulk-mark-modal').classList.add('open');
+  ['bm-emp-select','bm-dept-select','bm-date-from','bm-date-to','bm-status-select','bm-skip-filled'].forEach(id=>{
+    document.getElementById(id).onchange = updateBulkPreview;
+  });
+  updateBulkPreview();
+}
+function closeBulkMark(){
+  document.getElementById('bulk-mark-modal').classList.remove('open');
+}
+function getBulkTargets(){
+  const from = document.getElementById('bm-date-from').value;
+  const to = document.getElementById('bm-date-to').value;
+  const dates = state.dates.filter(d=>(!from||d>=from) && (!to||d<=to));
+  let emps;
+  if(bulkScope==='employee'){
+    const name = document.getElementById('bm-emp-select').value;
+    emps = activeEmployees().filter(e=>e.name===name);
+  } else {
+    const dept = document.getElementById('bm-dept-select').value;
+    emps = activeEmployees().filter(e=>e.team===dept);
+  }
+  const skipFilled = document.getElementById('bm-skip-filled').checked;
+  const pairs = [];
+  emps.forEach(e=>{
+    dates.forEach(d=>{
+      const existing = state.attendance[gk(e.name,d)]||'';
+      if(!(skipFilled && existing)) pairs.push([e.name,d]);
+    });
+  });
+  return {emps, dates, pairs};
+}
+function updateBulkPreview(){
+  const {emps, dates, pairs} = getBulkTargets();
+  const el = document.getElementById('bm-preview');
+  if(!emps.length){ el.textContent = 'Select an employee or department.'; return; }
+  if(!dates.length){ el.textContent = 'No tracked dates in that range.'; return; }
+  el.innerHTML = `Will mark <strong style="color:var(--text)">${pairs.length}</strong> day(s) across <strong style="color:var(--text)">${emps.length}</strong> employee(s).`;
+}
+function applyBulkMark(){
+  const status = document.getElementById('bm-status-select').value;
+  const {pairs} = getBulkTargets();
+  if(!pairs.length){ toast('Nothing to mark — check your filters'); return; }
+  if(!confirm(`Mark ${pairs.length} day(s) as "${status}"? This can be undone individually but not in bulk.`)) return;
+  pairs.forEach(([name,date])=>{ state.attendance[gk(name,date)] = status; });
+  scheduleSave();
+  renderTable();
+  renderDash();
+  closeBulkMark();
+  toast(`🗂️ Marked ${pairs.length} day(s) as ${status}`);
+}
+
 function openManageDepts(){
   renderDeptList();
   document.getElementById('dept-modal').classList.add('open');
@@ -5659,7 +5796,7 @@ function enableEditMode(showToast=true){
   isEditMode = true;
   try{sessionStorage.setItem('att_is_edit','1');}catch(e){}
   // Show all edit buttons
-  const editBtns = ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl',
+  const editBtns = ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl',
     'btn-manage-depts','btn-add-ot','btn-import-sched','btn-auto-sched',
     'btn-add-date-range','btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-import-btn'];
   editBtns.forEach(id=>{
@@ -5686,7 +5823,7 @@ function enableLeaveMode(showToast=true){
   isEditMode = false;
   try{sessionStorage.removeItem('att_is_edit');}catch(e){}
   // Make sure no edit/admin buttons are visible
-  ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
+  ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
    'sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
@@ -5734,7 +5871,7 @@ function disableEditMode(){
   localStorage.removeItem(PIN_STORAGE_KEY);
   localStorage.removeItem(OT_PIN_STORAGE_KEY);
   localStorage.removeItem(LEAVE_STORAGE_KEY);
-  ['btn-add-date','btn-add-emp','btn-edit-leave','btn-import-xl','btn-manage-depts',
+  ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
    'sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
