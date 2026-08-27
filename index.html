@@ -5517,8 +5517,8 @@ function renderLeaves(){
         +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);font-size:11px">'+(r.leadNotes||'—')+'</td>'
         +(canManage?'<td style="padding:6px 10px;border:1px solid #3a2868;text-align:center;white-space:nowrap">'
           +(function(rid){
-            return '<button onclick="openReviewLeave(\"'+rid+'\")" style="background:rgba(196,168,255,.2);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font);margin-right:4px">Review</button>'
-              +'<button onclick="deleteLeave(\"'+rid+'\")" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>';
+            return '<button onclick="openReviewLeave(\''+rid+'\')" style="background:rgba(196,168,255,.2);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font);margin-right:4px">Review</button>'
+              +'<button onclick="deleteLeave(\''+rid+'\')" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>';
           })(r.id)
           +'</td>':'')
         +'</tr>';
@@ -5599,7 +5599,7 @@ function renderLeavesCalendar(reqs){
       const tc = typeColors[r.type]||'#c4a8ff';
       const _rid=r.id,_rn=leaveEmpName(r).split(' ')[0],_rt=r.type,_rs=r.status;
       html += (function(rid,rn,rt,rs,sc2,tc2){
-        return '<div style="font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;background:rgba(0,0,0,.3);border-left:3px solid '+sc2+';cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" onclick="openReviewLeave(\"'+rid+'\")" title="'+rn+' - '+rt+' ('+rs+')">'
+        return '<div style="font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;background:rgba(0,0,0,.3);border-left:3px solid '+sc2+';cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" onclick="openReviewLeave(\''+rid+'\')" title="'+rn+' - '+rt+' ('+rs+')">'
           +'<span style="color:'+tc2+';font-weight:700">'+rt+'</span> <span style="color:var(--text2)">'+rn+'</span></div>';
       })(_rid,_rn,_rt,_rs,sc,tc);
     });
