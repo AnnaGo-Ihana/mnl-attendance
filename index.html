@@ -3275,14 +3275,16 @@ function getTsEntry(emp, date){
   const attChanged = att !== prevAtt;
   entry._lastAtt = att;
 
-  // Always re-evaluate for VL/SL/A even if already initialized
-  if(attChanged || !entry._notesInit || ['VL','SL','A'].includes(att)){
+  // Always re-evaluate for leave/absent statuses even if already initialized
+  const AUTO_NOTE_STATUSES = ['VL','UVL','SL','A','HD','UHD','EL','BL'];
+  const AUTO_NOTE_LABELS = {VL:'Paid VL', UVL:'Unpaid VL', SL:'Paid SL', A:'Absent', HD:'Paid Half Day', UHD:'Unpaid Half Day', EL:'Emergency Leave', BL:'Bereavement Leave'};
+  if(attChanged || !entry._notesInit || AUTO_NOTE_STATUSES.includes(att)){
     entry._notesInit = true;
-    if(['VL','SL','A'].includes(att)){
+    if(AUTO_NOTE_STATUSES.includes(att)){
       if(!entry._timesManual){
         entry.timeIn = ''; entry.timeOut = ''; entry.nd = 0;
       }
-      const base = att==='VL'?'Paid VL':att==='SL'?'Paid SL':'Absent';
+      const base = AUTO_NOTE_LABELS[att];
       const autoNote = holiday ? holiday+' | '+base : base;
       if(attChanged || !entry._notesManual || !entry.notes.includes(base)){
         entry.notes = autoNote;
@@ -3293,8 +3295,7 @@ function getTsEntry(emp, date){
       entry.notes = holiday;
     } else if(!entry._notesManual && !entry.notes){
       // Only set if notes is completely empty
-      if(att==='HD') entry.notes = 'Half Day';
-      else if(att==='L') entry.notes = 'Late';
+      if(att==='L') entry.notes = 'Late';
       else if(att==='UT') entry.notes = 'Undertime';
     }
     // Save the updated entry back
@@ -3472,13 +3473,7 @@ function renderTimesheet(){
       const entry = getTsEntry(emp.name, d);
       const attendance = state.attendance[gk(emp.name,d)]||'';
       empTotalND += parseFloat(entry.nd)||0;
-      const attColor = attendance==='P'?'#00e896':attendance==='A'?'#ff5c7a':attendance==='VL'?'#00cfff':attendance==='SL'?'#ffaa5c':attendance==='HD'?'#ffcf3d':attendance==='L'?'#5db8ff':attendance==='UT'?'#c49eff':'var(--text3)';
-      // Auto-sync VL/SL/A to notes from tracker
-      if(['VL','SL','A'].includes(attendance) && entry && !entry._notesManual){
-        const autoNote = attendance==='VL'?'Paid VL':attendance==='SL'?'Paid SL':'Absent';
-        if(!entry.notes) entry.notes = autoNote;
-        if(['VL','SL','A'].includes(attendance)) entry.nd = 0;
-      }
+      const attColor = SC[attendance] || 'var(--text3)';
 
       const tr = document.createElement('tr');
       tr.style.cssText = 'border-bottom:1px solid #3a2868';
