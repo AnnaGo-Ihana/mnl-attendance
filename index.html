@@ -1198,6 +1198,13 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <button class="btn light" onclick="openNewCutoffModal()" style="width:100%">+ Start New Cutoff</button>
     </div>
 
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:520px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📝 Leave Balance Note</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Shown under "Summary" on the Tracker so everyone knows how current the VL/SL balances are. Update this after each payout.</div>
+      <textarea id="settings-leave-note-input" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);margin-bottom:8px;resize:vertical"></textarea>
+      <button class="btn light" onclick="saveLeaveBalanceNote()" style="width:100%">Save Note</button>
+    </div>
+
   </div>
 </div>
 
@@ -1416,6 +1423,10 @@ async function loadFromDB(){
     // Seed the first cutoff period. Purely informational — does not move
     // or archive any attendance data.
     state.cutoffs = [{id:'co_1', start:'2026-08-31', end:'2026-09-13'}];
+    try{ await saveToDB(); }catch(e){}
+  }
+  if(state.leaveBalanceNote === undefined){
+    state.leaveBalanceNote = "Last updated: Aug 26, 2026 for last week's cutoff. Will refresh after the next payout.";
     try{ await saveToDB(); }catch(e){}
   }
 }
@@ -1833,6 +1844,17 @@ function renderCutoffBadge(){
   if(settingsEl){
     settingsEl.textContent = cur ? ('Current: '+dd(cur.start)+' – '+dd(cur.end)) : 'No cutoff set yet';
   }
+  const noteInput = document.getElementById('settings-leave-note-input');
+  if(noteInput) noteInput.value = state.leaveBalanceNote || '';
+}
+
+function saveLeaveBalanceNote(){
+  if(!(currentUser && currentUser.isAdmin)){ toast('⚠️ Only Anna can edit this'); return; }
+  const val = document.getElementById('settings-leave-note-input').value.trim();
+  state.leaveBalanceNote = val;
+  scheduleSave();
+  renderTable(); // refresh the Summary header note
+  toast('📝 Note saved');
 }
 
 function openNewCutoffModal(){
@@ -2003,10 +2025,13 @@ function renderTable(){
     r1.appendChild(th1);
   });
   const st=document.createElement('th');
-  st.textContent='Summary';st.style.cssText='min-width:110px;position:sticky;top:0;z-index:15;background:#0d0818;';
+  st.innerHTML = 'Summary<div id="leave-balance-note" style="font-size:9px;font-weight:400;color:#ffcf3d;margin-top:2px;line-height:1.3;white-space:normal;max-width:150px"></div>';
+  st.style.cssText='min-width:110px;position:sticky;top:0;z-index:15;background:#0d0818;';
   r1.appendChild(st);
   thead.innerHTML='';thead.appendChild(r1);
   tbody.innerHTML='';
+  const noteEl = document.getElementById('leave-balance-note');
+  if(noteEl) noteEl.textContent = state.leaveBalanceNote || '';
 
   const ROLE_SHORT={Director:'DIR','Team Lead':'TL','Deputy Team Lead':'DTL',Manager:'TL','Deputy Manager':'DTL'};
   const ROLE_CLASS2={Director:'role-Director','Team Lead':'role-TL','Deputy Team Lead':'role-Deputy',Manager:'role-TL','Deputy Manager':'role-Deputy'};
