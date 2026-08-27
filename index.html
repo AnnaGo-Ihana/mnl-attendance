@@ -5495,6 +5495,7 @@ function renderLeaves(){
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Dept</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Type</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Dates</th>'
+    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Filed</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Reason</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Status</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Lead Notes</th>'
@@ -5509,6 +5510,7 @@ function renderLeaves(){
         +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2)">'+r.dept+'</td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868"><span style="color:'+tc+';font-weight:700">'+r.type+'</span></td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);white-space:nowrap">'+days+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text3);font-size:11px;white-space:nowrap">'+filedAtDisplay(r.filedAt)+'</td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);max-width:200px">'
           +(r.reason||'—')
           +(r.docLink?'<br><a href="'+r.docLink+'" target="_blank" style="color:#5db8ff;font-size:10px">📎 View doc</a>':'')
