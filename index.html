@@ -1290,6 +1290,37 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <button class="btn light" onclick="saveLeaveBalanceNote()" style="width:100%">Save Note</button>
     </div>
 
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🔑 Manage Team Access</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Control who has Full access, Leave-only access (files leave under their own name only), OT-only access, or no access at all. Department and Active status are edited from an employee's cell in the Tracker instead.</div>
+      <input type="text" id="access-mgmt-search" placeholder="Search a name…" oninput="renderAccessMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:10px">
+      <div id="access-mgmt-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ACCESS EDIT MODAL (admin-only) -->
+<div class="ov" id="access-edit-modal" onclick="if(event.target===this)closeAccessEdit()">
+  <div class="popup" style="width:340px">
+    <h3 id="access-edit-name">Edit Access</h3>
+    <label style="font-size:10px;color:var(--text3);display:block;margin:12px 0 5px">Access Level</label>
+    <select id="access-edit-level" onchange="onAccessLevelChange()" style="width:100%;margin-bottom:10px">
+      <option value="none">No Access</option>
+      <option value="full">Full Access</option>
+      <option value="leave_only">Leave Only</option>
+      <option value="ot_only">OT Only</option>
+    </select>
+    <div id="access-edit-otdept-wrap" style="display:none;margin-bottom:10px">
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">OT Department</label>
+      <input type="text" id="access-edit-otdept" placeholder="e.g. Funding" style="width:100%">
+    </div>
+    <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Password</label>
+    <input type="text" id="access-edit-pw" placeholder="e.g. CARE123" style="width:100%;margin-bottom:16px">
+    <div class="pa">
+      <button class="btn go" onclick="saveAccessEdit()" style="flex:2">Save</button>
+      <button class="btn light" onclick="closeAccessEdit()">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -1646,7 +1677,7 @@ function showPage(id){
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
   if(id==='leaderboard')initLeaderboardPage();
-  if(id==='settings')renderCutoffBadge();
+  if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); }
   if(id==='timesheet'){
     populateTsEmpFilter();
     const tf=document.getElementById('ts-date-from');
@@ -1918,6 +1949,91 @@ function currentCutoff(){
 function latestCutoff(){
   if(!state.cutoffs || !state.cutoffs.length) return null;
   return [...state.cutoffs].sort((a,b)=>a.end.localeCompare(b.end)).pop();
+}
+
+// ─── MANAGE TEAM ACCESS (admin-only) ────────────────────────────────────────
+function allKnownNames(){
+  const names = new Set();
+  Object.keys(ALL_CREDENTIALS).forEach(n=>names.add(n));
+  (state.employees||[]).forEach(e=>names.add(e.name));
+  if(state.credentialOverrides) Object.keys(state.credentialOverrides).forEach(n=>names.add(n));
+  return [...names].sort();
+}
+function accessLabel(cred){
+  if(!cred) return {text:'No Access', color:'#7a68a8'};
+  if(cred.access==='full') return {text: cred.admin ? 'Full Access (Admin)' : 'Full Access', color:'#00e896'};
+  if(cred.access==='leave_only') return {text:'Leave Only', color:'#5db8ff'};
+  if(cred.access && cred.access.startsWith('ot_only')) return {text:'OT Only ('+cred.access.split(':')[1]+')', color:'#ffcf3d'};
+  return {text:'No Access', color:'#7a68a8'};
+}
+function renderAccessMgmtList(){
+  const wrap = document.getElementById('access-mgmt-list');
+  if(!wrap) return;
+  const q = (document.getElementById('access-mgmt-search').value||'').toLowerCase().trim();
+  let names = allKnownNames();
+  if(q) names = names.filter(n=>n.toLowerCase().includes(q));
+  if(!names.length){ wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px">No matches.</div>'; return; }
+  wrap.innerHTML = names.map(name=>{
+    const cred = getCred(name);
+    const lbl = accessLabel(cred);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#0d0818;border:1px solid #2d1f55;border-radius:6px">'
+      +'<span style="font-size:12px;color:var(--text)">'+name+'</span>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;font-weight:700;color:'+lbl.color+'">'+lbl.text+'</span>'
+      +'<button onclick="openAccessEdit(\''+name.replace(/'/g,"\\'")+'\')" style="background:rgba(196,168,255,.15);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Edit</button>'
+      +'</div></div>';
+  }).join('');
+}
+let _accessEditName = null;
+function openAccessEdit(name){
+  if(!(currentUser && currentUser.isAdmin)) return;
+  _accessEditName = name;
+  document.getElementById('access-edit-name').textContent = 'Edit Access — '+name;
+  const cred = getCred(name);
+  const levelSel = document.getElementById('access-edit-level');
+  if(!cred) levelSel.value = 'none';
+  else if(cred.access==='full') levelSel.value = 'full';
+  else if(cred.access==='leave_only') levelSel.value = 'leave_only';
+  else if(cred.access && cred.access.startsWith('ot_only')) levelSel.value = 'ot_only';
+  else levelSel.value = 'none';
+  document.getElementById('access-edit-otdept').value = cred && cred.access && cred.access.startsWith('ot_only') ? cred.access.split(':')[1] : '';
+  document.getElementById('access-edit-pw').value = cred ? (cred.pw||'') : '';
+  onAccessLevelChange();
+  document.getElementById('access-edit-modal').classList.add('open');
+}
+function onAccessLevelChange(){
+  const level = document.getElementById('access-edit-level').value;
+  document.getElementById('access-edit-otdept-wrap').style.display = level==='ot_only' ? 'block' : 'none';
+}
+function closeAccessEdit(){
+  document.getElementById('access-edit-modal').classList.remove('open');
+  _accessEditName = null;
+}
+function saveAccessEdit(){
+  if(!(currentUser && currentUser.isAdmin) || !_accessEditName) return;
+  const level = document.getElementById('access-edit-level').value;
+  if(_accessEditName===currentUser.name && level!=='full'){
+    toast('⚠️ You can\'t remove your own Full access here');
+    return;
+  }
+  const pw = document.getElementById('access-edit-pw').value.trim().toUpperCase();
+  if(!state.credentialOverrides) state.credentialOverrides = {};
+  if(level==='none'){
+    state.credentialOverrides[_accessEditName] = {removed:true};
+  } else {
+    if(!pw){ toast('Enter a password'); return; }
+    let access = level;
+    if(level==='ot_only'){
+      const dept = document.getElementById('access-edit-otdept').value.trim();
+      if(!dept){ toast('Enter an OT department'); return; }
+      access = 'ot_only:'+dept;
+    }
+    state.credentialOverrides[_accessEditName] = {pw, access};
+  }
+  scheduleSave();
+  closeAccessEdit();
+  renderAccessMgmtList();
+  toast('🔑 Access updated for '+_accessEditName);
 }
 
 function renderCutoffBadge(){
@@ -5872,9 +5988,17 @@ const ALL_CREDENTIALS = {
   'Zan Juanes': {pw:'CARE059', access:'leave_only'},
 };
 
-// Helper: get access level for a user
+// Helper: get access level for a user — checks Anna's overrides first (stored
+// in the DB, editable via Settings), falling back to the hardcoded defaults.
+function getCred(name){
+  const override = state.credentialOverrides && state.credentialOverrides[name];
+  const base = ALL_CREDENTIALS[name];
+  if(override && override.removed) return null; // access explicitly revoked
+  if(override) return {...(base||{}), ...override};
+  return base;
+}
 function getUserAccess(name, pw) {
-  const cred = ALL_CREDENTIALS[name];
+  const cred = getCred(name);
   if(!cred) return null;
   if(cred.pw !== pw.trim().toUpperCase()) return null;
   return cred.access; // 'full' or 'ot_only:Funding'
@@ -6038,6 +6162,20 @@ function disableEditMode(){
   renderTable();
 }
 
+function syncLoginNameOptions(){
+  const sel = document.getElementById('login-name');
+  if(!sel) return;
+  const existing = new Set([...sel.options].map(o=>o.value).filter(Boolean));
+  const overrideNames = state.credentialOverrides ? Object.keys(state.credentialOverrides) : [];
+  overrideNames.forEach(name=>{
+    if(existing.has(name)) return;
+    const cred = getCred(name);
+    if(!cred) return; // removed access, don't list
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+}
 function toggleLock(){
   if(isEditMode || currentUser){
     if(confirm('Sign out?')) disableEditMode();
@@ -6045,6 +6183,7 @@ function toggleLock(){
     const ln=document.getElementById('login-name'); if(ln) ln.value='';
     const lp=document.getElementById('login-pass'); if(lp) lp.value='';
     const pe=document.getElementById('pin-error'); if(pe) pe.textContent='';
+    syncLoginNameOptions();
     document.getElementById('pin-modal').classList.add('open');
     setTimeout(()=>{ const ln=document.getElementById('login-name'); if(ln) ln.focus(); },100);
   }
@@ -6056,7 +6195,7 @@ function checkRoleLogin(){
   const err  = document.getElementById('pin-error');
   if(!name){err.textContent='⚠️ Please select your name';return;}
   if(!pass){err.textContent='⚠️ Please enter your password';return;}
-  if(!ALL_CREDENTIALS[name]){err.textContent='⚠️ Name not in system';return;}
+  if(!getCred(name)){err.textContent='⚠️ Name not in system';return;}
   const access = getUserAccess(name, pass);
   if(!access){
     err.textContent='❌ Wrong password for '+name.split(' ')[0]+' — try again';
@@ -6065,7 +6204,7 @@ function checkRoleLogin(){
     return;
   }
   if(access==='full'){
-    const userData = {name, accessLevel:'full', isAdmin: !!(ALL_CREDENTIALS[name] && ALL_CREDENTIALS[name].admin)};
+    const userData = {name, accessLevel:'full', isAdmin: !!(getCred(name) && getCred(name).admin)};
     localStorage.setItem(PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(OT_PIN_STORAGE_KEY);
     localStorage.removeItem(LEAVE_STORAGE_KEY);
