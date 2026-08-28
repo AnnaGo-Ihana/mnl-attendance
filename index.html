@@ -1546,6 +1546,19 @@ async function loadFromDB(){
     state.leaveBalanceNote = "Last updated: Aug 26, 2026 for last week's cutoff. Will refresh after the next payout.";
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: mark resigned employees inactive (confirmed by Anna, Aug 2026)
+  const RESIGNED_2026_08 = ['Camelle Dumayas','Leomar Papa','Karen Orcales','Ivy Madrigal','Reigne Buccat'];
+  let resignedFixed = false;
+  RESIGNED_2026_08.forEach(name=>{
+    const emp = (state.employees||[]).find(e=>e.name===name);
+    if(emp && emp.status!=='Inactive'){
+      emp.status = 'Inactive';
+      emp.inactiveReason = 'Resigned';
+      emp.inactiveDate = '2026-08-24';
+      resignedFixed = true;
+    }
+  });
+  if(resignedFixed){ try{ await saveToDB(); }catch(e){} }
 }
 
 let _saveCount = 0;
