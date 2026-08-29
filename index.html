@@ -3736,16 +3736,20 @@ function getTsEntry(emp, date){
         entry._notesManual = false;
         state.timesheet[k].notes = autoNote;
       }
-    } else if(holiday && !entry._notesManual && (!entry.notes || entry.notes===holiday)){
-      entry.notes = holiday;
     } else if(!entry._notesManual && !entry.notes){
       // Only set if notes is completely empty
       if(att==='L') entry.notes = 'Late';
       else if(att==='UT') entry.notes = 'Undertime';
     }
-    // Save the updated entry back
-    state.timesheet[k] = entry;
   }
+  // Always re-check the holiday note independent of _notesInit/attChanged —
+  // this ensures entries created before this feature existed (or before a
+  // holiday was added to PH_HOLIDAYS) still get correctly backfilled instead
+  // of being silently skipped forever once _notesInit was already true.
+  if(holiday && !AUTO_NOTE_STATUSES.includes(att) && !entry._notesManual && (!entry.notes || entry.notes===holiday)){
+    entry.notes = holiday;
+  }
+  state.timesheet[k] = entry;
   return entry;
 }
 function setTsEntry(emp, date, field, val){
