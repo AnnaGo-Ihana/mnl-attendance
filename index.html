@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1748,6 +1748,23 @@ async function loadFromDB(){
     }
     state._purgedAprJul2026 = true;
     try{ await saveToDB(); }catch(e){}
+  }
+  // One-time: repair timesheet entries incorrectly stuck as "manual" with
+  // empty notes — a bug in the notes input's onchange handler used to mark
+  // ANY change as manual, even when the field ended up empty, permanently
+  // blocking auto-notes (like holidays) from ever showing again for that cell.
+  if(!state._repairedNotesManual){
+    let fixed = 0;
+    if(state.timesheet){
+      Object.values(state.timesheet).forEach(entry=>{
+        if(entry._notesManual && !entry.notes){
+          entry._notesManual = false;
+          fixed++;
+        }
+      });
+    }
+    state._repairedNotesManual = true;
+    if(fixed > 0){ try{ await saveToDB(); }catch(e){} }
   }
 }
 
@@ -4188,7 +4205,14 @@ function renderTimesheet(){
       notesInp.style.cssText = 'width:100%;background:'+noteBg+';border:1px solid #3a2868;border-radius:4px;color:'+noteColor+';padding:4px;font-size:11px;font-family:var(--font);font-weight:600';
       notesInp.onchange = ()=>{
         setTsEntry(emp.name,d,'notes',notesInp.value);
-        state.timesheet[tsk(emp.name,d)]._notesManual=true;
+        // Only mark manual if there's actually text left — an empty value
+        // should release the field back to auto-notes (holiday, VL, etc.)
+        // instead of permanently blocking them.
+        if(notesInp.value.trim()){
+          state.timesheet[tsk(emp.name,d)]._notesManual=true;
+        } else {
+          state.timesheet[tsk(emp.name,d)]._notesManual=false;
+        }
         // Update color on change
         const nc=getNoteColor(notesInp.value,attendance,d);
         const nb=nc==='#ff5c7a'?'rgba(255,92,122,.08)':nc==='#00e896'?'rgba(0,232,150,.08)':nc==='#5db8ff'?'rgba(93,184,255,.08)':'#0d0818';
@@ -6587,7 +6611,7 @@ function toggleTheme(){
 function initTheme(){
   let saved = null;
   try{ saved = localStorage.getItem('att_theme'); }catch(e){}
-  const theme = saved || 'light';
+  const theme = saved || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
   const btn = document.getElementById('btn-theme-toggle');
   if(btn) btn.textContent = theme==='light' ? '☀️' : '🌙';
