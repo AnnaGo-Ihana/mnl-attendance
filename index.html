@@ -355,7 +355,6 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <div class="nav-tab" data-page="overtime" onclick="showPage('overtime')">Overtime</div>
         <div class="nav-tab" data-page="schedule" onclick="showPage('schedule')">Schedule</div>
         <div class="nav-tab" data-page="leaves" onclick="showPage('leaves')">Leaves</div>
-        <div class="nav-tab" data-page="leaderboard" onclick="showPage('leaderboard')">🏆 Leaderboard</div>
         <div class="nav-tab" id="nav-tab-settings" data-page="settings" onclick="showPage('settings')" style="display:none">⚙️ Settings</div>
       </div>
       <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;max-width:100%">
@@ -1215,24 +1214,6 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
   <div style="padding:16px 20px;overflow-x:auto" id="leaves-content"></div>
 </div>
 
-<!-- LEADERBOARD PAGE -->
-<div class="page" id="page-leaderboard" style="display:none;padding:24px 20px">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:6px">
-    <div>
-      <div style="font-size:16px;font-weight:700;color:#c4a8ff">🏆 Leadership KPI Leaderboard</div>
-      <div style="font-size:11px;color:var(--text3)" id="lb-cutoff-label">—</div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <select id="lb-cutoff-select" onchange="renderLeaderboard()" style="font-size:12px"></select>
-      <button class="btn light" id="lb-edit-btn" onclick="toggleLeaderboardEdit()" style="display:none;font-size:11px;padding:6px 12px">✏️ Enter Scores</button>
-    </div>
-  </div>
-  <div style="font-size:10px;color:var(--text3);margin-bottom:16px">
-    KPI1 Freshdesk KB (30%) · KPI2 Underperformers Improved (30%) · KPI3 Chats/Calls/Tickets/Team Perf (25%) · KPI4 Review Response Time (15%) — each graded 0–3, weighted into a final score out of 3.
-  </div>
-  <div id="leaderboard-content"></div>
-</div>
-
 <!-- SETTINGS PAGE (admin-only) -->
 <div class="page" id="page-settings" style="display:none;padding:24px 20px">
   <div style="font-size:16px;font-weight:700;color:#c4a8ff;margin-bottom:4px">⚙️ Settings</div>
@@ -1612,7 +1593,7 @@ async function loadFromDB(){
     try{ await saveToDB(); }catch(e){}
   }
   // One-time: mark resigned employees inactive (confirmed by Anna, Aug 2026)
-  const RESIGNED_2026_08 = ['Camelle Dumayas','Leomar Papa','Karen Orcales','Ivy Madrigal','Reigne Buccat'];
+  const RESIGNED_2026_08 = ['Camelle Dumayas','Leomar Papa','Karen Orcales','Ivy Madrigal','Reigne Buccat','Abby Salanguit','Antonio Raymundo','Lorilyn Cuanan'];
   let resignedFixed = false;
   RESIGNED_2026_08.forEach(name=>{
     const emp = (state.employees||[]).find(e=>e.name===name);
@@ -1757,12 +1738,10 @@ function showPage(id){
   document.getElementById('page-overtime').style.display = (id==='overtime') ? 'block' : 'none';
   document.getElementById('page-schedule').style.display = (id==='schedule') ? 'block' : 'none';
   if(document.getElementById('page-leaves')) document.getElementById('page-leaves').style.display = (id==='leaves') ? 'block' : 'none';
-  if(document.getElementById('page-leaderboard')) document.getElementById('page-leaderboard').style.display = (id==='leaderboard') ? 'block' : 'none';
   if(document.getElementById('page-settings')) document.getElementById('page-settings').style.display = (id==='settings') ? 'block' : 'none';
   document.querySelectorAll('.nav-tab').forEach(t=>{if(t.dataset.page===id)t.classList.add('active');});
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
-  if(id==='leaderboard')initLeaderboardPage();
   if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); renderEmpMgmtList(); }
   if(id==='timesheet'){
     populateTsEmpFilter();
@@ -2255,124 +2234,6 @@ function saveNewCutoff(){
   toast('📦 New cutoff started: '+dd(start)+' – '+dd(end));
 }
 
-// ─── LEADERSHIP KPI LEADERBOARD ────────────────────────────────────────────
-const KPI_DEFS = [
-  {key:'kb',        label:'Freshdesk Knowledge Base',        weight:0.30, unit:'P/M', higherBetter:true,  t3:40, t2:20, t1:10},
-  {key:'underperf', label:'Underperformers Improved',        weight:0.30, unit:'%',   higherBetter:true,  t3:80, t2:20, t1:10},
-  {key:'volume',    label:'Chats/Calls/Tickets/Team Perf',   weight:0.25, unit:'P/M', higherBetter:true,  t3:60, t2:30, t1:20},
-  {key:'reviews',   label:'Review Response Time',            weight:0.15, unit:'sec', higherBetter:false, t3:30, t2:40, t1:50},
-];
-function gradeKPI(def, value){
-  if(value===undefined || value===null || value==='') return null;
-  const v = parseFloat(value);
-  if(isNaN(v)) return null;
-  if(def.higherBetter){
-    if(v>=def.t3) return 3;
-    if(v>=def.t2) return 2;
-    if(v>=def.t1) return 1;
-    return 0;
-  } else {
-    if(v<=def.t3) return 3;
-    if(v<=def.t2) return 2;
-    if(v<=def.t1) return 1;
-    return 0;
-  }
-}
-function computeWeightedScore(scores){
-  let total=0, anyGraded=false;
-  KPI_DEFS.forEach(def=>{
-    const g = gradeKPI(def, scores[def.key]);
-    if(g!==null){ total += g*def.weight; anyGraded=true; }
-  });
-  return anyGraded ? total : null;
-}
-let lbEditMode = false;
-function initLeaderboardPage(){
-  const sel = document.getElementById('lb-cutoff-select');
-  const cutoffs = [...(state.cutoffs||[])].sort((a,b)=>b.start.localeCompare(a.start));
-  sel.innerHTML = cutoffs.map(c=>'<option value="'+c.id+'">'+dd(c.start)+' – '+dd(c.end)+'</option>').join('');
-  const cur = currentCutoff();
-  if(cur) sel.value = cur.id;
-  const editBtn = document.getElementById('lb-edit-btn');
-  editBtn.style.display = (currentUser && currentUser.isAdmin) ? '' : 'none';
-  editBtn.textContent = '✏️ Enter Scores';
-  lbEditMode = false;
-  renderLeaderboard();
-}
-function toggleLeaderboardEdit(){
-  if(!(currentUser && currentUser.isAdmin)) return;
-  lbEditMode = !lbEditMode;
-  document.getElementById('lb-edit-btn').textContent = lbEditMode ? '✅ Done Editing' : '✏️ Enter Scores';
-  renderLeaderboard();
-}
-function saveKPIScore(cutoffId, empName, key, value){
-  if(!(currentUser && currentUser.isAdmin)) return;
-  if(!state.kpiScores) state.kpiScores = {};
-  if(!state.kpiScores[cutoffId]) state.kpiScores[cutoffId] = {};
-  if(!state.kpiScores[cutoffId][empName]) state.kpiScores[cutoffId][empName] = {};
-  state.kpiScores[cutoffId][empName][key] = value;
-  scheduleSave();
-}
-function renderLeaderboard(){
-  const sel = document.getElementById('lb-cutoff-select');
-  const cutoffId = sel.value;
-  const cutoff = (state.cutoffs||[]).find(c=>c.id===cutoffId);
-  document.getElementById('lb-cutoff-label').textContent = cutoff ? ('Showing: '+dd(cutoff.start)+' – '+dd(cutoff.end)) : 'No cutoff selected yet';
-
-  const leaders = activeEmployees().filter(e=>e.team==='Leadership');
-  const scoresForCutoff = (state.kpiScores && state.kpiScores[cutoffId]) || {};
-
-  const rows = leaders.map(emp=>{
-    const s = scoresForCutoff[emp.name] || {};
-    return {name:emp.name, role:emp.role||'', scores:s, weighted:computeWeightedScore(s)};
-  });
-  rows.sort((a,b)=>{
-    if(a.weighted===null && b.weighted===null) return 0;
-    if(a.weighted===null) return 1;
-    if(b.weighted===null) return -1;
-    return b.weighted - a.weighted;
-  });
-
-  const medals = ['🥇','🥈','🥉'];
-  const wrap = document.getElementById('leaderboard-content');
-  if(!rows.length){ wrap.innerHTML = '<div style="color:var(--text3);font-size:12px">No Leadership team members found.</div>'; return; }
-  if(!cutoffId){ wrap.innerHTML = '<div style="color:var(--text3);font-size:12px">No cutoff period exists yet — start one in Settings.</div>'; return; }
-
-  wrap.innerHTML = '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:900px">'
-    +'<tr>'
-    +'<th style="padding:8px 10px;text-align:left;color:#c4a8ff;border-bottom:2px solid #3a2868">Rank</th>'
-    +'<th style="padding:8px 10px;text-align:left;color:#c4a8ff;border-bottom:2px solid #3a2868">Lead</th>'
-    +KPI_DEFS.map(def=>'<th style="padding:8px 10px;text-align:center;color:#c4a8ff;border-bottom:2px solid #3a2868">'+def.label+'<br><span style="font-weight:400;color:var(--text3)">('+Math.round(def.weight*100)+'%)</span></th>').join('')
-    +'<th style="padding:8px 10px;text-align:center;color:#c4a8ff;border-bottom:2px solid #3a2868">Score</th>'
-    +'</tr>'
-    +rows.map((r,i)=>{
-      const rankDisplay = r.weighted!==null ? (medals[i]||('#'+(i+1))) : '—';
-      return '<tr style="border-bottom:1px solid #2d1f55">'
-        +'<td style="padding:8px 10px;font-size:15px">'+rankDisplay+'</td>'
-        +'<td style="padding:8px 10px;font-weight:600;color:var(--text)">'+r.name+'<div style="font-size:10px;color:var(--text3);font-weight:400">'+r.role+'</div></td>'
-        +KPI_DEFS.map(def=>{
-          const val = r.scores[def.key];
-          const grade = gradeKPI(def, val);
-          const gradeColor = grade===3?'#00e896':grade===2?'#ffcf3d':grade===1?'#ff8f5c':grade===0?'#ff5c7a':'var(--text3)';
-          if(lbEditMode){
-            return '<td style="padding:6px 8px;text-align:center">'
-              +'<input type="number" step="any" value="'+(val!==undefined?val:'')+'" placeholder="'+def.unit+'" '
-              +'onchange="saveKPIScore(\''+cutoffId+'\',\''+r.name+'\',\''+def.key+'\',this.value); renderLeaderboard()" '
-              +'style="width:70px;text-align:center;padding:4px;border-radius:4px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:11px">'
-              +(grade!==null?'<div style="font-size:10px;color:'+gradeColor+';font-weight:700;margin-top:2px">Grade '+grade+'</div>':'')
-              +'</td>';
-          }
-          return '<td style="padding:8px 10px;text-align:center">'
-            +(val!==undefined&&val!==''
-              ?'<div style="color:var(--text2);font-size:11px">'+val+(def.unit==='%'?'%':def.unit==='sec'?'s':' '+def.unit)+'</div><div style="font-size:11px;font-weight:700;color:'+gradeColor+'">Grade '+grade+'</div>'
-              :'<span style="color:var(--text3);font-size:11px">—</span>')
-            +'</td>';
-        }).join('')
-        +'<td style="padding:8px 10px;text-align:center;font-weight:700;font-size:14px;color:'+(r.weighted!==null?'#c4b5fd':'var(--text3)')+'">'+(r.weighted!==null?r.weighted.toFixed(2)+' / 3':'—')+'</td>'
-        +'</tr>';
-    }).join('')
-    +'</table></div>';
-}
 
 function getWeekRanges(){
   const sorted = [...(state.dates||[])].sort();
