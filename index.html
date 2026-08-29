@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -207,6 +207,83 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .spinner{width:32px;height:32px;border:3px solid #3a2868;border-top-color:#9d6fff;border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-overlay p{font-size:13px;color:var(--text2);}
+
+/* ===== LIGHT MODE (Fusion Markets palette) ===== */
+html[data-theme="light"] {
+  --bg:#ffffff; --surface:#ffffff; --surface2:#f3f0ff; --border:#ddd6fe; --border2:#c4b5fd;
+  --text:#1e1b4b; --text2:#4b4a6b; --text3:#6b6b8a;
+  --accent:#7c3aed; --accent2:#ede9fe;
+}
+html[data-theme="light"] body{background:#ffffff;}
+html[data-theme="light"] [style*="#0d0818"]{background-color:#ffffff !important;}
+html[data-theme="light"] [style*="#1a1035"]{background-color:#ffffff !important;}
+html[data-theme="light"] [style*="#160d2e"]{background-color:#f8f7ff !important;}
+html[data-theme="light"] [style*="#221545"]{background-color:#f3f0ff !important;}
+html[data-theme="light"] [style*="#1e1240"]{background-color:#f3f0ff !important;}
+html[data-theme="light"] [style*="#180d30"]{background-color:#f3f4f6 !important;}
+html[data-theme="light"] [style*="#1e1040"]{background-color:#f3f0ff !important;}
+html[data-theme="light"] [style*="#003d28"]{background-color:#d1fae5 !important;}
+html[data-theme="light"] [style*="#3d0818"]{background-color:#fee2e2 !important;}
+html[data-theme="light"] [style*="#3d2800"]{background-color:#fef3c7 !important;}
+html[data-theme="light"] [style*="#001838"]{background-color:#dbeafe !important;}
+html[data-theme="light"] [style*="#003040"]{background-color:#cffafe !important;}
+html[data-theme="light"] [style*="#3d1800"]{background-color:#ffedd5 !important;}
+html[data-theme="light"] [style*="#1e0845"]{background-color:#ede9fe !important;}
+html[data-theme="light"] [style*="#7a1030"]{background-color:#fecdd3 !important;}
+html[data-theme="light"] [style*="#00232e"]{background-color:#cffafe !important;}
+html[data-theme="light"] [style*="#2e1e00"]{background-color:#fef3c7 !important;}
+html[data-theme="light"] [style*="#3d1200"]{background-color:#ffedd5 !important;}
+html[data-theme="light"] [style*="#241344"]{background-color:#ede9fe !important;}
+html[data-theme="light"] [style*="#0a5038"]{background-color:#d1fae5 !important;}
+html[data-theme="light"] [style*="#1e0510"]{background-color:#fee2e2 !important;}
+html[data-theme="light"] [style*="#3a2800"]{background-color:#fef3c7 !important;}
+html[data-theme="light"] [style*="#041a10"]{background-color:#d1fae5 !important;}
+html[data-theme="light"] [style*="#0a2848"]{background-color:#dbeafe !important;}
+html[data-theme="light"] [style*="#3a2868"]{border-color:#ddd6fe !important;}
+html[data-theme="light"] [style*="#2d1f55"]{border-color:#e5e0f5 !important;}
+html[data-theme="light"] [style*="#4a3880"]{border-color:#c4b5fd !important;}
+html[data-theme="light"] [style*="#c4a8ff"]{color:#6d28d9 !important;}
+html[data-theme="light"] [style*="#c4b5fd"]{color:#5b21b6 !important;}
+html[data-theme="light"] [style*="#a78bfa"]{color:#6d28d9 !important;}
+html[data-theme="light"] [style*="#7a68a8"]{color:#5b5b7a !important;}
+html[data-theme="light"] [style*="#b8a8e8"]{color:#4b4a6b !important;}
+html[data-theme="light"] [style*="#9d6fff"]{color:#7c3aed !important;}
+html[data-theme="light"] [style*="#d4b8ff"]{color:#7c3aed !important;}
+html[data-theme="light"] [style*="#8878b8"]{color:#6b6b8a !important;}
+html[data-theme="light"] [style*="#8fb8ff"]{color:#2563eb !important;}
+html[data-theme="light"] [style*="#7c9dff"]{color:#2563eb !important;}
+/* Status badge classes defined in <style> (not inline) — override directly */
+html[data-theme="light"] .so-P{background:#d1fae5 !important;}
+html[data-theme="light"] .ci-P{background:#d1fae5 !important;}
+html[data-theme="light"] .so-A{background:#fee2e2 !important;}
+html[data-theme="light"] .ci-A{background:#fee2e2 !important;}
+html[data-theme="light"] .so-HD{background:#fef3c7 !important;}
+html[data-theme="light"] .ci-HD{background:#fef3c7 !important;}
+html[data-theme="light"] .so-UHD{background:#fef3c7 !important;}
+html[data-theme="light"] .ci-UHD{background:#fef3c7 !important;}
+html[data-theme="light"] .so-UT{background:#ede9fe !important;}
+html[data-theme="light"] .ci-UT{background:#ede9fe !important;}
+html[data-theme="light"] .so-L{background:#dbeafe !important;}
+html[data-theme="light"] .ci-L{background:#dbeafe !important;}
+html[data-theme="light"] .so-VL{background:#cffafe !important;}
+html[data-theme="light"] .ci-VL{background:#cffafe !important;}
+html[data-theme="light"] .so-UVL{background:#cffafe !important;}
+html[data-theme="light"] .ci-UVL{background:#cffafe !important;}
+html[data-theme="light"] .so-SL{background:#ffedd5 !important;}
+html[data-theme="light"] .ci-SL{background:#ffedd5 !important;}
+html[data-theme="light"] .so-EL{background:#ffedd5 !important;}
+html[data-theme="light"] .ci-EL{background:#ffedd5 !important;}
+html[data-theme="light"] .so-BL{background:#ede9fe !important;}
+html[data-theme="light"] .ci-BL{background:#ede9fe !important;}
+html[data-theme="light"] .so-Off{background:#f3f4f6 !important;}
+html[data-theme="light"] .ci-Off{background:#f3f4f6 !important;}
+html[data-theme="light"] .nav-tab{color:rgba(30,27,75,.65) !important;}
+html[data-theme="light"] .nav-tab:hover{color:rgba(30,27,75,.9) !important;}
+html[data-theme="light"] .nav-tab.active{color:#6d28d9 !important;border-bottom-color:#7c3aed !important;}
+html[data-theme="light"] nav{background:linear-gradient(90deg,#ffffff 0%,#f8f7ff 50%,#ffffff 100%) !important;border-bottom-color:#ddd6fe !important;box-shadow:0 4px 24px rgba(124,58,237,.12) !important;}
+html[data-theme="light"] .btn{color:#1e1b4b;}
+html[data-theme="light"] .btn.go{background:#7c3aed !important;color:#fff !important;}
+html[data-theme="light"] input,html[data-theme="light"] select,html[data-theme="light"] textarea{background:#ffffff !important;color:#1e1b4b !important;border-color:#ddd6fe !important;}
 </style>
 </head>
 <body>
@@ -358,6 +435,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <div class="nav-tab" id="nav-tab-settings" data-page="settings" onclick="showPage('settings')" style="display:none">⚙️ Settings</div>
       </div>
       <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;max-width:100%">
+        <button class="btn" id="btn-theme-toggle" onclick="toggleTheme()" title="Switch light/dark" style="flex:0 0 auto;background:rgba(157,111,255,.12);border-color:#9d6fff;color:#c4a8ff;padding:5px 9px">🌙</button>
         <button class="btn" id="btn-lock" onclick="toggleLock()" style="flex:0 0 auto;background:rgba(251,146,60,.15);border-color:#fb923c;color:#fb923c;min-width:80px">🔒 Sign In</button>
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin">
           <div style="display:flex;align-items:center;gap:5px;flex:0 0 auto;background:rgba(255,255,255,.07);border:1px solid rgba(196,168,255,.3);border-radius:6px;padding:4px 8px">
@@ -6466,8 +6544,28 @@ function confirmImport(){
   pendingLeaveImport = null;
 }
 
+// ─── THEME ───────────────────────────────────────────────────────────────────
+function toggleTheme(){
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme')==='light';
+  const next = isLight ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  try{ localStorage.setItem('att_theme', next); }catch(e){}
+  const btn = document.getElementById('btn-theme-toggle');
+  if(btn) btn.textContent = next==='light' ? '☀️' : '🌙';
+}
+function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('att_theme'); }catch(e){}
+  const theme = saved || 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('btn-theme-toggle');
+  if(btn) btn.textContent = theme==='light' ? '☀️' : '🌙';
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 function startApp(){
+  initTheme();
   document.getElementById('setup-screen').style.display='none';
   document.getElementById('app').style.display='block';
   showLoading('Loading attendance data…');
