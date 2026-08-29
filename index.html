@@ -6318,16 +6318,15 @@ function disableEditMode(){
 function syncLoginNameOptions(){
   const sel = document.getElementById('login-name');
   if(!sel) return;
-  const existing = new Set([...sel.options].map(o=>o.value).filter(Boolean));
-  const overrideNames = state.credentialOverrides ? Object.keys(state.credentialOverrides) : [];
-  overrideNames.forEach(name=>{
-    if(existing.has(name)) return;
-    const cred = getCred(name);
-    if(!cred) return; // removed access, don't list
-    const o = document.createElement('option');
-    o.value = name; o.textContent = name;
-    sel.appendChild(o);
-  });
+  // Rebuild fully from every name with a resolvable credential (base list +
+  // overrides), rather than trusting the static HTML list — that list was
+  // generated once and silently fell out of sync as employees were added.
+  const allNames = new Set([...Object.keys(ALL_CREDENTIALS), ...(state.credentialOverrides?Object.keys(state.credentialOverrides):[])]);
+  const withAccess = [...allNames].filter(name=>getCred(name)).sort();
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">— Select your name —</option>'
+    + withAccess.map(name=>'<option value="'+name+'">'+name+'</option>').join('');
+  if(currentVal && withAccess.includes(currentVal)) sel.value = currentVal;
 }
 function toggleLock(){
   if(isEditMode || currentUser){
