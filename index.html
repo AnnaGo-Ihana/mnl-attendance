@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -284,6 +284,32 @@ html[data-theme="light"] nav{background:linear-gradient(90deg,#ffffff 0%,#f8f7ff
 html[data-theme="light"] .btn{color:#1e1b4b;}
 html[data-theme="light"] .btn.go{background:#7c3aed !important;color:#fff !important;}
 html[data-theme="light"] input,html[data-theme="light"] select,html[data-theme="light"] textarea{background:#ffffff !important;color:#1e1b4b !important;border-color:#ddd6fe !important;}
+/* Classes with hardcoded backgrounds defined directly in <style>, not inline */
+html[data-theme="light"] input[type=date],html[data-theme="light"] select,html[data-theme="light"] input[type=text]{background:#ffffff !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] .mini-bar{background:#f3f0ff !important;}
+html[data-theme="light"] .sg{background:#ddd6fe !important;}
+html[data-theme="light"] .si{background:#ffffff !important;}
+html[data-theme="light"] .lead-card{background:#ffffff !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] .tctrl{background:#ffffff !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] thead th{background:#ffffff !important;color:#6d28d9 !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] .nc{background:#ffffff !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] .nc input:focus{background:#f3f0ff !important;}
+html[data-theme="light"] .tbc{background:#f8f7ff !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] .sumc{background:#f8f7ff !important;}
+html[data-theme="light"] .popup{background:#ffffff !important;border-color:#ddd6fe !important;box-shadow:0 24px 60px rgba(124,58,237,.15) !important;}
+html[data-theme="light"] .modal{background:#ffffff !important;border-color:#ddd6fe !important;box-shadow:0 24px 60px rgba(124,58,237,.15) !important;}
+html[data-theme="light"] .step-body code{background:#f3f0ff !important;color:#4338ca !important;}
+html[data-theme="light"] .role-Director{background:#dbeafe !important;}
+html[data-theme="light"] .role-TL{background:#d1fae5 !important;}
+html[data-theme="light"] .role-Deputy{background:#ede9fe !important;}
+html[data-theme="light"] .role-Manager{background:#d1fae5 !important;}
+html[data-theme="light"] .badge-CS{background:#dbeafe !important;}
+html[data-theme="light"] .badge-KYC{background:#ede9fe !important;}
+html[data-theme="light"] .badge-Funding{background:#d1fae5 !important;}
+html[data-theme="light"] .badge-Leadership{background:#ede9fe !important;}
+html[data-theme="light"] .badge-Marketing{background:#fce7f3 !important;}
+html[data-theme="light"] .badge-Operations{background:#dbeafe !important;}
+html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 </style>
 </head>
 <body>
@@ -6557,7 +6583,7 @@ function toggleTheme(){
 function initTheme(){
   let saved = null;
   try{ saved = localStorage.getItem('att_theme'); }catch(e){}
-  const theme = saved || 'dark';
+  const theme = saved || 'light';
   document.documentElement.setAttribute('data-theme', theme);
   const btn = document.getElementById('btn-theme-toggle');
   if(btn) btn.textContent = theme==='light' ? '☀️' : '🌙';
