@@ -1768,7 +1768,7 @@ async function loadFromDB(){
   }
   // One-time: backfill holiday notes across ALL existing timesheet entries
   // (not just ones the user happens to scroll to), for every non-Off status.
-  if(!state._backfilledHolidayNotes){
+  if(!state._backfilledHolidayNotesV2){
     let fixed2 = 0;
     if(state.timesheet){
       Object.keys(state.timesheet).forEach(k=>{
@@ -1783,15 +1783,13 @@ async function loadFromDB(){
         if(AUTO_NOTE_STATUSES2.includes(att)){
           const labels2 = {VL:'Paid VL', UVL:'Unpaid VL', SL:'Paid SL', A:'Absent', HD:'Paid Half Day', UHD:'Unpaid Half Day', EL:'Emergency Leave', BL:'Bereavement Leave'};
           const combo = holiday+' | '+labels2[att];
-          if(!entry.notes || entry.notes===holiday || entry.notes===labels2[att]){
-            entry.notes = combo; fixed2++;
-          }
-        } else if(!entry.notes){
+          if((entry.notes||'').trim() !== combo){ entry.notes = combo; fixed2++; }
+        } else if(!(entry.notes||'').trim()){
           entry.notes = holiday; fixed2++;
         }
       });
     }
-    state._backfilledHolidayNotes = true;
+    state._backfilledHolidayNotesV2 = true;
     if(fixed2 > 0){ try{ await saveToDB(); }catch(e){} }
   }
 }
@@ -3797,8 +3795,17 @@ function getTsEntry(emp, date){
   // this ensures entries created before this feature existed (or before a
   // holiday was added to PH_HOLIDAYS) still get correctly backfilled instead
   // of being silently skipped forever once _notesInit was already true.
-  if(holiday && att!=='Off' && !AUTO_NOTE_STATUSES.includes(att) && !entry._notesManual && (!entry.notes || entry.notes===holiday)){
-    entry.notes = holiday;
+  // As long as the note isn't manually set, force it to reflect the current
+  // holiday truth rather than only filling when completely empty — a stale
+  // leftover value (whitespace, an old auto-note, etc.) shouldn't block it.
+  if(holiday && att!=='Off' && !entry._notesManual){
+    if(AUTO_NOTE_STATUSES.includes(att)){
+      const base = AUTO_NOTE_LABELS[att];
+      const combo = holiday+' | '+base;
+      if((entry.notes||'').trim() !== combo) entry.notes = combo;
+    } else if(!(entry.notes||'').trim() || entry.notes===holiday){
+      entry.notes = holiday;
+    }
   }
   state.timesheet[k] = entry;
   return entry;
