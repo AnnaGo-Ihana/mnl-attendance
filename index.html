@@ -1647,7 +1647,7 @@ async function loadFromDB(){
   }
 }
 
-let _saveCount = 0;
+let _lastBackupAt = 0;
 let _pendingSave = false;
 async function saveToDB(){
   _pendingSave = true;
@@ -1663,9 +1663,12 @@ async function saveToDB(){
     _pendingSave = false; // only clear on confirmed success — a failed save
                           // means local edits are still ahead of the DB, so
                           // the poll must keep treating them as unsaved
-    // Auto-backup every 10 saves
-    _saveCount++;
-    if(_saveCount % 10 === 0){
+    // Auto-backup on a real time interval (not a session-only save counter,
+    // which reset to 0 on every page reload and rarely actually fired in
+    // practice — most sessions never reached 10 saves before a refresh).
+    const now = Date.now();
+    if(now - _lastBackupAt > 20*60*1000){ // every 20 minutes of activity
+      _lastBackupAt = now;
       try{
         await sbFetch('attendance?id=eq.backup', {
           method:'PATCH',
