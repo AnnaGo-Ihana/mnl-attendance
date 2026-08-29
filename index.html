@@ -1291,12 +1291,68 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
     </div>
 
     <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">👥 Manage Employees</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Department, hire date, active/resigned status, and default schedule — all in one place. For login access/password, use "Manage Team Access" below.</div>
+      <input type="text" id="emp-mgmt-search" placeholder="Search a name…" oninput="renderEmpMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:10px">
+      <div id="emp-mgmt-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🔑 Manage Team Access</div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Control who has Full access, Leave-only access (files leave under their own name only), OT-only access, or no access at all. Department and Active status are edited from an employee's cell in the Tracker instead.</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Control who has Full access, Leave-only access (files leave under their own name only), OT-only access, or no access at all.</div>
       <input type="text" id="access-mgmt-search" placeholder="Search a name…" oninput="renderAccessMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:10px">
       <div id="access-mgmt-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- EMPLOYEE PROFILE EDIT MODAL (admin-only) -->
+<div class="ov" id="emp-profile-modal" onclick="if(event.target===this)closeEmpProfile()">
+  <div class="popup" style="width:360px">
+    <h3 id="emp-profile-name">Edit Employee</h3>
+    <label style="font-size:10px;color:var(--text3);display:block;margin:12px 0 5px">Role</label>
+    <input type="text" id="emp-profile-role" style="width:100%;margin-bottom:10px">
+    <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Team</label>
+    <select id="emp-profile-team" style="width:100%;margin-bottom:10px">
+      <option value="CS">CS</option><option value="KYC">KYC</option><option value="Funding">Funding</option>
+      <option value="Marketing">Marketing</option><option value="Operations">Operations</option>
+      <option value="Finance">Finance</option><option value="Leadership">Leadership</option>
+    </select>
+    <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Department (for leadership)</label>
+    <input type="text" id="emp-profile-dept" placeholder="e.g. CS, All Departments" style="width:100%;margin-bottom:10px">
+    <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Hire Date</label>
+    <input type="date" id="emp-profile-startdate" style="width:100%;margin-bottom:10px">
+    <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Default Schedule (shift)</label>
+    <input type="text" id="emp-profile-schedule" placeholder="e.g. 9AM-6PM" style="width:100%;margin-bottom:12px">
+
+    <div style="padding:10px 12px;background:rgba(255,92,122,.06);border:1px solid rgba(255,92,122,.25);border-radius:8px;margin-bottom:14px">
+      <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ff5c7a;display:block;margin-bottom:6px">🚫 Employment Status</label>
+      <div id="emp-profile-active-view">
+        <select id="emp-profile-inactive-reason" style="width:100%;margin-bottom:6px">
+          <option value="">— Select reason —</option>
+          <option value="Resigned">Resigned</option>
+          <option value="Terminated">Terminated</option>
+          <option value="Did Not Finish Contract">Did Not Finish Contract</option>
+          <option value="End of Contract">End of Contract</option>
+          <option value="Other">Other</option>
+        </select>
+        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">End Date</label>
+        <input type="date" id="emp-profile-enddate" style="width:100%;margin-bottom:8px">
+        <button class="btn danger" onclick="markEmpInactiveFromProfile()" style="width:100%">Mark Inactive</button>
+      </div>
+      <div id="emp-profile-inactive-view" style="display:none">
+        <div style="font-size:12px;color:#ff5c7a;margin-bottom:8px" id="emp-profile-inactive-summary"></div>
+        <button class="btn light" onclick="reactivateEmpFromProfile()" style="width:100%">✅ Reactivate Employee</button>
+      </div>
+    </div>
+
+    <button class="btn light" onclick="closeEmpProfile();openAccessEdit(_empProfileName)" style="width:100%;margin-bottom:8px">🔑 Edit Login Access / Password →</button>
+
+    <div class="pa">
+      <button class="btn go" onclick="saveEmpProfile()" style="flex:2">Save</button>
+      <button class="btn light" onclick="closeEmpProfile()">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -1691,7 +1747,7 @@ function showPage(id){
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
   if(id==='leaderboard')initLeaderboardPage();
-  if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); }
+  if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); renderEmpMgmtList(); }
   if(id==='timesheet'){
     populateTsEmpFilter();
     const tf=document.getElementById('ts-date-from');
@@ -1966,6 +2022,81 @@ function latestCutoff(){
 }
 
 // ─── MANAGE TEAM ACCESS (admin-only) ────────────────────────────────────────
+// ─── MANAGE EMPLOYEES (admin-only) ──────────────────────────────────────────
+function renderEmpMgmtList(){
+  const wrap = document.getElementById('emp-mgmt-list');
+  if(!wrap) return;
+  const q = (document.getElementById('emp-mgmt-search').value||'').toLowerCase().trim();
+  let emps = [...(state.employees||[])].sort((a,b)=>a.name.localeCompare(b.name));
+  if(q) emps = emps.filter(e=>e.name.toLowerCase().includes(q));
+  if(!emps.length){ wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px">No matches.</div>'; return; }
+  wrap.innerHTML = emps.map(e=>{
+    const statusColor = e.status==='Inactive' ? '#ff5c7a' : '#00e896';
+    const statusText = e.status==='Inactive' ? 'Inactive' : 'Active';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#0d0818;border:1px solid #2d1f55;border-radius:6px">'
+      +'<div><span style="font-size:12px;color:var(--text)">'+e.name+'</span><span style="font-size:10px;color:var(--text3);margin-left:6px">'+(e.team||'')+'</span></div>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;font-weight:700;color:'+statusColor+'">'+statusText+'</span>'
+      +'<button onclick="openEmpProfile(\''+e.name.replace(/'/g,"\\'")+'\')" style="background:rgba(196,168,255,.15);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Edit</button>'
+      +'</div></div>';
+  }).join('');
+}
+let _empProfileName = null;
+function openEmpProfile(name){
+  if(!(currentUser && currentUser.isAdmin)) return;
+  const emp = state.employees.find(e=>e.name===name);
+  if(!emp) return;
+  _empProfileName = name;
+  document.getElementById('emp-profile-name').textContent = 'Edit — '+name;
+  document.getElementById('emp-profile-role').value = emp.role||'';
+  document.getElementById('emp-profile-team').value = emp.team||'CS';
+  document.getElementById('emp-profile-dept').value = emp.dept||'';
+  document.getElementById('emp-profile-startdate').value = emp.startDate||'';
+  document.getElementById('emp-profile-schedule').value = emp.defaultSchedule||'';
+
+  const activeView = document.getElementById('emp-profile-active-view');
+  const inactiveView = document.getElementById('emp-profile-inactive-view');
+  if(emp.status==='Inactive'){
+    activeView.style.display='none';
+    inactiveView.style.display='block';
+    document.getElementById('emp-profile-inactive-summary').innerHTML =
+      '<strong>'+(emp.inactiveReason||'Inactive')+'</strong>'+(emp.inactiveDate?' — effective '+dd(emp.inactiveDate):'');
+  } else {
+    activeView.style.display='block';
+    inactiveView.style.display='none';
+    document.getElementById('emp-profile-inactive-reason').value='';
+    document.getElementById('emp-profile-enddate').value='';
+  }
+  document.getElementById('emp-profile-modal').classList.add('open');
+}
+function closeEmpProfile(){
+  document.getElementById('emp-profile-modal').classList.remove('open');
+}
+function saveEmpProfile(){
+  if(!(currentUser && currentUser.isAdmin) || !_empProfileName) return;
+  const emp = state.employees.find(e=>e.name===_empProfileName);
+  if(!emp) return;
+  emp.role = document.getElementById('emp-profile-role').value.trim();
+  emp.team = document.getElementById('emp-profile-team').value;
+  emp.dept = document.getElementById('emp-profile-dept').value.trim();
+  emp.startDate = document.getElementById('emp-profile-startdate').value;
+  emp.defaultSchedule = document.getElementById('emp-profile-schedule').value.trim();
+  scheduleSave();
+  renderTable(); renderDash(); renderEmpMgmtList();
+  closeEmpProfile();
+  toast('✅ Profile updated for '+_empProfileName);
+}
+function markEmpInactiveFromProfile(){
+  if(!_empProfileName) return;
+  const reason = document.getElementById('emp-profile-inactive-reason').value;
+  const effDate = document.getElementById('emp-profile-enddate').value;
+  if(setEmpInactive(_empProfileName, reason, effDate)){ closeEmpProfile(); renderEmpMgmtList(); }
+}
+function reactivateEmpFromProfile(){
+  if(!_empProfileName) return;
+  if(setEmpActive(_empProfileName)){ closeEmpProfile(); renderEmpMgmtList(); }
+}
+
 function allKnownNames(){
   const names = new Set();
   Object.keys(ALL_CREDENTIALS).forEach(n=>names.add(n));
@@ -2606,29 +2737,37 @@ function delEmp(){
   state.employees=state.employees.filter(e=>e.name!==pEmp);
   closePop();renderTable();renderDash();scheduleSave();
 }
+function setEmpInactive(name, reason, effDate){
+  if(!reason){toast('Select a reason');return false;}
+  if(!effDate){toast('Select an effective date');return false;}
+  const empObj = state.employees.find(e=>e.name===name);
+  if(!empObj)return false;
+  empObj.status = 'Inactive';
+  empObj.inactiveReason = reason;
+  empObj.inactiveDate = effDate;
+  renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
+  toast('🚫 '+name+' marked inactive');
+  return true;
+}
+function setEmpActive(name){
+  const empObj = state.employees.find(e=>e.name===name);
+  if(!empObj)return false;
+  empObj.status = 'Active';
+  delete empObj.inactiveReason;
+  delete empObj.inactiveDate;
+  renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
+  toast('✅ '+name+' reactivated');
+  return true;
+}
 function markEmpInactive(){
   if(!pEmp)return;
   const reason = document.getElementById('pop-inactive-reason').value;
   const effDate = document.getElementById('pop-inactive-date').value;
-  if(!reason){toast('Select a reason');return;}
-  if(!effDate){toast('Select an effective date');return;}
-  const empObj = state.employees.find(e=>e.name===pEmp);
-  if(!empObj)return;
-  empObj.status = 'Inactive';
-  empObj.inactiveReason = reason;
-  empObj.inactiveDate = effDate;
-  closePop();renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
-  toast('🚫 '+pEmp+' marked inactive');
+  if(setEmpInactive(pEmp, reason, effDate)) closePop();
 }
 function reactivateEmp(){
   if(!pEmp)return;
-  const empObj = state.employees.find(e=>e.name===pEmp);
-  if(!empObj)return;
-  empObj.status = 'Active';
-  delete empObj.inactiveReason;
-  delete empObj.inactiveDate;
-  closePop();renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
-  toast('✅ '+pEmp+' reactivated');
+  if(setEmpActive(pEmp)) closePop();
 }
 function renderTimesheet_ifOpen(){
   const activePage=document.querySelector('.page.active');
