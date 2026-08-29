@@ -3446,7 +3446,10 @@ function recalcAllNDNotes(){
       e.nd = nd;
       if(!e._notesManual){
         const issues = detectAttendanceIssues(e.schedule, e.timeIn, e.timeOut);
-        e.notes = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
+        const issueNote = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
+        const holiday = getPHHoliday(d);
+        const att = state.attendance[gk(emp.name,d)]||'';
+        e.notes = (holiday && att!=='Off') ? (issueNote ? holiday+' | '+issueNote : holiday) : issueNote;
       }
       updated++;
     });
@@ -4157,13 +4160,20 @@ function renderTimesheet(){
           return ct?ct.timeIn:'';
         })();
         const _issues = _ti ? detectAttendanceIssues(entry.schedule, _ti, entry.timeOut) : [];
-        const _note = _issues.length>0 ? _issues.map(i=>i.note).join(' | ') : '';
+        const _holiday = getPHHoliday(d);
+        // If there's a holiday and no actual late/UT/OT issue, the note should
+        // stay the holiday name — never blank it out just because there's no
+        // detected issue. Only append an issue note alongside it if one exists.
+        const _issueNote = _issues.length>0 ? _issues.map(i=>i.note).join(' | ') : '';
+        const _note = _holiday && attendance!=='Off'
+          ? (_issueNote ? _holiday+' | '+_issueNote : _holiday)
+          : _issueNote;
         const _k = tsk(emp.name,d);
         const _stored = state.timesheet[_k];
         // Only auto-update if: no manual note OR note is empty OR note is a previous auto-note
         const _isAutoNote = !_stored?._notesManual || !_stored?.notes || 
           /^(\d+min|\d+\.?\d*hr).*?(Late|Undertime|OT)/i.test(_stored?.notes||'');
-        if(_stored && _isAutoNote && _stored.notes !== _note){
+        if(_stored && _isAutoNote && (_stored.notes||'').trim() !== _note){
           _stored.notes = _note;
           entry.notes = _note;
           // Save immediately so sync doesn't overwrite
