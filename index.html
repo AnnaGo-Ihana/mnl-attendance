@@ -1588,6 +1588,12 @@ async function loadFromDB(){
     state.cutoffs = [{id:'co_1', start:'2026-08-31', end:'2026-09-13'}];
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: the Aug 17-30 cutoff (the one actually active right now) was
+  // missing — only the following Aug 31-Sep 13 period had been seeded.
+  if(!state.cutoffs.find(c=>c.start==='2026-08-17')){
+    state.cutoffs.push({id:'co_0', start:'2026-08-17', end:'2026-08-30'});
+    try{ await saveToDB(); }catch(e){}
+  }
   if(state.leaveBalanceNote === undefined){
     state.leaveBalanceNote = "Last updated: Aug 26, 2026 for last week's cutoff. Will refresh after the next payout.";
     try{ await saveToDB(); }catch(e){}
@@ -2049,11 +2055,12 @@ function currentCutoff(){
   const sorted = [...state.cutoffs].sort((a,b)=>a.start.localeCompare(b.start));
   const active = sorted.find(c=>today>=c.start && today<=c.end);
   if(active) return active;
-  // No exact match — return the most recent one that's already started,
-  // or the earliest upcoming one if none have started yet.
+  // No exact match — return the most recent one that's already started.
+  // A cutoff that hasn't started yet is NOT current, even if it's the only
+  // one that exists — it must actually be reached before it takes effect.
   const started = sorted.filter(c=>c.start<=today);
   if(started.length) return started[started.length-1];
-  return sorted[0];
+  return null;
 }
 
 function latestCutoff(){
