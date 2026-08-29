@@ -1795,7 +1795,7 @@ async function loadFromDB(){
   // One-time: clear stale Time In/Out on existing "Off" (rest day) entries —
   // these previously kept whatever time was auto-filled before the day got
   // marked Off, which incorrectly implied someone clocked in on their day off.
-  if(!state._clearedOffDayTimes){
+  if(!state._clearedOffDayTimesV2){
     let fixed3 = 0;
     if(state.timesheet){
       Object.keys(state.timesheet).forEach(k=>{
@@ -1803,13 +1803,21 @@ async function loadFromDB(){
         const emp = parts[1], date = parts[2];
         const att = (state.attendance||{})[emp+'||'+date] || '';
         const entry = state.timesheet[k];
-        if(att==='Off' && !entry._timesManual && (entry.timeIn || entry.timeOut)){
-          entry.timeIn = ''; entry.timeOut = ''; entry.nd = 0;
-          fixed3++;
+        if(att==='Off'){
+          let changed = false;
+          if(!entry._timesManual && (entry.timeIn || entry.timeOut || entry.nd)){
+            entry.timeIn = ''; entry.timeOut = ''; entry.nd = 0;
+            changed = true;
+          }
+          if(!entry._notesManual && (entry.notes || '').trim() === ''){
+            entry.notes = 'Rest Day';
+            changed = true;
+          }
+          if(changed) fixed3++;
         }
       });
     }
-    state._clearedOffDayTimes = true;
+    state._clearedOffDayTimesV2 = true;
     if(fixed3 > 0){ try{ await saveToDB(); }catch(e){} }
   }
 }
@@ -3815,6 +3823,9 @@ function getTsEntry(emp, date){
       if(!entry._timesManual){
         entry.timeIn = ''; entry.timeOut = ''; entry.nd = 0;
       }
+      if(!entry._notesManual && (!entry.notes || entry.notes==='Rest Day')){
+        entry.notes = 'Rest Day';
+      }
     } else if(!entry._notesManual && !entry.notes){
       // Only set if notes is completely empty
       if(att==='L') entry.notes = 'Late';
@@ -4236,6 +4247,8 @@ function renderTimesheet(){
       }
       // Skip ND for VL/SL/Absent (not for holidays - people still work on holidays)
       if(['VL','SL','A'].includes(attendance) && !getPHHoliday(d)) displayND = 0;
+      // Off (rest day) never has ND regardless of holiday — no one worked that day
+      if(attendance==='Off') displayND = 0;
       // Auto-reset _ndManual if stored nd matches schedule default (was auto-set before)
       const schedDefault = SCHEDULE_ND[schedForND]!==undefined?SCHEDULE_ND[schedForND]:0;
       if(entry._ndManual && entry.nd === schedDefault) entry._ndManual = false;
