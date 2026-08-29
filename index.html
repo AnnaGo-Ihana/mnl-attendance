@@ -1612,6 +1612,33 @@ async function loadFromDB(){
     state.employees.push({name:'Geraldine Gallano', team:'HouseKeeping & Admin', role:'', dept:'HouseKeeping & Admin'});
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: purge old Apr-Jul 2026 Tracker/Timesheet data (confirmed stale
+  // by Anna). Removes those date columns entirely plus all attendance and
+  // timesheet entries tied to them, for every employee.
+  if(!state._purgedAprJul2026){
+    const OLD_START = '2026-04-01', OLD_END = '2026-07-31';
+    const oldDates = (state.dates||[]).filter(d=>d>=OLD_START && d<=OLD_END);
+    if(oldDates.length){
+      const oldDateSet = new Set(oldDates);
+      state.dates = state.dates.filter(d=>!oldDateSet.has(d));
+      if(state.attendance){
+        Object.keys(state.attendance).forEach(k=>{
+          const date = k.split('||')[1];
+          if(oldDateSet.has(date)) delete state.attendance[k];
+        });
+      }
+      if(state.timesheet){
+        Object.keys(state.timesheet).forEach(k=>{
+          // timesheet keys are 'ts||emp||date' — date is the 3rd segment
+          const parts = k.split('||');
+          const date = parts[2];
+          if(oldDateSet.has(date)) delete state.timesheet[k];
+        });
+      }
+    }
+    state._purgedAprJul2026 = true;
+    try{ await saveToDB(); }catch(e){}
+  }
 }
 
 let _saveCount = 0;
@@ -1757,14 +1784,21 @@ function showPage(id){
     populateTsEmpFilter();
     const tf=document.getElementById('ts-date-from');
     const tt=document.getElementById('ts-date-to');
-    if(tf&&!tf.value){
-      // Default to first and last date in state
-      const sorted=[...state.dates].sort();
-      tf.value = sorted[0]||'2026-04-27';
-    }
-    if(tt&&!tt.value){
-      const sorted=[...state.dates].sort();
-      tt.value = sorted[sorted.length-1]||'2026-05-10';
+    // Always default to the current cutoff period, not a stale stuck value —
+    // matches the same "always reset to something sensible" fix used for Leaves.
+    const cutoff = currentCutoff();
+    if(cutoff){
+      if(tf) tf.value = cutoff.start;
+      if(tt) tt.value = cutoff.end;
+    } else {
+      if(tf&&!tf.value){
+        const sorted=[...state.dates].sort();
+        tf.value = sorted[0]||'';
+      }
+      if(tt&&!tt.value){
+        const sorted=[...state.dates].sort();
+        tt.value = sorted[sorted.length-1]||'';
+      }
     }
     // Auto-fill schedules silently on first load
     autoPopulateSchedules(true);
