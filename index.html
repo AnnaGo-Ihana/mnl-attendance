@@ -448,6 +448,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <option value="Marketing">Marketing</option>
         <option value="Operations">Operations</option>
         <option value="Finance">Finance</option>
+        <option value="HouseKeeping & Admin">HouseKeeping & Admin</option>
       </select>
       <input type="text" id="nf" placeholder="Search name…" oninput="renderTable()" style="width:155px">
       <select id="sf" onchange="renderTable()">
@@ -607,6 +608,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
           <option value="Operations">Operations</option>
           <option value="Finance">Finance</option>
           <option value="Leadership">Leadership</option>
+          <option value="HouseKeeping & Admin">HouseKeeping & Admin</option>
         </select>
       </div>
       <label style="font-size:10px;color:var(--text3);display:block;margin-top:5px">Department (for leadership)</label>
@@ -672,6 +674,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <option value="Operations">Operations</option>
       <option value="Finance">Finance</option>
       <option value="Leadership">Leadership</option>
+      <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
     </select>
     <label>Role <span style="color:var(--text3);font-weight:400">(optional — for leadership)</span></label>
     <select id="ne-role">
@@ -692,6 +695,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
         <option value="Marketing">Marketing</option>
         <option value="Operations">Operations</option>
         <option value="Finance">Finance</option>
+        <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
         <option value="All Departments">All Departments</option>
         <option value="custom">Custom…</option>
       </select>
@@ -730,6 +734,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <option value="Marketing">Marketing</option>
       <option value="Operations">Operations</option>
       <option value="Finance">Finance</option>
+      <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
     </select>
     <select id="ts-emp-filter" onchange="renderTimesheet()" style="min-width:160px">
       <option value="">All Employees</option>
@@ -813,6 +818,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
           <option value="Marketing">Marketing</option>
           <option value="Operations">Operations</option>
           <option value="Finance">Finance</option>
+          <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
         </select>
       </div>
     </div>
@@ -924,6 +930,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <option value="Marketing">Marketing</option>
       <option value="Operations">Operations</option>
       <option value="Finance">Finance</option>
+      <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
     </select>
     <div style="display:flex;align-items:center;gap:6px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 10px">
       <span style="font-size:11px;color:var(--text3)">📅</span>
@@ -1176,6 +1183,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <option value="Marketing">Marketing</option>
       <option value="Operations">Operations</option>
       <option value="Finance">Finance</option>
+      <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
     </select>
     <select id="leaves-status-filter" onchange="renderLeaves()" style="min-width:120px">
       <option value="">All Status</option>
@@ -1318,6 +1326,7 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
       <option value="CS">CS</option><option value="KYC">KYC</option><option value="Funding">Funding</option>
       <option value="Marketing">Marketing</option><option value="Operations">Operations</option>
       <option value="Finance">Finance</option><option value="Leadership">Leadership</option>
+      <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
     </select>
     <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Department (for leadership)</label>
     <input type="text" id="emp-profile-dept" placeholder="e.g. CS, All Departments" style="width:100%;margin-bottom:10px">
@@ -1615,6 +1624,13 @@ async function loadFromDB(){
     }
   });
   if(resignedFixed){ try{ await saveToDB(); }catch(e){} }
+  // One-time: add Geraldine Gallano — she had login credentials but was
+  // missing from the employee roster entirely (HouseKeeping & Admin)
+  if(!(state.employees||[]).find(e=>e.name==='Geraldine Gallano')){
+    if(!state.employees) state.employees = [];
+    state.employees.push({name:'Geraldine Gallano', team:'HouseKeeping & Admin', role:'', dept:'HouseKeeping & Admin'});
+    try{ await saveToDB(); }catch(e){}
+  }
 }
 
 let _saveCount = 0;
@@ -1886,7 +1902,8 @@ function renderDash(){
   const teams=[
     {id:'CS',label:'Customer Service'},{id:'KYC',label:'Know Your Customer'},
     {id:'Funding',label:'Funding Team'},{id:'Marketing',label:'Marketing'},
-    {id:'Operations',label:'Operations'},{id:'Finance',label:'Finance'}
+    {id:'Operations',label:'Operations'},{id:'Finance',label:'Finance'},
+    {id:'HouseKeeping & Admin',label:'HouseKeeping & Admin'}
   ];
   document.getElementById('team-grid').innerHTML=teams.map(td=>{
     const emps=activeEmployees().filter(e=>e.team===td.id);
@@ -2960,9 +2977,9 @@ function renderLeaveSummary() {
   const wrap = document.getElementById('leave-summary');
   if(!wrap) return;
 
-  const TEAM_COLORS = {CS:'#1a6b9a',KYC:'#6b3a9a',Funding:'#1a7a4a',Marketing:'#9a2060',Operations:'#1a5a7a',Finance:'#5a6a10'};
-  const TEAM_BG = {CS:'#e4f2f8',KYC:'#f0eafc',Funding:'#e4f8ec',Marketing:'#fce8f4',Operations:'#e4f0f8',Finance:'#f4f8e0'};
-  const teams = ['CS','KYC','Funding','Marketing','Operations','Finance'];
+  const TEAM_COLORS = {CS:'#1a6b9a',KYC:'#6b3a9a',Funding:'#1a7a4a',Marketing:'#9a2060',Operations:'#1a5a7a',Finance:'#5a6a10','HouseKeeping & Admin':'#7a4a1a'};
+  const TEAM_BG = {CS:'#e4f2f8',KYC:'#f0eafc',Funding:'#e4f8ec',Marketing:'#fce8f4',Operations:'#e4f0f8',Finance:'#f4f8e0','HouseKeeping & Admin':'#f8ecdc'};
+  const teams = ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
 
   // Top strip — overall leave health
   let totalVLall=0,totalSLall=0,lowVLall=0,lowSLall=0,empCount=0;
@@ -3236,7 +3253,7 @@ function applyLeaveOverrides(){
     return (ai===-1?999:ai)-(bi===-1?999:bi);
   });
   // Sort non-leaders by team then name
-  const teamOrder = ['CS','KYC','Funding','Marketing','Operations','Finance'];
+  const teamOrder = ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
   others.sort((a,b)=>{
     const ta=teamOrder.indexOf(a.team), tb=teamOrder.indexOf(b.team);
     const to=(ta===-1?99:ta)-(tb===-1?99:tb);
@@ -4328,7 +4345,8 @@ const OT_DEPTS = ['Manila Management','Client Success','Banking and Payments','K
 const OT_DEPT_MAP = {
   'CS':'Client Success','KYC':'KYC','Funding':'Funding',
   'Marketing':'Marketing','Operations':'Operations','Finance':'Finance',
-  'Leadership':'Manila Management','Banking and Payments':'Banking and Payments'
+  'Leadership':'Manila Management','Banking and Payments':'Banking and Payments',
+  'HouseKeeping & Admin':'HouseKeeping & Admin'
 };
 
 function otKey(id){ return 'ot_'+id; }
@@ -4686,7 +4704,7 @@ function exportOTCSV(){
 }
 
 // ─── DEPARTMENT MANAGEMENT ───────────────────────────────────────────────────
-const DEFAULT_DEPTS = ['CS','KYC','Funding','Marketing','Operations','Finance','Leadership'];
+const DEFAULT_DEPTS = ['CS','KYC','Funding','Marketing','Operations','Finance','Leadership','HouseKeeping & Admin'];
 
 function getDepts(){
   const custom = state._customDepts || [];
