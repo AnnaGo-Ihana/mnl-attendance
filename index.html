@@ -1766,6 +1766,34 @@ async function loadFromDB(){
     state._repairedNotesManual = true;
     if(fixed > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: backfill holiday notes across ALL existing timesheet entries
+  // (not just ones the user happens to scroll to), for every non-Off status.
+  if(!state._backfilledHolidayNotes){
+    let fixed2 = 0;
+    if(state.timesheet){
+      Object.keys(state.timesheet).forEach(k=>{
+        const parts = k.split('||');
+        const emp = parts[1], date = parts[2];
+        const holiday = PH_HOLIDAYS[date];
+        if(!holiday) return;
+        const entry = state.timesheet[k];
+        const att = (state.attendance||{})[emp+'||'+date] || '';
+        const AUTO_NOTE_STATUSES2 = ['VL','UVL','SL','A','HD','UHD','EL','BL'];
+        if(att==='Off' || entry._notesManual) return;
+        if(AUTO_NOTE_STATUSES2.includes(att)){
+          const labels2 = {VL:'Paid VL', UVL:'Unpaid VL', SL:'Paid SL', A:'Absent', HD:'Paid Half Day', UHD:'Unpaid Half Day', EL:'Emergency Leave', BL:'Bereavement Leave'};
+          const combo = holiday+' | '+labels2[att];
+          if(!entry.notes || entry.notes===holiday || entry.notes===labels2[att]){
+            entry.notes = combo; fixed2++;
+          }
+        } else if(!entry.notes){
+          entry.notes = holiday; fixed2++;
+        }
+      });
+    }
+    state._backfilledHolidayNotes = true;
+    if(fixed2 > 0){ try{ await saveToDB(); }catch(e){} }
+  }
 }
 
 let _lastBackupAt = 0;
@@ -3444,6 +3472,9 @@ function toggleAllComplete(checked, emps, dates){
       const live=getTsEntry(emp.name,d);
       const att=state.attendance[gk(emp.name,d)]||'';
       if(['VL','SL','A'].includes(att)||live.schedule==='RD') return; // skip leave/RD
+      const holiday = getPHHoliday(d);
+      const k = tsk(emp.name,d);
+      const isManual = state.timesheet[k] && state.timesheet[k]._notesManual;
       if(checked){
         const ct=getScheduleClockTimes(live.schedule);
         if(ct){
@@ -3451,13 +3482,13 @@ function toggleAllComplete(checked, emps, dates){
           setTsEntry(emp.name,d,'timeOut',ct.timeOut);
           const b=SCHEDULE_ND[live.schedule]||0;
           setTsEntry(emp.name,d,'nd',calcActualND(live.schedule,ct.timeIn,ct.timeOut,b));
-          setTsEntry(emp.name,d,'notes','');
+          if(!isManual) setTsEntry(emp.name,d,'notes', holiday || '');
           count++;
         }
       } else {
         setTsEntry(emp.name,d,'timeIn','');
         setTsEntry(emp.name,d,'timeOut','');
-        setTsEntry(emp.name,d,'notes','');
+        if(!isManual) setTsEntry(emp.name,d,'notes', holiday || '');
       }
     });
   });
@@ -3468,6 +3499,7 @@ function toggleAllComplete(checked, emps, dates){
 
 function toggleCompleteAttendance(chk, empName, date){
   const entry = getTsEntry(empName, date);
+  const holiday = getPHHoliday(date);
   if(chk.checked){
     // Auto-fill with exact schedule times
     const ct = getScheduleClockTimes(entry.schedule);
@@ -3478,15 +3510,17 @@ function toggleCompleteAttendance(chk, empName, date){
     const base = SCHEDULE_ND[entry.schedule]!==undefined?SCHEDULE_ND[entry.schedule]:0;
     const nd   = calcActualND(entry.schedule, ct.timeIn, ct.timeOut, base);
     setTsEntry(empName, date, 'nd', nd);
-    // Clear any auto-generated late/OT notes
+    // Clear any auto-generated late/OT notes — but preserve the holiday note
+    // instead of wiping it, since Present-on-a-holiday should still show it.
     const k = tsk(empName,date);
-    if(state.timesheet[k] && !state.timesheet[k]._notesManual) setTsEntry(empName,date,'notes','');
+    if(state.timesheet[k] && !state.timesheet[k]._notesManual) setTsEntry(empName,date,'notes', holiday || '');
     toast('✅ Complete attendance for '+empName.split(' ')[0]);
   } else {
     setTsEntry(empName, date, 'timeIn', '');
     setTsEntry(empName, date, 'timeOut', '');
     setTsEntry(empName, date, 'nd', SCHEDULE_ND[entry.schedule]||0);
-    setTsEntry(empName, date, 'notes', '');
+    const k = tsk(empName,date);
+    if(!(state.timesheet[k] && state.timesheet[k]._notesManual)) setTsEntry(empName,date,'notes', holiday || '');
   }
   renderTimesheet();
   scheduleSave();
@@ -3763,7 +3797,7 @@ function getTsEntry(emp, date){
   // this ensures entries created before this feature existed (or before a
   // holiday was added to PH_HOLIDAYS) still get correctly backfilled instead
   // of being silently skipped forever once _notesInit was already true.
-  if(holiday && !AUTO_NOTE_STATUSES.includes(att) && !entry._notesManual && (!entry.notes || entry.notes===holiday)){
+  if(holiday && att!=='Off' && !AUTO_NOTE_STATUSES.includes(att) && !entry._notesManual && (!entry.notes || entry.notes===holiday)){
     entry.notes = holiday;
   }
   state.timesheet[k] = entry;
