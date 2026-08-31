@@ -1478,13 +1478,17 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 <div class="ov" id="new-cutoff-modal" onclick="if(event.target===this)closeNewCutoffModal()">
   <div class="modal" style="width:360px">
     <h3>📦 Start New Cutoff</h3>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:14px">This just labels a new period for reference — it doesn't archive or move any attendance data.</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px">This just labels a new period for reference — it doesn't archive or move any attendance data. Activates immediately once saved.</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div class="so" id="nc-mode-auto" onclick="setNewCutoffMode('auto')" style="flex:1;background:#1a1035;color:var(--text2)">🔁 Auto-match next</div>
+      <div class="so" id="nc-mode-manual" onclick="setNewCutoffMode('manual')" style="flex:1;background:#1a1035;color:var(--text2)">✏️ Manual dates</div>
+    </div>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Start Date</label>
-    <input type="date" id="new-cutoff-start" style="width:100%;margin-bottom:12px">
+    <input type="date" id="new-cutoff-start" onchange="setNewCutoffMode('manual')" style="width:100%;margin-bottom:12px">
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">End Date</label>
-    <input type="date" id="new-cutoff-end" style="width:100%;margin-bottom:20px">
+    <input type="date" id="new-cutoff-end" onchange="setNewCutoffMode('manual')" style="width:100%;margin-bottom:20px">
     <div class="pa">
-      <button class="btn go" onclick="saveNewCutoff()" style="flex:2">Save</button>
+      <button class="btn go" onclick="saveNewCutoff()" style="flex:2">Save &amp; Activate</button>
       <button class="btn light" onclick="closeNewCutoffModal()">Cancel</button>
     </div>
   </div>
@@ -2229,13 +2233,19 @@ function renderDash(){
 // ─── CUTOFF PERIODS (informational only — no data archiving) ──────────────
 function currentCutoff(){
   if(!state.cutoffs || !state.cutoffs.length) return null;
+  // A manually-activated cutoff always wins — starting a new cutoff should
+  // take effect immediately when clicked, not wait for the calendar date to
+  // actually arrive.
+  if(state.activeCutoffId){
+    const active = state.cutoffs.find(c=>c.id===state.activeCutoffId);
+    if(active) return active;
+  }
+  // Fallback for state that predates explicit activation: derive from today's
+  // date, preferring the most recent cutoff that has already started.
   const today = fmt(new Date());
   const sorted = [...state.cutoffs].sort((a,b)=>a.start.localeCompare(b.start));
-  const active = sorted.find(c=>today>=c.start && today<=c.end);
-  if(active) return active;
-  // No exact match — return the most recent one that's already started.
-  // A cutoff that hasn't started yet is NOT current, even if it's the only
-  // one that exists — it must actually be reached before it takes effect.
+  const dateMatch = sorted.find(c=>today>=c.start && today<=c.end);
+  if(dateMatch) return dateMatch;
   const started = sorted.filter(c=>c.start<=today);
   if(started.length) return started[started.length-1];
   return null;
@@ -2442,7 +2452,24 @@ function openNewCutoffModal(){
   }
   document.getElementById('new-cutoff-start').value = fmt(sugStart);
   document.getElementById('new-cutoff-end').value = fmt(sugEnd);
+  setNewCutoffMode('auto');
   document.getElementById('new-cutoff-modal').classList.add('open');
+}
+function setNewCutoffMode(mode){
+  document.getElementById('nc-mode-auto').classList.toggle('sel', mode==='auto');
+  document.getElementById('nc-mode-manual').classList.toggle('sel', mode==='manual');
+  if(mode==='auto'){
+    const last = latestCutoff();
+    let sugStart, sugEnd;
+    if(last){
+      sugStart = new Date(pd(last.end)); sugStart.setDate(sugStart.getDate()+1);
+      sugEnd   = new Date(sugStart); sugEnd.setDate(sugEnd.getDate()+13);
+    } else {
+      sugStart = new Date(); sugEnd = new Date(); sugEnd.setDate(sugEnd.getDate()+13);
+    }
+    document.getElementById('new-cutoff-start').value = fmt(sugStart);
+    document.getElementById('new-cutoff-end').value = fmt(sugEnd);
+  }
 }
 
 function closeNewCutoffModal(){
@@ -2456,10 +2483,20 @@ function saveNewCutoff(){
   if(!start || !end){ toast('Select both dates'); return; }
   if(end < start){ toast('End date must be after start date'); return; }
   if(!state.cutoffs) state.cutoffs = [];
-  state.cutoffs.push({id:'co_'+Date.now(), start, end});
+  const newId = 'co_'+Date.now();
+  state.cutoffs.push({id:newId, start, end});
+  // Starting a new cutoff activates it immediately — it does not wait for
+  // the calendar date to actually reach the start date.
+  state.activeCutoffId = newId;
   scheduleSave();
   closeNewCutoffModal();
   renderCutoffBadge();
+  // Timesheet's date range needs to jump to the new cutoff right away too
+  const tf=document.getElementById('ts-date-from'), tt=document.getElementById('ts-date-to');
+  if(tf) tf.value = start;
+  if(tt) tt.value = end;
+  const activePage=document.querySelector('.page.active');
+  if(activePage && activePage.id==='page-timesheet') renderTimesheet();
   toast('📦 New cutoff started: '+dd(start)+' – '+dd(end));
 }
 
@@ -4418,10 +4455,24 @@ function importScheduleExcel(input){
 
 function exportTimesheetCSV(){
   const deptF = document.getElementById('ts-dept-filter').value;
-  const dates = [...state.dates].sort();
+  const empF = document.getElementById('ts-emp-filter') ? document.getElementById('ts-emp-filter').value : '';
+  const dateFrom = document.getElementById('ts-date-from') ? document.getElementById('ts-date-from').value : '';
+  const dateTo = document.getElementById('ts-date-to') ? document.getElementById('ts-date-to').value : '';
+  let dates = [...state.dates].sort();
+  if(dateFrom) dates = dates.filter(d=>d>=dateFrom);
+  if(dateTo) dates = dates.filter(d=>d<=dateTo);
   let csv = 'Department,Employee,Date,Day,Schedule,Time In,Time Out,ND,Notes,Attendance\n';
-  const emps = state.employees.filter(e=>!deptF||e.team===deptF);
+  const emps = state.employees.filter(e=>(!deptF||e.team===deptF) && (!empF||e.name===empF));
   emps.forEach(emp=>{
+    // Skip an employee entirely if they have zero attendance/timesheet data
+    // in this exact date range — e.g. someone who resigned before this
+    // cutoff started shouldn't appear as an empty row.
+    const hasAnyData = dates.some(d=>{
+      const att = state.attendance[gk(emp.name,d)]||'';
+      const ts = state.timesheet ? state.timesheet[tsk(emp.name,d)] : null;
+      return att || (ts && (ts.timeIn || ts.timeOut || ts.notes));
+    });
+    if(!hasAnyData) return;
     dates.forEach(d=>{
       const e=getTsEntry(emp.name,d);
       const att=state.attendance[gk(emp.name,d)]||'';
