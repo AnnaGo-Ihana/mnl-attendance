@@ -1385,7 +1385,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 
     <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🗓️ Manage Schedules</div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once. Takes effect immediately for today and future dates.</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once.</div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div class="so" id="sched-mgmt-mode-ind" onclick="setSchedMgmtMode('individual')" style="flex:1;background:#0d0818;color:var(--text2)">👤 Individual</div>
         <div class="so" id="sched-mgmt-mode-grp" onclick="setSchedMgmtMode('group')" style="flex:1;background:#0d0818;color:var(--text2)">🏢 Whole Team</div>
@@ -1393,7 +1393,30 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <div id="sched-mgmt-target-wrap" style="margin-bottom:12px">
         <select id="sched-mgmt-target" onchange="loadSchedMgmtTarget()" style="width:100%"></select>
       </div>
+
+      <div style="background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:12px;margin-bottom:12px">
+        <label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a78bfa;display:block;margin-bottom:8px">⚡ Quick Fill</label>
+        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Working Time</label>
+        <select id="sched-quick-time" style="width:100%;margin-bottom:8px"></select>
+        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Rest Days (RD)</label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-SUN" style="width:auto">Sun</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-MON" style="width:auto">Mon</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-TUE" style="width:auto">Tue</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-WED" style="width:auto">Wed</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-THU" style="width:auto">Thu</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-FRI" style="width:auto">Fri</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-SAT" style="width:auto">Sat</label>
+        </div>
+        <button class="btn light" onclick="applyQuickFill()" style="width:100%;font-size:11px">Fill Days Below ↓</button>
+      </div>
+
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:12px" id="sched-mgmt-days"></div>
+
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Effective Until <span style="color:var(--text3);font-weight:400">(optional — leave blank for indefinite)</span></label>
+      <input type="date" id="sched-mgmt-until" onchange="updateUntilHint()" style="width:100%;margin-bottom:12px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px" id="sched-mgmt-until-hint"></div>
+
       <button class="btn light" onclick="saveScheduleOverride()" style="width:100%">Save &amp; Apply</button>
     </div>
 
@@ -2507,6 +2530,9 @@ function setSchedMgmtMode(mode){
   }
   renderSchedMgmtDays();
   loadSchedMgmtTarget();
+  document.getElementById('sched-mgmt-until').value = '';
+  updateUntilHint();
+  DAYS_OF_WEEK.forEach(day=>{ document.getElementById('sched-quick-rd-'+day).checked = false; });
 }
 function renderSchedMgmtDays(){
   const wrap = document.getElementById('sched-mgmt-days');
@@ -2515,6 +2541,24 @@ function renderSchedMgmtDays(){
     return '<div><label style="font-size:9px;color:var(--text3);display:block;margin-bottom:3px">'+day+'</label>'
       +'<select id="sched-mgmt-day-'+day+'" style="width:100%;font-size:11px">'+opts+'</select></div>';
   }).join('');
+  const qt = document.getElementById('sched-quick-time');
+  if(qt) qt.innerHTML = SCHEDULES.filter(s=>s&&s!=='RD'&&s!=='RDOT'&&s!=='Custom').map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+}
+function applyQuickFill(){
+  const time = document.getElementById('sched-quick-time').value;
+  DAYS_OF_WEEK.forEach(day=>{
+    const isRD = document.getElementById('sched-quick-rd-'+day).checked;
+    const el = document.getElementById('sched-mgmt-day-'+day);
+    if(el) el.value = isRD ? 'RD' : time;
+  });
+  toast('⚡ Applied — click Save & Apply below to confirm');
+}
+function updateUntilHint(){
+  const until = document.getElementById('sched-mgmt-until').value;
+  const hint = document.getElementById('sched-mgmt-until-hint');
+  hint.textContent = until
+    ? 'Applies today through '+dd(until)+' only — reverts to their previous schedule after that.'
+    : 'No end date — this becomes their standing weekly schedule from today onward.';
 }
 function loadSchedMgmtTarget(){
   const target = document.getElementById('sched-mgmt-target').value;
@@ -2546,33 +2590,59 @@ function saveScheduleOverride(){
   DAYS_OF_WEEK.forEach(day=>{
     pattern[day] = document.getElementById('sched-mgmt-day-'+day).value;
   });
-  if(!state.scheduleOverrides) state.scheduleOverrides = {};
+  const untilDate = document.getElementById('sched-mgmt-until').value;
+  const todayStr = fmt(new Date());
+
   let affectedNames = [];
   if(schedMgmtMode==='individual'){
-    state.scheduleOverrides[target] = pattern;
     affectedNames = [target];
   } else {
     affectedNames = activeEmployees().filter(e=>e.team===target).map(e=>e.name);
-    affectedNames.forEach(name=>{ state.scheduleOverrides[name] = pattern; });
   }
-  // Apply immediately to today-and-future dates, same as other schedule fixes
-  const todayStr = fmt(new Date());
-  affectedNames.forEach(name=>{
-    (state.dates||[]).filter(d=>d>=todayStr).forEach(d=>{
-      const sched = getScheduleForEmp(name, d);
-      const k = tsk(name, d);
-      if(!state.timesheet) state.timesheet = {};
-      if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
-      const entry = state.timesheet[k];
-      entry.schedule = sched;
-      if(!entry._timesManual){
-        const ct = getScheduleClockTimes(sched);
-        if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
-        else { entry.timeIn=''; entry.timeOut=''; }
-        entry.nd = calcActualND(sched, entry.timeIn, entry.timeOut, SCHEDULE_ND[sched]||0);
-      }
+
+  if(untilDate){
+    // Bounded: apply only from today through the given end date, written
+    // directly into those specific dates. No indefinite override is set, so
+    // the schedule automatically reverts to whatever it was before once the
+    // "until" date passes.
+    affectedNames.forEach(name=>{
+      (state.dates||[]).filter(d=>d>=todayStr && d<=untilDate).forEach(d=>{
+        const dayName = DAYS_OF_WEEK[new Date(d+'T00:00:00').getDay()];
+        const sched = pattern[dayName];
+        const k = tsk(name, d);
+        if(!state.timesheet) state.timesheet = {};
+        if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+        const entry = state.timesheet[k];
+        entry.schedule = sched;
+        if(!entry._timesManual){
+          const ct = getScheduleClockTimes(sched);
+          if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
+          else { entry.timeIn=''; entry.timeOut=''; }
+          entry.nd = calcActualND(sched, entry.timeIn, entry.timeOut, SCHEDULE_ND[sched]||0);
+        }
+      });
     });
-  });
+  } else {
+    // Indefinite: a proper weekly override, applied to today+future dates
+    if(!state.scheduleOverrides) state.scheduleOverrides = {};
+    affectedNames.forEach(name=>{ state.scheduleOverrides[name] = pattern; });
+    affectedNames.forEach(name=>{
+      (state.dates||[]).filter(d=>d>=todayStr).forEach(d=>{
+        const sched = getScheduleForEmp(name, d);
+        const k = tsk(name, d);
+        if(!state.timesheet) state.timesheet = {};
+        if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+        const entry = state.timesheet[k];
+        entry.schedule = sched;
+        if(!entry._timesManual){
+          const ct = getScheduleClockTimes(sched);
+          if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
+          else { entry.timeIn=''; entry.timeOut=''; }
+          entry.nd = calcActualND(sched, entry.timeIn, entry.timeOut, SCHEDULE_ND[sched]||0);
+        }
+      });
+    });
+  }
   scheduleSave();
   renderTable(); renderDash();
   const activePage=document.querySelector('.page.active');
