@@ -1951,6 +1951,39 @@ async function loadFromDB(){
     state._appliedFundingSpecificSchedule = true;
     if(updated > 0){ try{ await saveToDB(); }catch(e){} }
   }
+
+  // One-time: add the 5 Funding new hires (confirmed by Anna) as employees,
+  // then apply their specific day-by-day schedule the same way as the other
+  // 24 Funding employees.
+  if(!state._addedFundingNewHires){
+    const NEW_HIRES_SCHED = {"Christian Angelo Baluyot": {"2026-08-31": "1PM-10PM", "2026-09-01": "1PM-10PM", "2026-09-02": "1PM-10PM", "2026-09-03": "1PM-10PM", "2026-09-04": "1PM-10PM", "2026-09-05": "RD", "2026-09-06": "RD", "2026-09-07": "1PM-10PM", "2026-09-08": "1PM-10PM", "2026-09-09": "1PM-10PM", "2026-09-10": "1PM-10PM", "2026-09-11": "1PM-10PM", "2026-09-12": "RD", "2026-09-13": "RD", "2026-09-14": "1PM-10PM", "2026-09-15": "1PM-10PM", "2026-09-16": "1PM-10PM", "2026-09-17": "1PM-10PM", "2026-09-18": "1PM-10PM", "2026-09-19": "RD", "2026-09-20": "RD", "2026-09-21": "1PM-10PM", "2026-09-22": "1PM-10PM", "2026-09-23": "1PM-10PM", "2026-09-24": "1PM-10PM", "2026-09-25": "1PM-10PM", "2026-09-26": "RD", "2026-09-27": "RD"}, "Kirsten Kyle Love Maranan": {"2026-08-31": "1PM-10PM", "2026-09-01": "1PM-10PM", "2026-09-02": "1PM-10PM", "2026-09-03": "1PM-10PM", "2026-09-04": "1PM-10PM", "2026-09-05": "RD", "2026-09-06": "RD", "2026-09-07": "1PM-10PM", "2026-09-08": "1PM-10PM", "2026-09-09": "1PM-10PM", "2026-09-10": "1PM-10PM", "2026-09-11": "1PM-10PM", "2026-09-12": "RD", "2026-09-13": "RD", "2026-09-14": "1PM-10PM", "2026-09-15": "1PM-10PM", "2026-09-16": "1PM-10PM", "2026-09-17": "1PM-10PM", "2026-09-18": "1PM-10PM", "2026-09-19": "RD", "2026-09-20": "RD", "2026-09-21": "1PM-10PM", "2026-09-22": "1PM-10PM", "2026-09-23": "1PM-10PM", "2026-09-24": "1PM-10PM", "2026-09-25": "1PM-10PM", "2026-09-26": "RD", "2026-09-27": "RD"}, "Alexander John Edward M. Martinez": {"2026-08-31": "1PM-10PM", "2026-09-01": "1PM-10PM", "2026-09-02": "1PM-10PM", "2026-09-03": "1PM-10PM", "2026-09-04": "1PM-10PM", "2026-09-05": "RD", "2026-09-06": "RD", "2026-09-07": "1PM-10PM", "2026-09-08": "1PM-10PM", "2026-09-09": "1PM-10PM", "2026-09-10": "1PM-10PM", "2026-09-11": "1PM-10PM", "2026-09-12": "RD", "2026-09-13": "RD", "2026-09-14": "1PM-10PM", "2026-09-15": "1PM-10PM", "2026-09-16": "1PM-10PM", "2026-09-17": "1PM-10PM", "2026-09-18": "1PM-10PM", "2026-09-19": "RD", "2026-09-20": "RD", "2026-09-21": "1PM-10PM", "2026-09-22": "1PM-10PM", "2026-09-23": "1PM-10PM", "2026-09-24": "1PM-10PM", "2026-09-25": "1PM-10PM", "2026-09-26": "RD", "2026-09-27": "RD"}, "Joyce Roselle C. Isidro": {"2026-08-31": "1PM-10PM", "2026-09-01": "1PM-10PM", "2026-09-02": "1PM-10PM", "2026-09-03": "1PM-10PM", "2026-09-04": "1PM-10PM", "2026-09-05": "RD", "2026-09-06": "RD", "2026-09-07": "1PM-10PM", "2026-09-08": "1PM-10PM", "2026-09-09": "1PM-10PM", "2026-09-10": "1PM-10PM", "2026-09-11": "1PM-10PM", "2026-09-12": "RD", "2026-09-13": "RD", "2026-09-14": "1PM-10PM", "2026-09-15": "1PM-10PM", "2026-09-16": "1PM-10PM", "2026-09-17": "1PM-10PM", "2026-09-18": "1PM-10PM", "2026-09-19": "RD", "2026-09-20": "RD", "2026-09-21": "1PM-10PM", "2026-09-22": "1PM-10PM", "2026-09-23": "1PM-10PM", "2026-09-24": "1PM-10PM", "2026-09-25": "1PM-10PM", "2026-09-26": "RD", "2026-09-27": "RD"}, "Shaiddel Llamido": {"2026-08-31": "1PM-10PM", "2026-09-01": "1PM-10PM", "2026-09-02": "1PM-10PM", "2026-09-03": "1PM-10PM", "2026-09-04": "1PM-10PM", "2026-09-05": "RD", "2026-09-06": "RD", "2026-09-07": "1PM-10PM", "2026-09-08": "1PM-10PM", "2026-09-09": "1PM-10PM", "2026-09-10": "1PM-10PM", "2026-09-11": "1PM-10PM", "2026-09-12": "RD", "2026-09-13": "RD", "2026-09-14": "1PM-10PM", "2026-09-15": "1PM-10PM", "2026-09-16": "1PM-10PM", "2026-09-17": "1PM-10PM", "2026-09-18": "1PM-10PM", "2026-09-19": "RD", "2026-09-20": "RD", "2026-09-21": "1PM-10PM", "2026-09-22": "1PM-10PM", "2026-09-23": "1PM-10PM", "2026-09-24": "1PM-10PM", "2026-09-25": "1PM-10PM", "2026-09-26": "RD", "2026-09-27": "RD"}};
+    if(!state.employees) state.employees = [];
+    let updated2 = 0;
+    Object.entries(NEW_HIRES_SCHED).forEach(([name, dateMap])=>{
+      if(!state.employees.find(e=>e.name===name)){
+        state.employees.push({name, team:'Funding', role:'', dept:'Funding'});
+      }
+      Object.entries(dateMap).forEach(([date, sched])=>{
+        if(!sched) return;
+        if(!state.dates.includes(date)) state.dates.push(date);
+        const k = tsk(name, date);
+        if(!state.timesheet) state.timesheet = {};
+        if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+        const entry = state.timesheet[k];
+        entry.schedule = sched;
+        if(!entry._timesManual){
+          const ct = getScheduleClockTimes(sched);
+          if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
+          else { entry.timeIn=''; entry.timeOut=''; }
+          entry.nd = calcActualND(sched, entry.timeIn, entry.timeOut, SCHEDULE_ND[sched]||0);
+        }
+        updated2++;
+      });
+    });
+    state.dates.sort();
+    state._addedFundingNewHires = true;
+    if(updated2 > 0){ try{ await saveToDB(); }catch(e){} }
+  }
 }
 
 let _lastBackupAt = 0;
