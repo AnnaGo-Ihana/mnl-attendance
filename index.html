@@ -1384,6 +1384,20 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     </div>
 
     <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🗓️ Manage Schedules</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once. Takes effect immediately for today and future dates.</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="so" id="sched-mgmt-mode-ind" onclick="setSchedMgmtMode('individual')" style="flex:1;background:#0d0818;color:var(--text2)">👤 Individual</div>
+        <div class="so" id="sched-mgmt-mode-grp" onclick="setSchedMgmtMode('group')" style="flex:1;background:#0d0818;color:var(--text2)">🏢 Whole Team</div>
+      </div>
+      <div id="sched-mgmt-target-wrap" style="margin-bottom:12px">
+        <select id="sched-mgmt-target" onchange="loadSchedMgmtTarget()" style="width:100%"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:12px" id="sched-mgmt-days"></div>
+      <button class="btn light" onclick="saveScheduleOverride()" style="width:100%">Save &amp; Apply</button>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">👥 Manage Employees</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Department, hire date, active/resigned status, and default schedule — all in one place. For login access/password, use "Manage Team Access" below.</div>
       <input type="text" id="emp-mgmt-search" placeholder="Search a name…" oninput="renderEmpMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:10px">
@@ -1879,6 +1893,33 @@ async function loadFromDB(){
     state._appliedNewCSKYCSchedule = true;
     if(updated > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: fix Angelica Torela's schedule — she was incorrectly matched to
+  // Angelica Labajo's pattern by a fuzzy first-name fallback that has since
+  // been removed. Set to 2PM-11PM (matching her stated correct shift and the
+  // common pattern used by others on the same shift). Adjustable anytime via
+  // Settings -> Manage Schedules if the exact end time differs.
+  if(!state._fixedAngelicaTorela){
+    if(!state.scheduleOverrides) state.scheduleOverrides = {};
+    if((state.employees||[]).find(e=>e.name==='Angelica Torela')){
+      const pattern = {SUN:'2PM-11PM',MON:'2PM-11PM',TUE:'2PM-11PM',WED:'2PM-11PM',THU:'2PM-11PM',FRI:'2PM-11PM',SAT:'2PM-11PM'};
+      state.scheduleOverrides['Angelica Torela'] = pattern;
+      const todayStr = fmt(new Date());
+      (state.dates||[]).filter(d=>d>=todayStr).forEach(d=>{
+        const k = tsk('Angelica Torela', d);
+        if(!state.timesheet) state.timesheet = {};
+        if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+        const entry = state.timesheet[k];
+        entry.schedule = '2PM-11PM';
+        if(!entry._timesManual){
+          const ct = getScheduleClockTimes('2PM-11PM');
+          if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
+          entry.nd = calcActualND('2PM-11PM', entry.timeIn, entry.timeOut, SCHEDULE_ND['2PM-11PM']||0);
+        }
+      });
+      try{ await saveToDB(); }catch(e){}
+    }
+    state._fixedAngelicaTorela = true;
+  }
 }
 
 let _lastBackupAt = 0;
@@ -2022,7 +2063,7 @@ function showPage(id){
   document.querySelectorAll('.nav-tab').forEach(t=>{if(t.dataset.page===id)t.classList.add('active');});
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
-  if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); renderEmpMgmtList(); }
+  if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); renderEmpMgmtList(); setSchedMgmtMode('individual'); }
   if(id==='timesheet'){
     populateTsEmpFilter();
     const tf=document.getElementById('ts-date-from');
@@ -2385,6 +2426,95 @@ function markEmpInactiveFromProfile(){
 function reactivateEmpFromProfile(){
   if(!_empProfileName) return;
   if(setEmpActive(_empProfileName)){ closeEmpProfile(); renderEmpMgmtList(); }
+}
+
+// ─── MANAGE SCHEDULES (admin-only) ──────────────────────────────────────────
+let schedMgmtMode = 'individual';
+function setSchedMgmtMode(mode){
+  schedMgmtMode = mode;
+  document.getElementById('sched-mgmt-mode-ind').classList.toggle('sel', mode==='individual');
+  document.getElementById('sched-mgmt-mode-grp').classList.toggle('sel', mode==='group');
+  const sel = document.getElementById('sched-mgmt-target');
+  if(mode==='individual'){
+    sel.innerHTML = activeEmployees().map(e=>'<option value="'+e.name+'">'+e.name+'</option>').join('');
+  } else {
+    const teams = [...new Set(activeEmployees().map(e=>e.team).filter(Boolean))].sort();
+    sel.innerHTML = teams.map(t=>'<option value="'+t+'">'+t+' (whole team)</option>').join('');
+  }
+  renderSchedMgmtDays();
+  loadSchedMgmtTarget();
+}
+function renderSchedMgmtDays(){
+  const wrap = document.getElementById('sched-mgmt-days');
+  wrap.innerHTML = DAYS_OF_WEEK.map(day=>{
+    const opts = SCHEDULES.map(s=>'<option value="'+s+'">'+(s||'—')+'</option>').join('');
+    return '<div><label style="font-size:9px;color:var(--text3);display:block;margin-bottom:3px">'+day+'</label>'
+      +'<select id="sched-mgmt-day-'+day+'" style="width:100%;font-size:11px">'+opts+'</select></div>';
+  }).join('');
+}
+function loadSchedMgmtTarget(){
+  const target = document.getElementById('sched-mgmt-target').value;
+  if(!target) return;
+  if(schedMgmtMode==='individual'){
+    // Pre-fill with this person's current effective schedule per day, using
+    // the next 7 days as reference dates so the day-of-week lookup is correct.
+    const today = new Date();
+    for(let i=0;i<7;i++){
+      const d = new Date(today); d.setDate(d.getDate()+i);
+      const dayName = DAYS_OF_WEEK[d.getDay()];
+      const sched = getScheduleForEmp(target, fmt(d));
+      const el = document.getElementById('sched-mgmt-day-'+dayName);
+      if(el) el.value = sched || '';
+    }
+  } else {
+    // Group mode starts blank — you're setting one uniform pattern for everyone
+    DAYS_OF_WEEK.forEach(day=>{
+      const el = document.getElementById('sched-mgmt-day-'+day);
+      if(el) el.value = '';
+    });
+  }
+}
+function saveScheduleOverride(){
+  if(!(currentUser && currentUser.isAdmin)){ toast('⚠️ Only Anna can edit schedules'); return; }
+  const target = document.getElementById('sched-mgmt-target').value;
+  if(!target){ toast('Select an employee or team'); return; }
+  const pattern = {};
+  DAYS_OF_WEEK.forEach(day=>{
+    pattern[day] = document.getElementById('sched-mgmt-day-'+day).value;
+  });
+  if(!state.scheduleOverrides) state.scheduleOverrides = {};
+  let affectedNames = [];
+  if(schedMgmtMode==='individual'){
+    state.scheduleOverrides[target] = pattern;
+    affectedNames = [target];
+  } else {
+    affectedNames = activeEmployees().filter(e=>e.team===target).map(e=>e.name);
+    affectedNames.forEach(name=>{ state.scheduleOverrides[name] = pattern; });
+  }
+  // Apply immediately to today-and-future dates, same as other schedule fixes
+  const todayStr = fmt(new Date());
+  affectedNames.forEach(name=>{
+    (state.dates||[]).filter(d=>d>=todayStr).forEach(d=>{
+      const sched = getScheduleForEmp(name, d);
+      const k = tsk(name, d);
+      if(!state.timesheet) state.timesheet = {};
+      if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
+      const entry = state.timesheet[k];
+      entry.schedule = sched;
+      if(!entry._timesManual){
+        const ct = getScheduleClockTimes(sched);
+        if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
+        else { entry.timeIn=''; entry.timeOut=''; }
+        entry.nd = calcActualND(sched, entry.timeIn, entry.timeOut, SCHEDULE_ND[sched]||0);
+      }
+    });
+  });
+  scheduleSave();
+  renderTable(); renderDash();
+  const activePage=document.querySelector('.page.active');
+  if(activePage && activePage.id==='page-schedule') renderSchedulePage();
+  if(activePage && activePage.id==='page-timesheet') renderTimesheet();
+  toast('🗓️ Schedule updated for '+affectedNames.length+' employee'+(affectedNames.length!==1?'s':''));
 }
 
 function allKnownNames(){
@@ -3569,22 +3699,27 @@ const SPECIFIC_SCHEDULES = {"Joshua Dela Cruz": {"2026-04-27": "VL", "2026-04-28
 const DAYS_OF_WEEK = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 
 function getScheduleForEmp(empName, dateStr) {
-  // Check specific date schedule first
+  // Anna's manual overrides (via Settings -> Manage Schedules) always win —
+  // both individual and group edits write here.
+  const overrides = state.scheduleOverrides || {};
+  if(overrides[empName]){
+    const d = new Date(dateStr+'T00:00:00');
+    const dayName = DAYS_OF_WEEK[d.getDay()];
+    const v = overrides[empName][dayName];
+    if(v !== undefined) return v;
+  }
+  // Check specific date schedule
   if(SPECIFIC_SCHEDULES[empName] && SPECIFIC_SCHEDULES[empName][dateStr])
     return SPECIFIC_SCHEDULES[empName][dateStr];
-  // Fall back to weekly schedule by day of week
+  // Fall back to weekly schedule by day of week — exact name match only.
+  // (A first-name-only fuzzy fallback used to live here and could silently
+  // assign one person's entire schedule to anyone sharing a first name —
+  // e.g. "Angelica Torela" was incorrectly matched to "Angelica Labajo".
+  // Removed; use the Default Schedule field or Manage Schedules instead.)
   if(WEEKLY_SCHEDULES[empName]) {
     const d = new Date(dateStr+'T00:00:00');
     const dayName = DAYS_OF_WEEK[d.getDay()];
     return WEEKLY_SCHEDULES[empName][dayName] || '';
-  }
-  // Try first-name match
-  const firstName = empName.split(' ')[0];
-  for(const [k,v] of Object.entries(WEEKLY_SCHEDULES)) {
-    if(k.startsWith(firstName) || empName.includes(k)) {
-      const d = new Date(dateStr+'T00:00:00');
-      return v[DAYS_OF_WEEK[d.getDay()]] || '';
-    }
   }
   // Fall back to the employee's Default Schedule (set via Settings ->
   // Manage Employees) — covers anyone not in the hardcoded weekly data above
