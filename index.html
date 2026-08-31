@@ -1824,6 +1824,30 @@ async function loadFromDB(){
     state._clearedOffDayTimesV2 = true;
     if(fixed3 > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: provision date columns for the currently active cutoff — this
+  // was created before saveNewCutoff() auto-added dates, so Tracker/Timesheet/
+  // Schedule all correctly filtered to it but showed nothing because the
+  // actual dates were never added to state.dates.
+  if(!state._provisionedActiveCutoffDates){
+    const cur = currentCutoff();
+    if(cur){
+      const startD = new Date(cur.start+'T00:00:00');
+      const endD = new Date(cur.end+'T00:00:00');
+      let added = 0;
+      const c = new Date(startD);
+      while(c <= endD){
+        const dd2 = fmt(c);
+        if(!state.dates.includes(dd2)){ state.dates.push(dd2); added++; }
+        c.setDate(c.getDate()+1);
+      }
+      if(added > 0){
+        state.dates.sort();
+        try{ await saveToDB(); }catch(e){}
+      }
+    }
+    state._provisionedActiveCutoffDates = true;
+    try{ await saveToDB(); }catch(e){}
+  }
 }
 
 let _lastBackupAt = 0;
@@ -2488,16 +2512,38 @@ function saveNewCutoff(){
   // Starting a new cutoff activates it immediately — it does not wait for
   // the calendar date to actually reach the start date.
   state.activeCutoffId = newId;
+  // Provision the actual date columns for this period — otherwise Tracker,
+  // Timesheet, and Schedule all correctly filter to the new range but show
+  // nothing, since state.dates never had those dates added at all.
+  const startD = new Date(start+'T00:00:00');
+  const endD = new Date(end+'T00:00:00');
+  let added = 0;
+  const cur = new Date(startD);
+  while(cur <= endD){
+    const d = fmt(cur);
+    if(!state.dates.includes(d)){ state.dates.push(d); added++; }
+    cur.setDate(cur.getDate()+1);
+  }
+  state.dates.sort();
+  // Fill each employee's default schedule into these new dates
+  autoPopulateSchedules(true);
   scheduleSave();
   closeNewCutoffModal();
   renderCutoffBadge();
-  // Timesheet's date range needs to jump to the new cutoff right away too
+  buildDateSel();
+  renderTable();
+  renderDash();
+  // Jump every relevant page's date range to the new cutoff right away
   const tf=document.getElementById('ts-date-from'), tt=document.getElementById('ts-date-to');
   if(tf) tf.value = start;
   if(tt) tt.value = end;
+  const sf=document.getElementById('sched-date-from'), st=document.getElementById('sched-date-to');
+  if(sf) sf.value = start;
+  if(st) st.value = end;
   const activePage=document.querySelector('.page.active');
   if(activePage && activePage.id==='page-timesheet') renderTimesheet();
-  toast('📦 New cutoff started: '+dd(start)+' – '+dd(end));
+  if(activePage && activePage.id==='page-schedule') renderSchedulePage();
+  toast('📦 New cutoff started: '+dd(start)+' – '+dd(end)+' ('+added+' date'+(added!==1?'s':'')+' added)');
 }
 
 
@@ -3494,6 +3540,10 @@ function getScheduleForEmp(empName, dateStr) {
       return v[DAYS_OF_WEEK[d.getDay()]] || '';
     }
   }
+  // Fall back to the employee's Default Schedule (set via Settings ->
+  // Manage Employees) — covers anyone not in the hardcoded weekly data above
+  const emp = (state.employees||[]).find(e=>e.name===empName);
+  if(emp && emp.defaultSchedule) return emp.defaultSchedule;
   return '';
 }
 
