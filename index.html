@@ -2687,10 +2687,25 @@ function renderTable(){
   const tf=document.getElementById('tf').value;
   const nf=document.getElementById('nf').value.toLowerCase();
   const sf=document.getElementById('sf').value;
+
+  // Only show one cutoff period at a time by default — once a new cutoff
+  // starts, older dates shouldn't stay mixed in. A manually-set global date
+  // range (top nav picker) always takes priority over this.
+  let visibleDates = [...state.dates].sort();
+  if(globalDateFrom || globalDateTo){
+    if(globalDateFrom) visibleDates = visibleDates.filter(d=>d>=globalDateFrom);
+    if(globalDateTo)   visibleDates = visibleDates.filter(d=>d<=globalDateTo);
+  } else {
+    const cutoff = currentCutoff();
+    if(cutoff){
+      visibleDates = visibleDates.filter(d=>d>=cutoff.start && d<=cutoff.end);
+    }
+  }
+
   let emps=activeEmployees().filter(e=>{
     if(tf&&e.team!==tf)return false;
     if(nf&&!e.name.toLowerCase().includes(nf))return false;
-    if(sf)return state.dates.some(d=>state.attendance[gk(e.name,d)]===sf);
+    if(sf)return visibleDates.some(d=>state.attendance[gk(e.name,d)]===sf);
     return true;
   });
 
@@ -2706,7 +2721,7 @@ function renderTable(){
   t0.style.cssText='min-width:72px;position:sticky;left:175px;top:0;z-index:30;background:#0d0818;border-right:1px solid #2d1f55;';
   r1.appendChild(t0);
 
-  state.dates.forEach(d=>{
+  visibleDates.forEach(d=>{
     const th1=document.createElement('th');
     th1.style.cssText='position:sticky;top:0;z-index:15;background:#0d0818;min-width:60px;';
     th1.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3">${dd(d)}</div><div style="font-size:10px;color:#a78bfa;font-weight:500;margin-top:1px">${dow(d)}</div><span class="rd" onclick="remDate('${d}')">✕ remove</span>`;
@@ -2761,7 +2776,7 @@ function renderTable(){
     tr.appendChild(btd);
 
     const cnts={P:0,A:0,HD:0,UHD:0,UT:0,L:0,VL:0,UVL:0,SL:0,EL:0,BL:0,Off:0,blank:0};
-    state.dates.forEach(d=>{
+    visibleDates.forEach(d=>{
       const s=state.attendance[gk(emp.name,d)]||'';
       if(s){ cnts[s]=(cnts[s]||0)+1; } else { cnts.blank++; }
       const td=document.createElement('td');td.className='sc';
