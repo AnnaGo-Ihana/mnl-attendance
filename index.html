@@ -2007,6 +2007,16 @@ async function loadFromDB(){
     state._addedFundingNewHires = true;
     if(updated2 > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: clear all existing Overtime entries per Anna's request. Going
+  // forward, the Overtime tab also defaults to showing only the current
+  // cutoff period (see showPage), so old entries from a prior cutoff won't
+  // resurface just by starting a new one.
+  if(!state._clearedAllOT){
+    const hadEntries = (state.otEntries||[]).length > 0;
+    state.otEntries = [];
+    state._clearedAllOT = true;
+    if(hadEntries){ try{ await saveToDB(); }catch(e){} }
+  }
 }
 
 let _lastBackupAt = 0;
@@ -2175,7 +2185,23 @@ function showPage(id){
     autoPopulateSchedules(true);
     renderTimesheet();
   }
-  if(id==='overtime'){populateOTFilters();renderOT();}
+  if(id==='overtime'){
+    populateOTFilters();
+    // Default to the current cutoff period, matching Tracker/Timesheet — a
+    // manually-set global date range still takes priority when present.
+    const otf=document.getElementById('ot-date-from'), ott=document.getElementById('ot-date-to');
+    if(globalDateFrom || globalDateTo){
+      if(otf) otf.value = globalDateFrom;
+      if(ott) ott.value = globalDateTo;
+    } else {
+      const cutoff = currentCutoff();
+      if(cutoff){
+        if(otf) otf.value = cutoff.start;
+        if(ott) ott.value = cutoff.end;
+      }
+    }
+    renderOT();
+  }
   if(id==='leaves'){
     initLeavesPage();
     setLeavesView('cal');
@@ -2835,9 +2861,13 @@ function saveNewCutoff(){
   const sf=document.getElementById('sched-date-from'), st=document.getElementById('sched-date-to');
   if(sf) sf.value = start;
   if(st) st.value = end;
+  const otf=document.getElementById('ot-date-from'), ott=document.getElementById('ot-date-to');
+  if(otf) otf.value = start;
+  if(ott) ott.value = end;
   const activePage=document.querySelector('.page.active');
   if(activePage && activePage.id==='page-timesheet') renderTimesheet();
   if(activePage && activePage.id==='page-schedule') renderSchedulePage();
+  if(activePage && activePage.id==='page-overtime') renderOT();
   toast('📦 New cutoff started: '+dd(start)+' – '+dd(end)+' ('+added+' date'+(added!==1?'s':'')+' added)');
 }
 
