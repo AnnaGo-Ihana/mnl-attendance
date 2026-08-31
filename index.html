@@ -844,9 +844,9 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     </select>
     <div style="display:flex;align-items:center;gap:6px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 10px">
       <span style="font-size:11px;color:var(--text3)">📅 From</span>
-      <input type="date" id="ts-date-from" onchange="renderTimesheet()" value="2026-04-27" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
+      <input type="date" id="ts-date-from" onchange="renderTimesheet()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
       <span style="font-size:11px;color:var(--text3)">→</span>
-      <input type="date" id="ts-date-to" onchange="renderTimesheet()" value="2026-05-10" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
+      <input type="date" id="ts-date-to" onchange="renderTimesheet()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
       <button onclick="clearTsDates()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px" title="Clear dates">✕</button>
     </div>
     <button class="btn light" onclick="openTsAddDate()" style="background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">📅 + Add Date</button>
@@ -2209,8 +2209,19 @@ function showPage(id){
   if(id==='schedule'){
     const sf=document.getElementById('sched-date-from');
     const st=document.getElementById('sched-date-to');
-    if(sf&&!sf.value) sf.value=globalDateFrom||'2026-04-27';
-    if(st&&!st.value) st.value=globalDateTo||'2026-05-10';
+    // Always default to the current cutoff period, not a stale stuck value —
+    // same fix already applied to Tracker/Timesheet/Overtime. A manually-set
+    // global date range still takes priority when present.
+    if(globalDateFrom || globalDateTo){
+      if(sf) sf.value = globalDateFrom;
+      if(st) st.value = globalDateTo;
+    } else {
+      const cutoff = currentCutoff();
+      if(cutoff){
+        if(sf) sf.value = cutoff.start;
+        if(st) st.value = cutoff.end;
+      }
+    }
     renderSchedulePage();
   }
 }
@@ -5510,8 +5521,9 @@ function confirmTsAddDate(){
 }
 
 function openAddDateRange(){
-  document.getElementById('dr-from').value='2026-04-27';
-  document.getElementById('dr-to').value='2026-05-10';
+  const cutoff = currentCutoff();
+  document.getElementById('dr-from').value = cutoff ? cutoff.start : fmt(new Date());
+  document.getElementById('dr-to').value = cutoff ? cutoff.end : fmt(new Date());
   document.getElementById('dr-preview').textContent='';
   document.getElementById('add-date-range-modal').classList.add('open');
   updateDRPreview();
