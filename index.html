@@ -2017,6 +2017,36 @@ async function loadFromDB(){
     state._clearedAllOT = true;
     if(hadEntries){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: recalculate OT/Late/Undertime notes for every existing
+  // timesheet entry and sync any detected OT to the Overtime tab. This
+  // guarantees entries with a real time mismatch (e.g. scheduled 6AM-3PM but
+  // clocked out 4PM) show the correct note immediately, regardless of when
+  // they were originally created.
+  if(!state._recalculatedOTNotes){
+    let fixedOT = 0;
+    if(state.timesheet){
+      Object.keys(state.timesheet).forEach(k=>{
+        const entry = state.timesheet[k];
+        if(!entry.schedule || !entry.timeIn || !entry.timeOut) return;
+        if(entry._notesManual) return;
+        const parts = k.split('||');
+        const name = parts[1], date = parts[2];
+        const holiday = PH_HOLIDAYS[date];
+        const att = (state.attendance||{})[name+'||'+date] || '';
+        const issues = detectAttendanceIssues(entry.schedule, entry.timeIn, entry.timeOut);
+        const issueNote = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
+        const note = (holiday && att!=='Off') ? (issueNote ? holiday+' | '+issueNote : holiday) : issueNote;
+        if((entry.notes||'').trim() !== note){
+          entry.notes = note;
+          fixedOT++;
+        }
+        const otIssue = issues.find(i=>i.type==='ot');
+        if(otIssue) syncTimesheetOTToTracker(name, date, entry, otIssue);
+      });
+    }
+    state._recalculatedOTNotes = true;
+    if(fixedOT > 0){ try{ await saveToDB(); }catch(e){} }
+  }
 }
 
 let _lastBackupAt = 0;
