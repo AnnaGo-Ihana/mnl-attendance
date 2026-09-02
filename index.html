@@ -852,6 +852,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <button class="btn light" onclick="openTsAddDate()" style="background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">📅 + Add Date</button>
     <button class="btn light" id="btn-import-sched" onclick="document.getElementById('sched-import-input').click()" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">📋 Import Schedule</button>
     <button class="btn light" id="btn-auto-sched" onclick="autoPopulateSchedules()" style="display:none;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">🗓️ Auto-fill Schedules</button>
+    <button class="btn light" onclick="recalcAllOTNotes()" style="background:rgba(255,143,92,.1);border-color:#ff8f5c;color:#ff8f5c">⚡ Recalculate OT/Notes</button>
     <input type="file" id="sched-import-input" accept=".xlsx,.xls" style="display:none" onchange="importScheduleExcel(this)">
     <button class="btn light" onclick="exportTimesheetCSV()" style="margin-left:auto;background:rgba(0,207,255,.1);border-color:#00cfff;color:#00cfff">📤 Export CSV</button>
   </div>
@@ -4088,6 +4089,42 @@ function getScheduleClockTimes(sched){
   const to = fmtTime(parts[parts.length-1]);
   if(!ti||!to) return null;
   return {timeIn:ti, timeOut:to};
+}
+
+function recalcAllOTNotes(){
+  if(!(isEditMode || sessionStorage.getItem('att_is_edit')==='1')){ toast('Sign in to recalculate'); return; }
+  let scanned = 0, changed = 0, otSynced = 0;
+  if(state.timesheet){
+    Object.keys(state.timesheet).forEach(k=>{
+      const entry = state.timesheet[k];
+      // Defensively clean the stored time strings — collapse any non-breaking
+      // spaces or double spaces that could silently break time parsing.
+      const cleanTimeIn = (entry.timeIn||'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
+      const cleanTimeOut = (entry.timeOut||'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
+      if(!entry.schedule || !cleanTimeIn || !cleanTimeOut) return;
+      scanned++;
+      if(cleanTimeIn !== entry.timeIn) entry.timeIn = cleanTimeIn;
+      if(cleanTimeOut !== entry.timeOut) entry.timeOut = cleanTimeOut;
+      if(entry._notesManual && (entry.notes||'').trim()) return; // real manual note — skip
+      const parts = k.split('||');
+      const name = parts[1], date = parts[2];
+      const holiday = PH_HOLIDAYS[date];
+      const att = (state.attendance||{})[name+'||'+date] || '';
+      const issues = detectAttendanceIssues(entry.schedule, cleanTimeIn, cleanTimeOut);
+      const issueNote = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
+      const note = (holiday && att!=='Off') ? (issueNote ? holiday+' | '+issueNote : holiday) : issueNote;
+      if((entry.notes||'').trim() !== note){
+        entry.notes = note;
+        entry._notesManual = false;
+        changed++;
+      }
+      const otIssue = issues.find(i=>i.type==='ot');
+      if(otIssue){ syncTimesheetOTToTracker(name, date, entry, otIssue); otSynced++; }
+    });
+  }
+  if(changed>0) scheduleSave();
+  renderTimesheet();
+  toast('⚡ Scanned '+scanned+' entries, updated '+changed+' notes, synced '+otSynced+' to Overtime');
 }
 
 function autoPopulateSchedules(silent) {
