@@ -24,6 +24,7 @@
   --EL:#ff8f5c;--EL-bg:#3d1200;
   --BL:#9d6fff;--BL-bg:#241344;
   --Off:#8878b8;--Off-bg:#180d30;
+  --warn-bg:#1e0510;--ok-bg:#041a10;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
@@ -213,6 +214,7 @@ html[data-theme="light"] {
   --bg:#ffffff; --surface:#ffffff; --surface2:#f3f0ff; --border:#ddd6fe; --border2:#c4b5fd;
   --text:#1e1b4b; --text2:#4b4a6b; --text3:#6b6b8a;
   --accent:#7c3aed; --accent2:#ede9fe;
+  --warn-bg:#fee2e2; --ok-bg:#d1fae5;
 }
 html[data-theme="light"] body{background:#ffffff;}
 html[data-theme="light"] [style*="#0d0818"]{background-color:#ffffff !important;}
@@ -293,6 +295,7 @@ html[data-theme="light"] .lead-card{background:#ffffff !important;border-color:#
 html[data-theme="light"] .tctrl{background:#ffffff !important;border-color:#ddd6fe !important;}
 html[data-theme="light"] thead th{background:#ffffff !important;color:#6d28d9 !important;border-color:#ddd6fe !important;}
 html[data-theme="light"] .nc{background:#ffffff !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] .oc{background:linear-gradient(135deg,#f8f7ff,#ffffff) !important;border-color:#ddd6fe !important;box-shadow:0 4px 16px rgba(124,58,237,.08) !important;}
 html[data-theme="light"] .nc input:focus{background:#f3f0ff !important;}
 html[data-theme="light"] .tbc{background:#f8f7ff !important;border-color:#ddd6fe !important;}
 html[data-theme="light"] .sumc{background:#f8f7ff !important;}
@@ -3651,7 +3654,7 @@ function renderLeaveSummary() {
   let html = `
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
     <!-- Top Absentees -->
-    <div style="background:linear-gradient(135deg,#1a1035,#0d0818);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
+    <div style="background:var(--surface);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
       <div style="padding:12px 16px;border-bottom:1px solid #3a2868;background:rgba(255,92,122,.06);display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">🚨</span>
         <span style="font-size:12px;font-weight:700;color:#ff5c7a;letter-spacing:.08em;text-transform:uppercase">Top Absentees</span>
@@ -3660,7 +3663,7 @@ function renderLeaveSummary() {
       <div style="padding:4px 16px 10px">${absenteeRows}</div>
     </div>
     <!-- Recurring Absentees -->
-    <div style="background:linear-gradient(135deg,#1a1035,#0d0818);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
+    <div style="background:var(--surface);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
       <div style="padding:12px 16px;border-bottom:1px solid #3a2868;background:rgba(255,207,61,.05);display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">🔄</span>
         <span style="font-size:12px;font-weight:700;color:#ffcf3d;letter-spacing:.08em;text-transform:uppercase">Recurring Absentees</span>
@@ -3672,7 +3675,7 @@ function renderLeaveSummary() {
     </div>
 
     <!-- Absent Today -->
-    <div style="background:linear-gradient(135deg,#1a1035,#0d0818);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
+    <div style="background:var(--surface);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
       <div style="padding:12px 16px;border-bottom:1px solid #3a2868;background:rgba(255,92,122,.05);display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">❌</span>
         <span style="font-size:12px;font-weight:700;color:#ff5c7a;letter-spacing:.08em;text-transform:uppercase">Absent Today</span>
@@ -3720,11 +3723,11 @@ function renderLeaveSummary() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
           <div>
             <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3)"><span>VL used${vlUsed?` (${vlUsed} tracked)`:''}</span><span>${vlPct}%</span></div>
-            <div style="height:3px;background:#1e1240;border-radius:2px;overflow:hidden"><div style="height:100%;width:${vlPct}%;background:${vlBarColor};border-radius:2px"></div></div>
+            <div style="height:3px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${vlPct}%;background:${vlBarColor};border-radius:2px"></div></div>
           </div>
           <div>
             <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3)"><span>SL used${slUsed?` (${slUsed} tracked)`:''}</span><span>${slPct}%</span></div>
-            <div style="height:3px;background:#1e1240;border-radius:2px;overflow:hidden"><div style="height:100%;width:${slPct}%;background:${slBarColor};border-radius:2px"></div></div>
+            <div style="height:3px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${slPct}%;background:${slBarColor};border-radius:2px"></div></div>
           </div>
         </div>
       </div>`;
@@ -3736,7 +3739,7 @@ function renderLeaveSummary() {
           <div class="tc-dot dot-${team}"></div>
           <span style="font-size:14px;font-weight:700;color:${tc}">${team}</span>
           <span style="font-size:11px;color:var(--text2);flex:1">${emps.length} members</span>
-          ${teamLowVL||teamLowSL?`<span style="font-size:10px;background:#1e0510;color:#f87171;padding:2px 7px;border-radius:20px;font-weight:600">⚠️ ${teamLowVL+teamLowSL} low</span>`:'<span style="font-size:10px;background:#041a10;color:#34d399;padding:2px 7px;border-radius:20px;font-weight:600">✓ All good</span>'}
+          ${teamLowVL||teamLowSL?`<span style="font-size:10px;background:var(--warn-bg);color:#f87171;padding:2px 7px;border-radius:20px;font-weight:600">⚠️ ${teamLowVL+teamLowSL} low</span>`:'<span style="font-size:10px;background:var(--ok-bg);color:#34d399;padding:2px 7px;border-radius:20px;font-weight:600">✓ All good</span>'}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="background:rgba(124,58,237,.1);border-radius:8px;padding:8px 10px;text-align:center">
