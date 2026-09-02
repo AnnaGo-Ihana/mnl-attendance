@@ -1049,6 +1049,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <span><span style="display:inline-block;width:12px;height:12px;background:#003d28;border:1px solid #00e896;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Default</span>
     </div>
     <button class="btn light" id="sched-add-date-btn" onclick="openSchedAddDate()" style="background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">📅 + Date</button>
+    <button class="btn light" id="sched-manage-btn" onclick="openManageSchedulesModal()" style="background:rgba(255,143,92,.1);border-color:#ff8f5c;color:#ff8f5c">🗓️ Manage Schedules</button>
     <button class="btn light" id="sched-import-btn" onclick="document.getElementById('sched-xl-input').click()" style="background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">📋 Import Schedule</button>
     <input type="file" id="sched-xl-input" accept=".xlsx,.xls" style="display:none" onchange="importSchedExcel(this)">
     <button class="btn light" id="sched-contacts-btn" onclick="openContactsManager()" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">👥 Contacts</button>
@@ -1386,39 +1387,8 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 
     <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🗓️ Manage Schedules</div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once.</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <div class="so" id="sched-mgmt-mode-ind" onclick="setSchedMgmtMode('individual')" style="flex:1;background:#0d0818;color:var(--text2)">👤 Individual</div>
-        <div class="so" id="sched-mgmt-mode-grp" onclick="setSchedMgmtMode('group')" style="flex:1;background:#0d0818;color:var(--text2)">🏢 Whole Team</div>
-      </div>
-      <div id="sched-mgmt-target-wrap" style="margin-bottom:12px">
-        <select id="sched-mgmt-target" onchange="loadSchedMgmtTarget()" style="width:100%"></select>
-      </div>
-
-      <div style="background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:12px;margin-bottom:12px">
-        <label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a78bfa;display:block;margin-bottom:8px">⚡ Quick Fill</label>
-        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Working Time</label>
-        <select id="sched-quick-time" style="width:100%;margin-bottom:8px"></select>
-        <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Rest Days (RD)</label>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-SUN" style="width:auto">Sun</label>
-          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-MON" style="width:auto">Mon</label>
-          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-TUE" style="width:auto">Tue</label>
-          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-WED" style="width:auto">Wed</label>
-          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-THU" style="width:auto">Thu</label>
-          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-FRI" style="width:auto">Fri</label>
-          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-SAT" style="width:auto">Sat</label>
-        </div>
-        <button class="btn light" onclick="applyQuickFill()" style="width:100%;font-size:11px">Fill Days Below ↓</button>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:12px" id="sched-mgmt-days"></div>
-
-      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Effective Until <span style="color:var(--text3);font-weight:400">(optional — leave blank for indefinite)</span></label>
-      <input type="date" id="sched-mgmt-until" onchange="updateUntilHint()" style="width:100%;margin-bottom:12px">
-      <div style="font-size:10px;color:var(--text3);margin-bottom:10px" id="sched-mgmt-until-hint"></div>
-
-      <button class="btn light" onclick="saveScheduleOverride()" style="width:100%">Save &amp; Apply</button>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once. Also available to leads from the Schedule page toolbar.</div>
+      <button class="btn light" onclick="openManageSchedulesModal()" style="width:100%">Open Manage Schedules</button>
     </div>
 
     <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
@@ -1508,6 +1478,49 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div class="pa">
       <button class="btn go" onclick="saveAccessEdit()" style="flex:2">Save</button>
       <button class="btn light" onclick="closeAccessEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE SCHEDULES MODAL (leads + admin) -->
+<div class="ov" id="manage-schedules-modal" onclick="if(event.target===this)closeManageSchedulesModal()">
+  <div class="modal" style="width:420px;max-height:90vh;overflow-y:auto">
+    <h3>🗓️ Manage Schedules</h3>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once. Takes effect immediately.</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div class="so" id="sched-mgmt-mode-ind" onclick="setSchedMgmtMode('individual')" style="flex:1;background:#0d0818;color:var(--text2)">👤 Individual</div>
+      <div class="so" id="sched-mgmt-mode-grp" onclick="setSchedMgmtMode('group')" style="flex:1;background:#0d0818;color:var(--text2)">🏢 Whole Team</div>
+    </div>
+    <div id="sched-mgmt-target-wrap" style="margin-bottom:12px">
+      <select id="sched-mgmt-target" onchange="loadSchedMgmtTarget()" style="width:100%"></select>
+    </div>
+
+    <div style="background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:12px;margin-bottom:12px">
+      <label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a78bfa;display:block;margin-bottom:8px">⚡ Quick Fill</label>
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Working Time</label>
+      <select id="sched-quick-time" style="width:100%;margin-bottom:8px"></select>
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Rest Days (RD)</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-SUN" style="width:auto">Sun</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-MON" style="width:auto">Mon</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-TUE" style="width:auto">Tue</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-WED" style="width:auto">Wed</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-THU" style="width:auto">Thu</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-FRI" style="width:auto">Fri</label>
+        <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text2)"><input type="checkbox" id="sched-quick-rd-SAT" style="width:auto">Sat</label>
+      </div>
+      <button class="btn light" onclick="applyQuickFill()" style="width:100%;font-size:11px">Fill Days Below ↓</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:12px" id="sched-mgmt-days"></div>
+
+    <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Effective Until <span style="color:var(--text3);font-weight:400">(optional — leave blank for indefinite)</span></label>
+    <input type="date" id="sched-mgmt-until" onchange="updateUntilHint()" style="width:100%;margin-bottom:12px">
+    <div style="font-size:10px;color:var(--text3);margin-bottom:10px" id="sched-mgmt-until-hint"></div>
+
+    <div class="pa">
+      <button class="btn go" onclick="saveScheduleOverride()" style="flex:2">Save &amp; Apply</button>
+      <button class="btn light" onclick="closeManageSchedulesModal()">Close</button>
     </div>
   </div>
 </div>
@@ -2630,6 +2643,14 @@ function reactivateEmpFromProfile(){
 
 // ─── MANAGE SCHEDULES (admin-only) ──────────────────────────────────────────
 let schedMgmtMode = 'individual';
+function openManageSchedulesModal(){
+  if(!(isEditMode || sessionStorage.getItem('att_is_edit')==='1')){ toast('Sign in to manage schedules'); return; }
+  setSchedMgmtMode('individual');
+  document.getElementById('manage-schedules-modal').classList.add('open');
+}
+function closeManageSchedulesModal(){
+  document.getElementById('manage-schedules-modal').classList.remove('open');
+}
 function setSchedMgmtMode(mode){
   schedMgmtMode = mode;
   document.getElementById('sched-mgmt-mode-ind').classList.toggle('sel', mode==='individual');
@@ -2696,7 +2717,7 @@ function loadSchedMgmtTarget(){
   }
 }
 function saveScheduleOverride(){
-  if(!(currentUser && currentUser.isAdmin)){ toast('⚠️ Only Anna can edit schedules'); return; }
+  if(!(isEditMode || sessionStorage.getItem('att_is_edit')==='1')){ toast('⚠️ Sign in to edit schedules'); return; }
   const target = document.getElementById('sched-mgmt-target').value;
   if(!target){ toast('Select an employee or team'); return; }
   const pattern = {};
@@ -6991,7 +7012,7 @@ function enableEditMode(showToast=true){
   // Show all edit buttons
   const editBtns = ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl',
     'btn-manage-depts','btn-add-ot','btn-import-sched','btn-auto-sched',
-    'btn-add-date-range','btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-import-btn'];
+    'btn-add-date-range','btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'];
   editBtns.forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='';
   });
@@ -7018,7 +7039,7 @@ function enableLeaveMode(showToast=true){
   // Make sure no edit/admin buttons are visible
   ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
-   'sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
+   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   const settingsTab = document.getElementById('nav-tab-settings');
@@ -7066,7 +7087,7 @@ function disableEditMode(){
   localStorage.removeItem(LEAVE_STORAGE_KEY);
   ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
-   'sched-contacts-btn','sched-add-date-btn','sched-import-btn'].forEach(id=>{
+   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   // Restore all nav tabs (leave_only mode hides everything but Leaves)
