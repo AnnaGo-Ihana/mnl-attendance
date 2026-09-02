@@ -6611,8 +6611,10 @@ function openReviewLeave(id){
     +'<div style="font-size:10px;color:var(--text3);margin-top:4px">Filed: '+filedAtDisplay(req.filedAt)+'</div>'
     +'</div>';
   document.getElementById('review-lead-notes').value = req.leadNotes||'';
-  // Show approve/decline only for leads
-  const canReview = isEditMode || sessionStorage.getItem('att_is_edit')==='1';
+  // Show approve/decline only for leads, or a leave_approver reviewing a
+  // request from their specifically-assigned department.
+  const canReview = isEditMode || sessionStorage.getItem('att_is_edit')==='1'
+    || (currentUser && currentUser.accessLevel==='leave_approver' && req.dept===currentUser.approverDept);
   const appBtn = document.getElementById('btn-approve-leave');
   const decBtn = document.getElementById('btn-decline-leave');
   if(appBtn) appBtn.style.display = canReview ? '' : 'none';
@@ -6647,6 +6649,7 @@ function renderLeaves(){
   const dateF = document.getElementById('leaves-date-from').value;
   const dateT = document.getElementById('leaves-date-to').value;
   const canManage = isEditMode || sessionStorage.getItem('att_is_edit')==='1';
+  const isLeaveApprover = currentUser && currentUser.accessLevel==='leave_approver';
 
   let reqs = state.leaveRequests.filter(r=>{
     if(deptF && r.dept!==deptF) return false;
@@ -6696,7 +6699,7 @@ function renderLeaves(){
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Reason</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Status</th>'
     +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Lead Notes</th>'
-    +(canManage?'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Action</th>':'')
+    +((canManage||isLeaveApprover)?'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Action</th>':'')
     +'</tr></thead><tbody>'
     +reqs.map(r=>{
       const days = r.from===r.to ? dd(r.from) : dd(r.from)+' → '+dd(r.to);
@@ -6714,10 +6717,12 @@ function renderLeaves(){
         +'</td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868;text-align:center"><span style="color:'+sc+';font-weight:700;font-size:11px;background:rgba(0,0,0,.2);padding:3px 10px;border-radius:10px;border:1px solid '+sc+'">'+r.status+'</span></td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);font-size:11px">'+(r.leadNotes||'—')+'</td>'
-        +(canManage?'<td style="padding:6px 10px;border:1px solid #3a2868;text-align:center;white-space:nowrap">'
+        +((canManage||isLeaveApprover)?'<td style="padding:6px 10px;border:1px solid #3a2868;text-align:center;white-space:nowrap">'
           +(function(rid){
+            const canReviewThis = canManage || (isLeaveApprover && r.dept===currentUser.approverDept);
+            if(!canReviewThis) return '<span style="color:var(--text3);font-size:10px">—</span>';
             return '<button onclick="openReviewLeave(\''+rid+'\')" style="background:rgba(196,168,255,.2);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font);margin-right:4px">Review</button>'
-              +'<button onclick="deleteLeave(\''+rid+'\')" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>';
+              +(canManage?'<button onclick="deleteLeave(\''+rid+'\')" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>':'');
           })(r.id)
           +'</td>':'')
         +'</tr>';
@@ -6845,6 +6850,7 @@ function exportLeavesCSV(){
 const PIN_STORAGE_KEY = 'att_edit_unlocked';
 const OT_PIN_STORAGE_KEY = 'att_ot_unlocked';
 const LEAVE_STORAGE_KEY = 'att_leave_unlocked';
+const LEAVE_APPROVER_STORAGE_KEY = 'att_leave_approver_unlocked';
 
 const ALL_CREDENTIALS = {
   'Anna Go': {pw:'CARE001', access:'full', admin:true},
@@ -6896,6 +6902,8 @@ const ALL_CREDENTIALS = {
   'Charina Silva': {pw:'CARE015', access:'leave_only'},
   'Charmea Cruz': {pw:'CARE098', access:'leave_only'},
   'Danilo Tabontabon': {pw:'CARE071', access:'leave_only'},
+  'Kaza': {pw:'CARE200', access:'leave_approver:Operations'},
+  'Ria': {pw:'CARE201', access:'leave_approver:Operations'},
   'Dexter Yatco': {pw:'CARE068', access:'leave_only'},
   'Diana Santiago': {pw:'CARE022', access:'leave_only'},
   'Earl Insierto': {pw:'CARE066', access:'leave_only'},
@@ -7000,6 +7008,18 @@ function checkEditAccess(){
         }
       } catch(e){ localStorage.removeItem(LEAVE_STORAGE_KEY); }
     }
+    const approverSaved = localStorage.getItem(LEAVE_APPROVER_STORAGE_KEY);
+    if(approverSaved){
+      try {
+        const data = JSON.parse(atob(approverSaved));
+        if(data && data.name) {
+          currentUser = data;
+          enableLeaveApproverMode(false); return true;
+        } else {
+          localStorage.removeItem(LEAVE_APPROVER_STORAGE_KEY);
+        }
+      } catch(e){ localStorage.removeItem(LEAVE_APPROVER_STORAGE_KEY); }
+    }
   } catch(e){}
   return false;
 }
@@ -7061,6 +7081,33 @@ function enableLeaveMode(showToast=true){
   showPage('leaves');
 }
 
+function enableLeaveApproverMode(showToast=true){
+  isEditMode = false;
+  try{sessionStorage.removeItem('att_is_edit');}catch(e){}
+  // View-only everywhere — hide all edit/admin buttons, but unlike
+  // leave_only mode, do NOT restrict which nav tabs are visible. They can
+  // see the whole app; their only actionable permission is approving or
+  // declining Leave requests for their assigned department.
+  ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
+   'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
+   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  const settingsTab = document.getElementById('nav-tab-settings');
+  if(settingsTab) settingsTab.style.display = 'none';
+  document.querySelectorAll('.nav-tab').forEach(t=>{ t.style.display=''; });
+  const lb=document.getElementById('btn-lock');
+  if(lb){
+    const name = currentUser?currentUser.name:'';
+    lb.innerHTML='🔓 '+name.split(' ')[0];
+    lb.style.background='rgba(93,184,255,.15)';
+    lb.style.borderColor='#5db8ff';
+    lb.style.color='#5db8ff';
+  }
+  if(showToast) toast('👋 Welcome '+(currentUser?currentUser.name:'')+'! View-only — you can approve/decline '+(currentUser?currentUser.approverDept:'')+' leave requests.');
+  showPage('leaves');
+}
+
 function enableOTMode(showToast=true){
   isEditMode = false; // not full edit
   // Only show OT add button
@@ -7085,6 +7132,7 @@ function disableEditMode(){
   localStorage.removeItem(PIN_STORAGE_KEY);
   localStorage.removeItem(OT_PIN_STORAGE_KEY);
   localStorage.removeItem(LEAVE_STORAGE_KEY);
+  localStorage.removeItem(LEAVE_APPROVER_STORAGE_KEY);
   ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
    'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'].forEach(id=>{
@@ -7153,6 +7201,7 @@ function checkRoleLogin(){
     localStorage.setItem(PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(OT_PIN_STORAGE_KEY);
     localStorage.removeItem(LEAVE_STORAGE_KEY);
+    localStorage.removeItem(LEAVE_APPROVER_STORAGE_KEY);
     currentUser = userData;
     document.getElementById('pin-modal').classList.remove('open');
     enableEditMode(true);
@@ -7162,6 +7211,7 @@ function checkRoleLogin(){
     localStorage.setItem(OT_PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(PIN_STORAGE_KEY);
     localStorage.removeItem(LEAVE_STORAGE_KEY);
+    localStorage.removeItem(LEAVE_APPROVER_STORAGE_KEY);
     currentUser = userData;
     document.getElementById('pin-modal').classList.remove('open');
     enableOTMode(true);
@@ -7170,9 +7220,20 @@ function checkRoleLogin(){
     localStorage.setItem(LEAVE_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(PIN_STORAGE_KEY);
     localStorage.removeItem(OT_PIN_STORAGE_KEY);
+    localStorage.removeItem(LEAVE_APPROVER_STORAGE_KEY);
     currentUser = userData;
     document.getElementById('pin-modal').classList.remove('open');
     enableLeaveMode(true);
+  } else if(access.startsWith('leave_approver:')){
+    const approverDept = access.split(':')[1];
+    const userData = {name, accessLevel:'leave_approver', approverDept};
+    localStorage.setItem(LEAVE_APPROVER_STORAGE_KEY, btoa(JSON.stringify(userData)));
+    localStorage.removeItem(PIN_STORAGE_KEY);
+    localStorage.removeItem(OT_PIN_STORAGE_KEY);
+    localStorage.removeItem(LEAVE_STORAGE_KEY);
+    currentUser = userData;
+    document.getElementById('pin-modal').classList.remove('open');
+    enableLeaveApproverMode(true);
   }
 }
 
