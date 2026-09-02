@@ -3116,22 +3116,22 @@ function renderTable(){
   const r1=document.createElement('tr'),r2=document.createElement('tr');
   const e0=document.createElement('th');
   e0.textContent='Employee';
-  e0.style.cssText='text-align:left;min-width:175px;position:sticky;left:0;top:0;z-index:30;background:#0d0818;border-right:1px solid #2d1f55;';
+  e0.style.cssText='text-align:left;min-width:175px;position:sticky;left:0;top:0;z-index:30;background:var(--bg);border-right:1px solid #2d1f55;';
   r1.appendChild(e0);
   const t0=document.createElement('th');
   t0.textContent='Team / Role';
-  t0.style.cssText='min-width:72px;position:sticky;left:175px;top:0;z-index:30;background:#0d0818;border-right:1px solid #2d1f55;';
+  t0.style.cssText='min-width:72px;position:sticky;left:175px;top:0;z-index:30;background:var(--bg);border-right:1px solid #2d1f55;';
   r1.appendChild(t0);
 
   visibleDates.forEach(d=>{
     const th1=document.createElement('th');
-    th1.style.cssText='position:sticky;top:0;z-index:15;background:#0d0818;min-width:60px;';
+    th1.style.cssText='position:sticky;top:0;z-index:15;background:var(--bg);min-width:60px;';
     th1.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3">${dd(d)}</div><div style="font-size:10px;color:#a78bfa;font-weight:500;margin-top:1px">${dow(d)}</div><span class="rd" onclick="remDate('${d}')">✕ remove</span>`;
     r1.appendChild(th1);
   });
   const st=document.createElement('th');
   st.innerHTML = 'Summary<div id="leave-balance-note" style="font-size:9px;font-weight:400;color:#ffcf3d;margin-top:2px;line-height:1.3;white-space:normal;max-width:150px"></div>';
-  st.style.cssText='min-width:110px;position:sticky;top:0;z-index:15;background:#0d0818;';
+  st.style.cssText='min-width:110px;position:sticky;top:0;z-index:15;background:var(--bg);';
   r1.appendChild(st);
   thead.innerHTML='';thead.appendChild(r1);
   tbody.innerHTML='';
@@ -4622,8 +4622,8 @@ function renderTimesheet(){
   }
 
   thead.innerHTML = '<tr>'
-    + '<th style="position:sticky;left:0;z-index:20;background:#0d0818;text-align:left;padding:8px 12px;min-width:160px;border:1px solid #3a2868;color:#c4a8ff">Employee</th>'
-    + '<th style="position:sticky;left:160px;z-index:20;background:#0d0818;text-align:left;padding:8px 10px;min-width:60px;border:1px solid #3a2868;color:#c4a8ff">Dept</th>'
+    + '<th style="position:sticky;left:0;z-index:20;background:var(--bg);text-align:left;padding:8px 12px;min-width:160px;border:1px solid #3a2868;color:#c4a8ff">Employee</th>'
+    + '<th style="position:sticky;left:160px;z-index:20;background:var(--bg);text-align:left;padding:8px 10px;min-width:60px;border:1px solid #3a2868;color:#c4a8ff">Dept</th>'
     + '<th style="background:#0d0818;padding:8px 10px;min-width:80px;border:1px solid #3a2868;color:#c4a8ff">Date</th>'
     + '<th style="background:#0d0818;padding:8px 10px;min-width:45px;border:1px solid #3a2868;color:#c4a8ff">Day</th>'
     + '<th style="background:#0d0818;padding:8px 10px;min-width:110px;border:1px solid #3a2868;color:#c4a8ff">Schedule</th>'
@@ -4650,7 +4650,7 @@ function renderTimesheet(){
 
       // Complete checkbox + Name
       const nameTd = document.createElement('td');
-      nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:#1a1035;padding:6px 12px;font-weight:600;color:var(--text);border:1px solid #3a2868;font-size:11px;white-space:nowrap';
+      nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:var(--surface);padding:6px 12px;font-weight:600;color:var(--text);border:1px solid #3a2868;font-size:11px;white-space:nowrap';
       // Check if "complete" - has both timeIn and timeOut matching schedule
       const ct0 = getScheduleClockTimes(entry.schedule);
       const isComplete = ct0 && entry.timeIn===ct0.timeIn && entry.timeOut===ct0.timeOut;
@@ -4671,7 +4671,7 @@ function renderTimesheet(){
 
       // Dept
       const deptTd = document.createElement('td');
-      deptTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:#1a1035;padding:6px 8px;font-size:10px;color:var(--text2);border:1px solid #3a2868';
+      deptTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:var(--surface);padding:6px 8px;font-size:10px;color:var(--text2);border:1px solid #3a2868';
       deptTd.textContent = emp.team;
       tr.appendChild(deptTd);
 
@@ -5763,8 +5763,8 @@ function renderSchedulePage(){
 
   // Header row
   let hdr = '<tr>'
-    +'<th style="position:sticky;left:0;z-index:20;background:#0d0818;padding:8px 14px;text-align:left;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;min-width:160px;white-space:nowrap">EMPLOYEE</th>'
-    +'<th style="position:sticky;left:160px;z-index:20;background:#0d0818;padding:8px 10px;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;min-width:60px">TEAM</th>';
+    +'<th style="position:sticky;left:0;z-index:20;background:var(--bg);padding:8px 14px;text-align:left;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;min-width:160px;white-space:nowrap">EMPLOYEE</th>'
+    +'<th style="position:sticky;left:160px;z-index:20;background:var(--bg);padding:8px 10px;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;min-width:60px">TEAM</th>';
   dates.forEach(d=>{
     const holiday = getPHHoliday(d);
     hdr += '<th style="background:'+(holiday?'rgba(0,232,150,.1)':'#0d0818')+';padding:8px 10px;border:1px solid #3a2868;color:'+(holiday?'#00e896':'#c4a8ff')+';font-size:10px;text-align:center;min-width:100px">'
@@ -5784,13 +5784,13 @@ function renderSchedulePage(){
 
     // Name cell
     const nameTd = document.createElement('td');
-    nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:#1a1035;padding:7px 14px;font-weight:600;color:var(--text);border:1px solid #3a2868;font-size:12px;white-space:nowrap';
+    nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:var(--surface);padding:7px 14px;font-weight:600;color:var(--text);border:1px solid #3a2868;font-size:12px;white-space:nowrap';
     nameTd.textContent = emp.name;
     tr.appendChild(nameTd);
 
     // Team cell
     const teamTd = document.createElement('td');
-    teamTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:#1a1035;padding:7px 8px;font-size:10px;color:var(--text2);border:1px solid #3a2868;text-align:center';
+    teamTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:var(--surface);padding:7px 8px;font-size:10px;color:var(--text2);border:1px solid #3a2868;text-align:center';
     teamTd.textContent = emp.team;
     tr.appendChild(teamTd);
 
