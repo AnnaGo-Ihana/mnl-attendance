@@ -2054,6 +2054,44 @@ async function loadFromDB(){
     state._recalculatedOTNotesV2 = true;
     if(fixedOT > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: direct unconditional fix for Diana Santiago's Sep 1 2026
+  // record specifically — the generic migration above should have caught
+  // this but hasn't, so bypass all conditions and force it directly.
+  if(!state._fixedDianaSep1){
+    try{
+      const k = tsk('Diana Santiago', '2026-09-01');
+      if(state.timesheet && state.timesheet[k]){
+        const entry = state.timesheet[k];
+        if(entry.schedule && entry.timeIn && entry.timeOut){
+          const issues = detectAttendanceIssues(entry.schedule, entry.timeIn, entry.timeOut);
+          const issueNote = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
+          entry.notes = issueNote;
+          entry._notesManual = false;
+          const otIssue = issues.find(i=>i.type==='ot');
+          if(otIssue) syncTimesheetOTToTracker('Diana Santiago', '2026-09-01', entry, otIssue);
+        }
+      }
+    }catch(e){ console.error('Diana Sep1 fix error:', e); }
+    state._fixedDianaSep1 = true;
+    try{ await saveToDB(); }catch(e){}
+  }
+  // One-time: remove inactive/resigned employees from Timesheet entirely,
+  // per Anna's updated request (previously they were kept for payroll
+  // export purposes, but she now wants them fully removed instead).
+  if(!state._removedInactiveFromTimesheet){
+    try{
+      const inactiveNames = new Set((state.employees||[]).filter(e=>e.status==='Inactive').map(e=>e.name));
+      if(state.timesheet && inactiveNames.size){
+        Object.keys(state.timesheet).forEach(k=>{
+          const parts = k.split('||');
+          const name = parts[1];
+          if(inactiveNames.has(name)) delete state.timesheet[k];
+        });
+      }
+    }catch(e){ console.error('Remove inactive from timesheet error:', e); }
+    state._removedInactiveFromTimesheet = true;
+    try{ await saveToDB(); }catch(e){}
+  }
 }
 
 let _lastBackupAt = 0;
@@ -4368,7 +4406,7 @@ function populateTsEmpFilter(){
   const dept = document.getElementById('ts-dept-filter').value;
   const sel = document.getElementById('ts-emp-filter');
   const cur = sel.value;
-  const emps = state.employees.filter(e=>!dept||e.team===dept);
+  const emps = activeEmployees().filter(e=>!dept||e.team===dept);
   sel.innerHTML = '<option value="">All Employees</option>'
     + emps.map(e=>'<option value="'+e.name+'">'+e.name+'</option>').join('');
   sel.value = cur;
@@ -4435,7 +4473,7 @@ function renderTimesheet(){
 
   populateTsEmpFilter();
 
-  let emps = state.employees.filter(e=>{
+  let emps = activeEmployees().filter(e=>{
     if(deptF && e.team!==deptF) return false;
     if(empF && e.name!==empF) return false;
     return true;
@@ -4905,7 +4943,7 @@ function exportTimesheetCSV(){
   if(dateFrom) dates = dates.filter(d=>d>=dateFrom);
   if(dateTo) dates = dates.filter(d=>d<=dateTo);
   let csv = 'Department,Employee,Date,Day,Schedule,Time In,Time Out,ND,Notes,Attendance\n';
-  const emps = state.employees.filter(e=>(!deptF||e.team===deptF) && (!empF||e.name===empF));
+  const emps = activeEmployees().filter(e=>(!deptF||e.team===deptF) && (!empF||e.name===empF));
   emps.forEach(emp=>{
     // Skip an employee entirely if they have zero attendance/timesheet data
     // in this exact date range — e.g. someone who resigned before this
