@@ -4187,6 +4187,52 @@ function tsk(emp, date){ return 'ts||'+emp+'||'+date; }
 
 function calcNDFromTimes(timeIn, timeOut){ return 0; }
 
+function normalizeTime(raw){
+  // Normalize a user-typed time string into clean "H:MM AM/PM" format.
+  // Accepts: "4", "4pm", "4 pm", "4:00pm", "4:00 PM", "16:00", "4:30", etc.
+  // Returns '' if it can't be parsed, so callers can treat that as "no change".
+  if(!raw) return '';
+  let s = raw.trim().toUpperCase().replace(/\s+/g,' ');
+  // Already has AM/PM
+  let m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  if(m){
+    let h = parseInt(m[1]), mn = parseInt(m[2]);
+    if(h<1||h>12||mn<0||mn>59) return '';
+    return h+':'+String(mn).padStart(2,'0')+' '+m[3];
+  }
+  m = s.match(/^(\d{1,2})\s*(AM|PM)$/);
+  if(m){
+    let h = parseInt(m[1]);
+    if(h<1||h>12) return '';
+    return h+':00 '+m[2];
+  }
+  // 24-hour format "16:00", "04:30"
+  m = s.match(/^(\d{1,2}):(\d{2})$/);
+  if(m){
+    let h = parseInt(m[1]), mn = parseInt(m[2]);
+    if(mn<0||mn>59) return '';
+    if(h>=0 && h<=23){
+      const ap = h>=12 ? 'PM' : 'AM';
+      let h12 = h%12; if(h12===0) h12=12;
+      return h12+':'+String(mn).padStart(2,'0')+' '+ap;
+    }
+    return '';
+  }
+  // Just a bare hour number "4", "16" — ambiguous without AM/PM context, but
+  // treat 0-23 as 24hr and default minutes to :00
+  m = s.match(/^(\d{1,2})$/);
+  if(m){
+    let h = parseInt(m[1]);
+    if(h>=0 && h<=23){
+      const ap = h>=12 ? 'PM' : 'AM';
+      let h12 = h%12; if(h12===0) h12=12;
+      return h12+':00 '+ap;
+    }
+    return '';
+  }
+  return '';
+}
+
 function parseHour(t12){
   // Convert 12hr time to decimal hours (e.g. "10:00 PM" -> 22.0)
   if(!t12||t12==='—'||t12==='-') return null;
