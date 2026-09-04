@@ -7333,32 +7333,41 @@ function importExcel(input){
         }
       } else { log.push('⚠️ Sheet "SL Monitoring" not found'); }
 
-      // Match against roster
+      // Match against roster — surname-based fuzzy match (handles spelling
+      // variants like Kristen/Kirsten) instead of requiring a literal
+      // substring match, which missed many real matches before.
+      function normTok(s){ return (s||'').toLowerCase().replace(/[^a-z]/g,''); }
+      function fuzzyLookup(empName, updates){
+        if(updates[empName]) return updates[empName];
+        const empTokens = empName.split(' ').filter(Boolean);
+        const empFirst = normTok(empTokens[0]);
+        const empLast = normTok(empTokens[empTokens.length-1]);
+        // Group all update-keys by their surname (last token)
+        const bySurname = {};
+        Object.keys(updates).forEach(k=>{
+          const kTokens = k.split(' ').filter(Boolean);
+          const kLast = normTok(kTokens[kTokens.length-1]);
+          const kFirst = normTok(kTokens[0]);
+          (bySurname[kLast] = bySurname[kLast]||[]).push({key:k, firstToks:kTokens.slice(0,-1).map(normTok), kFirst});
+          // Also index by first-token-as-surname, for rows with columns reversed
+          (bySurname[kFirst] = bySurname[kFirst]||[]).push({key:k, firstToks:[kLast], kFirst:kLast, reversed:true});
+        });
+        const candidates = bySurname[empLast] || [];
+        if(candidates.length===1) return updates[candidates[0].key];
+        if(candidates.length>1){
+          // Multiple same-surname candidates — disambiguate by first-name overlap
+          const overlap = candidates.filter(c=>
+            c.kFirst===empFirst || c.kFirst.startsWith(empFirst) || empFirst.startsWith(c.kFirst)
+            || c.firstToks.some(t=>t===empFirst || t.startsWith(empFirst) || empFirst.startsWith(t))
+          );
+          if(overlap.length===1) return updates[overlap[0].key];
+        }
+        return null;
+      }
       let matched=0, unmatched=[];
       state.employees.forEach(emp=>{
-        const nameParts = emp.name.split(' ');
-        // Try exact match first
-        let vlMatch = vlUpdates[emp.name];
-        let slMatch = slUpdates[emp.name];
-        // Try first+last name match from spreadsheet
-        if(!vlMatch){
-          Object.keys(vlUpdates).forEach(k=>{
-            const kl = k.toLowerCase();
-            const el = emp.name.toLowerCase();
-            if(kl===el || el.includes(kl.split(' ')[0]) && el.includes(kl.split(' ').slice(-1)[0])){
-              vlMatch = vlUpdates[k];
-            }
-          });
-        }
-        if(!slMatch){
-          Object.keys(slUpdates).forEach(k=>{
-            const kl = k.toLowerCase();
-            const el = emp.name.toLowerCase();
-            if(kl===el || el.includes(kl.split(' ')[0]) && el.includes(kl.split(' ').slice(-1)[0])){
-              slMatch = slUpdates[k];
-            }
-          });
-        }
+        const vlMatch = fuzzyLookup(emp.name, vlUpdates);
+        const slMatch = fuzzyLookup(emp.name, slUpdates);
         if(vlMatch||slMatch){
           matched++;
           if(!state._leaveOverrides) state._leaveOverrides={};
