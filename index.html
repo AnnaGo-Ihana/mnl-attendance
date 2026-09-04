@@ -23,6 +23,8 @@
   --SL:#ffaa5c;--SL-bg:#3d1800;
   --EL:#ff8f5c;--EL-bg:#3d1200;
   --BL:#9d6fff;--BL-bg:#241344;
+  --HDVL:#5cd6ff;--HDVL-bg:#00303e;
+  --HDSL:#ffbc7a;--HDSL-bg:#3d2200;
   --Off:#8878b8;--Off-bg:#180d30;
   --warn-bg:#1e0510;--ok-bg:#041a10;
 }
@@ -152,6 +154,8 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .ci-SL{background:#3d1800;color:#ffaa5c;font-weight:700;}
 .ci-EL{background:#3d1200;color:#ff8f5c;font-weight:700;}
 .ci-BL{background:#241344;color:#9d6fff;font-weight:700;}
+.ci-HDVL{background:#00303e;color:#5cd6ff;font-weight:700;}
+.ci-HDSL{background:#3d2200;color:#ffbc7a;font-weight:700;}
 .ci-Off{background:#180d30;color:#8878b8;font-weight:700;}
 .ci-blank{background:transparent;color:transparent;}
 .sumc{text-align:center;padding:5px 8px;background:#160d2e;font-size:11px;font-family:var(--mono);}
@@ -178,6 +182,8 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .so-UHD{background:#2e1e00;color:#c9960f;}
 .so-EL{background:#3d1200;color:#ff8f5c;}
 .so-BL{background:#241344;color:#9d6fff;}
+.so-HDVL{background:#00303e;color:#5cd6ff;}
+.so-HDSL{background:#3d2200;color:#ffbc7a;}
 .so-SL{background:#3d1800;color:#ffaa5c;}
 .so-Off{background:#180d30;color:#8878b8;}
 .pa{display:flex;gap:8px;margin-top:14px;}
@@ -277,6 +283,10 @@ html[data-theme="light"] .so-EL{background:#ffedd5 !important;}
 html[data-theme="light"] .ci-EL{background:#ffedd5 !important;}
 html[data-theme="light"] .so-BL{background:#ede9fe !important;}
 html[data-theme="light"] .ci-BL{background:#ede9fe !important;}
+html[data-theme="light"] .so-HDVL{background:#cffafe !important;}
+html[data-theme="light"] .ci-HDVL{background:#cffafe !important;}
+html[data-theme="light"] .so-HDSL{background:#ffedd5 !important;}
+html[data-theme="light"] .ci-HDSL{background:#ffedd5 !important;}
 html[data-theme="light"] .so-Off{background:#f3f4f6 !important;}
 html[data-theme="light"] .ci-Off{background:#f3f4f6 !important;}
 html[data-theme="light"] .nav-tab{color:rgba(30,27,75,.65) !important;}
@@ -671,6 +681,10 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <div style="display:flex;gap:8px">
         <div class="so" id="pop-paytype-paid" onclick="setPayType('Paid')" style="flex:1;background:#003d28;color:#00e896">💰 Paid</div>
         <div class="so" id="pop-paytype-unpaid" onclick="setPayType('Unpaid')" style="flex:1;background:#3d0818;color:#ff5c7a">🚫 Unpaid</div>
+      </div>
+      <div id="pop-hd-extra-wrap" style="display:none;gap:8px;margin-top:8px">
+        <div class="so so-HDVL" id="pop-paytype-hdvl" onclick="setHDSubType('HDVL')" style="flex:1">🏖️ HDVL</div>
+        <div class="so so-HDSL" id="pop-paytype-hdsl" onclick="setHDSubType('HDSL')" style="flex:1">🤒 HDSL</div>
       </div>
     </div>
 
@@ -1642,9 +1656,9 @@ function getLeaveUsed(name, type) {
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const STATUSES=['P','A','HD','UHD','UT','L','VL','UVL','SL','EL','BL','Off'];
-const SC={P:'var(--P)',A:'var(--A)',HD:'var(--HD)',UHD:'var(--UHD)',UT:'var(--UT)',L:'var(--L)',VL:'var(--VL)',UVL:'var(--UVL)',SL:'var(--SL)',EL:'var(--EL)',BL:'var(--BL)',Off:'var(--Off)'};
-const SC_BG={P:'var(--P-bg)',A:'var(--A-bg)',HD:'var(--HD-bg)',UHD:'var(--UHD-bg)',UT:'var(--UT-bg)',L:'var(--L-bg)',VL:'var(--VL-bg)',UVL:'var(--UVL-bg)',SL:'var(--SL-bg)',EL:'var(--EL-bg)',BL:'var(--BL-bg)',Off:'var(--Off-bg)'};
+const STATUSES=['P','A','HD','UHD','UT','L','VL','UVL','SL','EL','BL','HDVL','HDSL','Off'];
+const SC={P:'var(--P)',A:'var(--A)',HD:'var(--HD)',UHD:'var(--UHD)',UT:'var(--UT)',L:'var(--L)',VL:'var(--VL)',UVL:'var(--UVL)',SL:'var(--SL)',EL:'var(--EL)',BL:'var(--BL)',HDVL:'var(--HDVL)',HDSL:'var(--HDSL)',Off:'var(--Off)'};
+const SC_BG={P:'var(--P-bg)',A:'var(--A-bg)',HD:'var(--HD-bg)',UHD:'var(--UHD-bg)',UT:'var(--UT-bg)',L:'var(--L-bg)',VL:'var(--VL-bg)',UVL:'var(--UVL-bg)',SL:'var(--SL-bg)',EL:'var(--EL-bg)',BL:'var(--BL-bg)',HDVL:'var(--HDVL-bg)',HDSL:'var(--HDSL-bg)',Off:'var(--Off-bg)'};
 
 const INIT_DATA = {
   dates: ['2025-05-01','2025-05-02','2025-05-03','2025-05-04','2025-05-05'],
@@ -3264,22 +3278,25 @@ function openPop(emp,date,cur){
   document.getElementById('pop-d').textContent=dd(date)+' · '+dow(date);
 
   const payWrap = document.getElementById('pop-paytype-section');
-  if(cur==='VL'||cur==='UVL'||cur==='HD'||cur==='UHD'){
-    pBaseType = cur.replace('U','');
-    const payType = cur.startsWith('U') ? 'Unpaid' : 'Paid';
+  const hdExtraWrap = document.getElementById('pop-hd-extra-wrap');
+  if(cur==='VL'||cur==='UVL'||cur==='HD'||cur==='UHD'||cur==='HDVL'||cur==='HDSL'){
+    pBaseType = (cur==='HDVL'||cur==='HDSL') ? 'HD' : cur.replace('U','');
+    const payType = (cur==='HDVL'||cur==='HDSL') ? cur : (cur.startsWith('U') ? 'Unpaid' : 'Paid');
     payWrap.style.display='block';
+    hdExtraWrap.style.display = pBaseType==='HD' ? 'flex' : 'none';
     document.getElementById('pop-paytype-label').textContent = (pBaseType==='VL'?'Vacation Leave':'Half Day')+' — Paid or Unpaid?';
     updatePayTypeUI(payType);
     document.querySelectorAll('.so').forEach(el=>{
-      if(el.id==='pop-paytype-paid'||el.id==='pop-paytype-unpaid') return;
+      if(['pop-paytype-paid','pop-paytype-unpaid','pop-paytype-hdvl','pop-paytype-hdsl'].includes(el.id)) return;
       el.classList.remove('sel');
       if(el.classList.contains('so-'+pBaseType))el.classList.add('sel');
     });
   } else {
     pBaseType = null;
     payWrap.style.display='none';
+    hdExtraWrap.style.display='none';
     document.querySelectorAll('.so').forEach(el=>{
-      if(el.id==='pop-paytype-paid'||el.id==='pop-paytype-unpaid') return;
+      if(['pop-paytype-paid','pop-paytype-unpaid','pop-paytype-hdvl','pop-paytype-hdsl'].includes(el.id)) return;
       el.classList.remove('sel');
       if(el.classList.contains('so-'+cur))el.classList.add('sel');
     });
@@ -3337,19 +3354,22 @@ function closePop(){document.getElementById('spop').classList.remove('open');}
 let pBaseType=null; // 'VL' or 'HD' when the paytype sub-choice is active
 function setSt(st){
   const payWrap = document.getElementById('pop-paytype-section');
+  const hdExtraWrap = document.getElementById('pop-hd-extra-wrap');
   if(st==='VL' || st==='HD'){
     pBaseType = st;
-    pCurSt = st; // defaults to Paid until they pick Unpaid
+    pCurSt = st; // defaults to Paid until they pick Unpaid/HDVL/HDSL
     payWrap.style.display='block';
+    hdExtraWrap.style.display = st==='HD' ? 'flex' : 'none';
     document.getElementById('pop-paytype-label').textContent = (st==='VL'?'Vacation Leave':'Half Day')+' — Paid or Unpaid?';
     updatePayTypeUI('Paid');
   } else {
     pBaseType = null;
     pCurSt = st;
     payWrap.style.display='none';
+    hdExtraWrap.style.display='none';
   }
   document.querySelectorAll('.so').forEach(el=>{
-    if(el.id==='pop-paytype-paid'||el.id==='pop-paytype-unpaid') return;
+    if(['pop-paytype-paid','pop-paytype-unpaid','pop-paytype-hdvl','pop-paytype-hdsl'].includes(el.id)) return;
     el.classList.remove('sel');
     if(el.classList.contains('so-'+st))el.classList.add('sel');
   });
@@ -3359,9 +3379,20 @@ function setPayType(type){
   pCurSt = (type==='Unpaid') ? ('U'+pBaseType) : pBaseType;
   updatePayTypeUI(type);
 }
+function setHDSubType(type){
+  // type is 'HDVL' or 'HDSL' — these are their own distinct statuses, only
+  // meaningful when the base type is Half Day.
+  if(pBaseType!=='HD') return;
+  pCurSt = type;
+  updatePayTypeUI(type);
+}
 function updatePayTypeUI(type){
   document.getElementById('pop-paytype-paid').classList.toggle('sel', type==='Paid');
   document.getElementById('pop-paytype-unpaid').classList.toggle('sel', type==='Unpaid');
+  const hdvl = document.getElementById('pop-paytype-hdvl');
+  const hdsl = document.getElementById('pop-paytype-hdsl');
+  if(hdvl) hdvl.classList.toggle('sel', type==='HDVL');
+  if(hdsl) hdsl.classList.toggle('sel', type==='HDSL');
 }
 function savePopup(){
   if(!pEmp||!pDate)return;
@@ -4454,8 +4485,8 @@ function getTsEntry(emp, date){
   entry._lastAtt = att;
 
   // Always re-evaluate for leave/absent statuses even if already initialized
-  const AUTO_NOTE_STATUSES = ['VL','UVL','SL','A','HD','UHD','EL','BL'];
-  const AUTO_NOTE_LABELS = {VL:'Paid VL', UVL:'Unpaid VL', SL:'Paid SL', A:'Absent', HD:'Paid Half Day', UHD:'Unpaid Half Day', EL:'Emergency Leave', BL:'Bereavement Leave'};
+  const AUTO_NOTE_STATUSES = ['VL','UVL','SL','A','HD','UHD','EL','BL','HDVL','HDSL'];
+  const AUTO_NOTE_LABELS = {VL:'Paid VL', UVL:'Unpaid VL', SL:'Paid SL', A:'Absent', HD:'Paid Half Day', UHD:'Unpaid Half Day', EL:'Emergency Leave', BL:'Bereavement Leave', HDVL:'Half Day VL', HDSL:'Half Day SL'};
   if(attChanged || !entry._notesInit || AUTO_NOTE_STATUSES.includes(att) || att==='Off'){
     entry._notesInit = true;
     if(AUTO_NOTE_STATUSES.includes(att)){
