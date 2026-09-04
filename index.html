@@ -7381,7 +7381,7 @@ function importExcel(input){
 
       log.push(`
 🎯 Matched: ${matched} employees`);
-      if(unmatched.length) log.push(`⚠️ Not matched (${unmatched.length}): ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'…':''}`);
+      if(unmatched.length) log.push(`⚠️ Not matched (${unmatched.length}): ${unmatched.join(', ')}`);
 
       pendingLeaveImport = true;
       document.getElementById('import-progress').innerHTML = log.map(l=>`<div>${l}</div>`).join('');
