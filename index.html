@@ -2031,6 +2031,27 @@ async function loadFromDB(){
     state._updatedLeaveNoteV3 = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
+  // SL_BASE values from the latest payroll refresh. This override layer
+  // (written by both the Import Leave Credits tool and the Edit Credits
+  // modal) gets re-applied on every load and was silently overwriting the
+  // corrected balances with stale data from before this session's fixes —
+  // e.g. Ann Cruz kept showing an old ~2 days even after being corrected to
+  // 0.7 in code, because a leftover override from an earlier import/edit
+  // took priority every time the app loaded.
+  if(!state._reconciledLeaveOverrides){
+    if(!state._leaveOverrides) state._leaveOverrides = {};
+    Object.keys(VL_BASE).forEach(name=>{
+      if(!state._leaveOverrides[name]) state._leaveOverrides[name] = {};
+      state._leaveOverrides[name].vl = VL_BASE[name];
+    });
+    Object.keys(SL_BASE).forEach(name=>{
+      if(!state._leaveOverrides[name]) state._leaveOverrides[name] = {};
+      state._leaveOverrides[name].sl = SL_BASE[name];
+    });
+    state._reconciledLeaveOverrides = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: clear all existing Overtime entries per Anna's request. Going
   // forward, the Overtime tab also defaults to showing only the current
   // cutoff period (see showPage), so old entries from a prior cutoff won't
