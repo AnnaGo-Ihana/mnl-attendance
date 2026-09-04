@@ -7358,15 +7358,25 @@ function importExcel(input){
       // variants like Kristen/Kirsten) instead of requiring a literal
       // substring match, which missed many real matches before.
       function normTok(s){ return (s||'').toLowerCase().replace(/[^a-z]/g,''); }
+      const NAME_SUFFIXES = new Set(['jr','sr','ii','iii','iv','v']);
+      function stripSuffix(tokens){
+        // Drop trailing suffixes like "III"/"Jr." so the real surname (the
+        // token before it) gets used, not the suffix itself — e.g. "Clemente
+        // D. Manabat III" should treat "Manabat" as the surname, not "III".
+        let t = tokens.slice();
+        while(t.length>1 && NAME_SUFFIXES.has(normTok(t[t.length-1]))) t.pop();
+        return t;
+      }
       function fuzzyLookup(empName, updates){
         if(updates[empName]) return updates[empName];
-        const empTokens = empName.split(' ').filter(Boolean);
+        const empTokensRaw = empName.split(' ').filter(Boolean);
+        const empTokens = stripSuffix(empTokensRaw);
         const empFirst = normTok(empTokens[0]);
         const empLast = normTok(empTokens[empTokens.length-1]);
-        // Group all update-keys by their surname (last token)
+        // Group all update-keys by their surname (last token, suffix-stripped)
         const bySurname = {};
         Object.keys(updates).forEach(k=>{
-          const kTokens = k.split(' ').filter(Boolean);
+          const kTokens = stripSuffix(k.split(' ').filter(Boolean));
           const kLast = normTok(kTokens[kTokens.length-1]);
           const kFirst = normTok(kTokens[0]);
           (bySurname[kLast] = bySurname[kLast]||[]).push({key:k, firstToks:kTokens.slice(0,-1).map(normTok), kFirst});
