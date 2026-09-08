@@ -2066,6 +2066,23 @@ async function loadFromDB(){
     state._reconciledLeaveOverrides = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: backfill Tracker marks for leave requests that were already
+  // approved before this feature existed (e.g. Jervin's approved Sep 9-11
+  // leave showing blank in the Tracker instead of the leave type).
+  if(!state._backfilledApprovedLeaveTracker){
+    let marked = 0;
+    (state.leaveRequests||[]).forEach(req=>{
+      if(req.status!=='Approved' || !req.from || !req.to) return;
+      const empName = leaveEmpName(req);
+      if(!empName) return;
+      (state.dates||[]).filter(d=>d>=req.from && d<=req.to).forEach(d=>{
+        const k = gk(empName,d);
+        if(!state.attendance[k]){ state.attendance[k] = req.type; marked++; }
+      });
+    });
+    state._backfilledApprovedLeaveTracker = true;
+    if(marked > 0){ try{ await saveToDB(); }catch(e){} }
+  }
   // One-time: clear all existing Overtime entries per Anna's request. Going
   // forward, the Overtime tab also defaults to showing only the current
   // cutoff period (see showPage), so old entries from a prior cutoff won't
@@ -6688,10 +6705,29 @@ function reviewLeave(status){
   if(!_reviewingLeaveId) return;
   const req = (state.leaveRequests||[]).find(r=>r.id===_reviewingLeaveId);
   if(!req) return;
+  const prevStatus = req.status;
   req.status = status;
   req.leadNotes = document.getElementById('review-lead-notes').value.trim();
   req.reviewedBy = currentUser?currentUser.name:'Lead';
   req.reviewedAt = new Date().toISOString();
+
+  // Mark (or unmark) the Tracker to match the approval decision
+  const empName = leaveEmpName(req);
+  if(req.from && req.to && empName){
+    const dates = (state.dates||[]).filter(d=>d>=req.from && d<=req.to);
+    if(status==='Approved'){
+      dates.forEach(d=>{ state.attendance[gk(empName,d)] = req.type; });
+    } else if(prevStatus==='Approved'){
+      // Was approved, now reversed — clear only the marks this approval set,
+      // so we don't clobber something a lead has since changed by hand.
+      dates.forEach(d=>{
+        const k = gk(empName,d);
+        if(state.attendance[k]===req.type) delete state.attendance[k];
+      });
+    }
+    renderTable();
+  }
+
   document.getElementById('review-leave-modal').classList.remove('open');
   scheduleSave();
   renderLeaves();
