@@ -1738,9 +1738,10 @@ async function sbFetch(path, opts={}){
 }
 
 async function loadFromDB(){
-  const rows = await sbFetch('attendance?id=eq.state&select=data');
+  const rows = await sbFetch('attendance?id=eq.state&select=data,updated_at');
   if(rows && rows.length){
     const d = rows[0].data;
+    _lastKnownRemoteTimestamp = rows[0].updated_at;
     // If DB is empty/fresh, seed with default data
     if(!d.employees || d.employees.length===0){
       state = JSON.parse(JSON.stringify(INIT_DATA));
@@ -2173,16 +2174,91 @@ async function loadFromDB(){
 let _lastBackupAt = 0;
 let _pendingSave = false;
 let _saveRetryCount = 0;
+let _lastKnownRemoteTimestamp = null;
+
+function mergeRemoteIntoLocal(remoteData){
+  // Merge remote changes into local state before saving, instead of blindly
+  // overwriting whatever another user saved in the meantime. Local values
+  // win on genuine conflicts (same key/id edited by both), but anything that
+  // only exists on the remote side gets preserved instead of silently wiped.
+  if(!remoteData) return;
+
+  // Per-key dictionaries: union of both sides, local wins per-key conflicts
+  const dictFields = ['attendance','timesheet','notes','onsite','scheduleOverrides','credentialOverrides','_leaveOverrides'];
+  dictFields.forEach(field=>{
+    const remoteObj = remoteData[field];
+    if(!remoteObj) return;
+    if(!state[field]) state[field] = {};
+    Object.keys(remoteObj).forEach(k=>{
+      if(!(k in state[field])) state[field][k] = remoteObj[k];
+    });
+  });
+
+  // Array-of-objects-with-id: union by id, local wins per-id conflicts
+  const idArrayFields = ['leaveRequests','otEntries'];
+  idArrayFields.forEach(field=>{
+    const remoteArr = remoteData[field];
+    if(!Array.isArray(remoteArr)) return;
+    if(!Array.isArray(state[field])) state[field] = [];
+    const localIds = new Set(state[field].map(r=>r.id));
+    remoteArr.forEach(r=>{
+      if(!localIds.has(r.id)) state[field].push(r);
+    });
+  });
+
+  // employees: union by name, local wins per-name conflicts
+  if(Array.isArray(remoteData.employees)){
+    if(!Array.isArray(state.employees)) state.employees = [];
+    const localNames = new Set(state.employees.map(e=>e.name));
+    remoteData.employees.forEach(e=>{
+      if(!localNames.has(e.name)) state.employees.push(e);
+    });
+  }
+
+  // dates: simple union
+  if(Array.isArray(remoteData.dates)){
+    if(!Array.isArray(state.dates)) state.dates = [];
+    const localDates = new Set(state.dates);
+    remoteData.dates.forEach(d=>{ if(!localDates.has(d)) state.dates.push(d); });
+    state.dates.sort();
+  }
+
+  // cutoffs: union by id
+  if(Array.isArray(remoteData.cutoffs)){
+    if(!Array.isArray(state.cutoffs)) state.cutoffs = [];
+    const localIds = new Set(state.cutoffs.map(c=>c.id));
+    remoteData.cutoffs.forEach(c=>{ if(!localIds.has(c.id)) state.cutoffs.push(c); });
+  }
+}
+
 async function saveToDB(){
   _pendingSave = true;
   setSyncStatus('syncing');
   if(currentUser) state._lastEditedBy = currentUser.name.split(' ')[0];
   try{
+    // Check whether someone else has saved since we last knew about the
+    // server's state. If so, merge their changes in first instead of
+    // blindly overwriting them with our own full snapshot — this is the
+    // actual fix for data disappearing when multiple leads save around the
+    // same time (e.g. everyone finalizing attendance right before a cutoff
+    // closes on Sunday).
+    try{
+      const rows = await sbFetch('attendance?id=eq.state&select=data,updated_at');
+      if(rows && rows.length){
+        const remoteTs = rows[0].updated_at;
+        if(_lastKnownRemoteTimestamp && remoteTs && remoteTs !== _lastKnownRemoteTimestamp){
+          mergeRemoteIntoLocal(rows[0].data);
+        }
+      }
+    }catch(e){ /* if this pre-check fails, fall through and save anyway */ }
+
+    const saveTs = new Date().toISOString();
     await sbFetch('attendance?id=eq.state', {
       method:'PATCH',
       prefer:'return=minimal',
-      body: JSON.stringify({data: state, updated_at: new Date().toISOString()})
+      body: JSON.stringify({data: state, updated_at: saveTs})
     });
+    _lastKnownRemoteTimestamp = saveTs;
     setSyncStatus('ok');
     _pendingSave = false; // only clear on confirmed success — a failed save
                           // means local edits are still ahead of the DB, so
@@ -7582,6 +7658,7 @@ function startApp(){
             state=ns;buildDateSel();renderDash();renderTable();
             toast('Updated by another user');
           }
+          _lastKnownRemoteTimestamp = rows[0].updated_at;
         }
       }catch(e){}
     },15000);
