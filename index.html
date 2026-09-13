@@ -2084,6 +2084,20 @@ async function loadFromDB(){
     state._backfilledApprovedLeaveTracker = true;
     if(marked > 0){ try{ await saveToDB(); }catch(e){} }
   }
+
+  // One-time: restore attendance entries recovered from the Sep 12 2026
+  // Supabase backup, after data went missing (likely lost during concurrent
+  // saves before the merge-on-save fix was in place). Only fills currently
+  // empty cells so it can never overwrite anything already correctly re-entered.
+  if(!state._restoredSep12BackupData){
+    const RECOVERED = {"Abigail Capco||2026-09-05": "Off", "Abigail Capco||2026-09-06": "Off", "Abigail Capco||2026-09-12": "Off", "Abigail Capco||2026-09-13": "Off", "Arielle Jesena||2026-09-05": "Off", "Arielle Jesena||2026-09-06": "Off", "Arielle Jesena||2026-09-12": "Off", "Arielle Jesena||2026-09-13": "Off", "Emmanuel Martin||2026-09-08": "VL", "Emmanuel Martin||2026-09-09": "VL", "Emmanuel Martin||2026-09-10": "VL", "Geraldine Gallano||2026-09-06": "Off", "Geraldine Gallano||2026-09-07": "Off", "Geraldine Gallano||2026-09-13": "Off", "Hannah Tampoc||2026-09-05": "Off", "Hannah Tampoc||2026-09-06": "Off", "Hannah Tampoc||2026-09-12": "Off", "Hannah Tampoc||2026-09-13": "Off", "Jervin Tan||2026-09-05": "Off", "Jervin Tan||2026-09-06": "Off", "Jervin Tan||2026-09-12": "Off", "Jervin Tan||2026-09-13": "Off", "Jonnel Ulit||2026-09-11": "VL", "Lemuel Yu||2026-09-12": "VL", "Lemuel Yu||2026-09-13": "VL", "Marrion Bared||2026-09-05": "Off", "Marrion Bared||2026-09-06": "Off", "Marrion Bared||2026-09-12": "Off", "Marrion Bared||2026-09-13": "Off", "Michelle Anne Barcelona||2026-09-07": "VL", "Michelle Anne Barcelona||2026-09-08": "VL", "Michelle Anne Barcelona||2026-09-09": "VL", "Michelle Anne Barcelona||2026-09-10": "VL", "Michelle Anne Barcelona||2026-09-11": "VL", "Rachel Ann Dadivas||2026-09-04": "VL", "Rachel Ann Dadivas||2026-09-05": "VL", "Rachel Ann Dadivas||2026-09-06": "VL", "Rachel Ann Dadivas||2026-09-07": "VL", "Rachel Ann Dadivas||2026-09-08": "VL", "Rachel Ann Dadivas||2026-09-09": "VL", "Rachel Ann Dadivas||2026-09-10": "VL", "Rachel Ann Dadivas||2026-09-11": "VL", "Rachel Ann Dadivas||2026-09-12": "VL", "Rachel Ann Dadivas||2026-09-13": "VL", "Zan Juanes||2026-09-04": "VL", "Zan Juanes||2026-09-05": "VL", "Zan Juanes||2026-09-06": "VL", "Zan Juanes||2026-09-07": "VL"};
+    let restored = 0;
+    Object.entries(RECOVERED).forEach(([k, v])=>{
+      if(!state.attendance[k]){ state.attendance[k] = v; restored++; }
+    });
+    state._restoredSep12BackupData = true;
+    if(restored > 0){ try{ await saveToDB(); }catch(e){} }
+  }
   // One-time: clear all existing Overtime entries per Anna's request. Going
   // forward, the Overtime tab also defaults to showing only the current
   // cutoff period (see showPage), so old entries from a prior cutoff won't
