@@ -2172,6 +2172,7 @@ async function loadFromDB(){
 
 let _lastBackupAt = 0;
 let _pendingSave = false;
+let _saveRetryCount = 0;
 async function saveToDB(){
   _pendingSave = true;
   setSyncStatus('syncing');
@@ -2186,6 +2187,8 @@ async function saveToDB(){
     _pendingSave = false; // only clear on confirmed success — a failed save
                           // means local edits are still ahead of the DB, so
                           // the poll must keep treating them as unsaved
+    _saveRetryCount = 0;
+    hideSaveFailBanner();
     // Auto-backup on a real time interval (not a session-only save counter,
     // which reset to 0 on every page reload and rarely actually fired in
     // practice — most sessions never reached 10 saves before a refresh).
@@ -2202,9 +2205,42 @@ async function saveToDB(){
     }
   } catch(e){
     setSyncStatus('error');
-    toast('⚠️ Save failed — check connection');
+    _saveRetryCount++;
+    if(_saveRetryCount <= 5){
+      // Automatically retry with backoff instead of just giving up silently —
+      // a transient network hiccup shouldn't mean permanently lost work.
+      const delay = Math.min(3000 * _saveRetryCount, 15000);
+      toast('⚠️ Save failed — retrying in '+Math.round(delay/1000)+'s (attempt '+_saveRetryCount+'/5)');
+      setTimeout(()=>{ saveToDB(); }, delay);
+    } else {
+      showSaveFailBanner();
+    }
   }
 }
+function showSaveFailBanner(){
+  let banner = document.getElementById('save-fail-banner');
+  if(!banner){
+    banner = document.createElement('div');
+    banner.id = 'save-fail-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7a1030;color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;font-family:var(--font)';
+    banner.innerHTML = '⚠️ Your changes have NOT been saved — check your internet connection. Do not close this tab. <button onclick="saveToDB()" style="margin-left:10px;background:#fff;color:#7a1030;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-weight:700">Retry Now</button>';
+    document.body.prepend(banner);
+  }
+}
+function hideSaveFailBanner(){
+  const banner = document.getElementById('save-fail-banner');
+  if(banner) banner.remove();
+}
+// Warn before leaving the page if there's anything genuinely unsaved —
+// this is the actual safety net against silent data loss: closing the tab
+// or navigating away no longer just discards a failed/pending save quietly.
+window.addEventListener('beforeunload', function(e){
+  if(_pendingSave){
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
 
 function scheduleSave(){
   _pendingSave = true;
