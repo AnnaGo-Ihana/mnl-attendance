@@ -2067,6 +2067,24 @@ async function loadFromDB(){
     state._reconciledLeaveOverrides = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: force a SECOND reconciliation pass. The first one ran before
+  // some later VL_BASE/SL_BASE corrections were made in code (e.g. Rachelle
+  // Sierra showing 0.9 days instead of the correct 5.89), so it locked in
+  // stale values that kept overriding the corrected code. This re-syncs
+  // _leaveOverrides to match the current VL_BASE/SL_BASE one more time.
+  if(!state._reconciledLeaveOverridesV2){
+    if(!state._leaveOverrides) state._leaveOverrides = {};
+    Object.keys(VL_BASE).forEach(name=>{
+      if(!state._leaveOverrides[name]) state._leaveOverrides[name] = {};
+      state._leaveOverrides[name].vl = VL_BASE[name];
+    });
+    Object.keys(SL_BASE).forEach(name=>{
+      if(!state._leaveOverrides[name]) state._leaveOverrides[name] = {};
+      state._leaveOverrides[name].sl = SL_BASE[name];
+    });
+    state._reconciledLeaveOverridesV2 = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: backfill Tracker marks for leave requests that were already
   // approved before this feature existed (e.g. Jervin's approved Sep 9-11
   // leave showing blank in the Tracker instead of the leave type).
