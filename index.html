@@ -2096,6 +2096,28 @@ async function loadFromDB(){
     state._removedRachelleSierraOverride = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: backfill Tracker "Off" marks for existing Rest Days set via
+  // the Schedule tab (explicit or recurring/default), for any date where
+  // the Tracker cell is still blank. Only fills empty cells so it never
+  // overwrites a genuine leave status marked for a different reason.
+  if(!state._syncedRestDaysToTracker){
+    let synced = 0;
+    (state.employees||[]).forEach(emp=>{
+      (state.dates||[]).forEach(d=>{
+        const k = tsk(emp.name, d);
+        const explicitSched = state.timesheet && state.timesheet[k] ? state.timesheet[k].schedule : '';
+        const sched = explicitSched || getScheduleForEmp(emp.name, d);
+        if(sched !== 'RD') return;
+        const attKey = gk(emp.name, d);
+        if(!state.attendance[attKey]){
+          state.attendance[attKey] = 'Off';
+          synced++;
+        }
+      });
+    });
+    state._syncedRestDaysToTracker = true;
+    if(synced > 0){ try{ await saveToDB(); }catch(e){} }
+  }
   // One-time: backfill Tracker marks for leave requests that were already
   // approved before this feature existed (e.g. Jervin's approved Sep 9-11
   // leave showing blank in the Tracker instead of the leave type).
@@ -6147,9 +6169,21 @@ function confirmSchedEdit(){
     state.timesheet[k].timeOut = ct.timeOut;
   }
 
+  // Keep the Tracker in sync: setting a Rest Day here should also mark the
+  // Tracker as Off, so the two views don't disagree with each other. Only
+  // does this when the Tracker cell is currently blank, so it never
+  // silently overwrites a genuine leave status (VL/SL/EL/BL/etc.) that's
+  // already been marked there for a different reason.
+  const attKey = gk(empName, date);
+  const currentAtt = state.attendance[attKey] || '';
+  if(newSched === 'RD' && !currentAtt){
+    state.attendance[attKey] = 'Off';
+  }
+
   document.getElementById('sched-edit-modal').classList.remove('open');
   scheduleSave();
   renderSchedulePage();
+  renderTable();
   toast('✅ Schedule updated for '+empName.split(' ')[0]+'!');
 
   // Offer WhatsApp/email notification for schedule change
