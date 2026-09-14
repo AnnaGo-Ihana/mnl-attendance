@@ -2085,6 +2085,17 @@ async function loadFromDB(){
     state._reconciledLeaveOverridesV2 = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: directly delete Rachelle Sierra's specific override entry.
+  // Two reconciliation passes haven't fixed her stale 0.9-day VL despite the
+  // code correctly having 5.89 -- removing the override entirely guarantees
+  // nothing is left to conflict with the correct code value.
+  if(!state._removedRachelleSierraOverride){
+    if(state._leaveOverrides && state._leaveOverrides['Rachelle Sierra']){
+      delete state._leaveOverrides['Rachelle Sierra'];
+    }
+    state._removedRachelleSierraOverride = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: backfill Tracker marks for leave requests that were already
   // approved before this feature existed (e.g. Jervin's approved Sep 9-11
   // leave showing blank in the Tracker instead of the leave type).
