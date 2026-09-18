@@ -7597,15 +7597,26 @@ function importExcel(input){
             vlBalCol=i; break;
           }
         }
+        // Find First Name / Surname columns by header label instead of
+        // assuming columns 0/1 — some payroll exports add a leading row-
+        // number column that shifts everything over by one.
+        let fnCol=-1, snCol=-1;
+        header.forEach((h,i)=>{
+          const hl = h?String(h).toLowerCase():'';
+          if(fnCol===-1 && hl.includes('first name')) fnCol=i;
+          if(snCol===-1 && hl.includes('surname')) snCol=i;
+        });
+        if(fnCol===-1) fnCol=0;
+        if(snCol===-1) snCol=1;
         if(vlBalCol===-1){log.push('⚠️ Could not find VL balance column');}
         else{
           log.push(`✅ VL: found balance column at col ${vlBalCol+1} — "${header[vlBalCol]}"`);
           let found=0;
           for(let r=2;r<rows.length;r++){
             const row=rows[r];
-            if(!row||!row[0]||!row[1]) continue;
-            const fname=String(row[0]).trim();
-            const lname=String(row[1]).trim();
+            if(!row||!row[fnCol]||!row[snCol]) continue;
+            const fname=String(row[fnCol]).trim();
+            const lname=String(row[snCol]).trim();
             const fullName=fname+' '+lname;
             const hrs=parseFloat(row[vlBalCol])||0;
             const days=Math.round(hrs/8*100)/100;
@@ -7627,15 +7638,23 @@ function importExcel(input){
             slBalCol=i; break;
           }
         }
+        let fnCol2=-1, snCol2=-1;
+        header.forEach((h,i)=>{
+          const hl = h?String(h).toLowerCase():'';
+          if(fnCol2===-1 && hl.includes('first name')) fnCol2=i;
+          if(snCol2===-1 && hl.includes('surname')) snCol2=i;
+        });
+        if(fnCol2===-1) fnCol2=0;
+        if(snCol2===-1) snCol2=1;
         if(slBalCol===-1){log.push('⚠️ Could not find SL balance column');}
         else{
           log.push(`✅ SL: found balance column at col ${slBalCol+1} — "${header[slBalCol]}"`);
           let found=0;
           for(let r=2;r<rows.length;r++){
             const row=rows[r];
-            if(!row||!row[0]||!row[1]) continue;
-            const fname=String(row[0]).trim();
-            const lname=String(row[1]).trim();
+            if(!row||!row[fnCol2]||!row[snCol2]) continue;
+            const fname=String(row[fnCol2]).trim();
+            const lname=String(row[snCol2]).trim();
             const fullName=fname+' '+lname;
             const hrs=parseFloat(row[slBalCol])||0;
             const days=Math.round(hrs/8*100)/100;
