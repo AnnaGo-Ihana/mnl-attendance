@@ -6862,6 +6862,38 @@ function filedAtDisplay(filedAt){
   return d.toLocaleDateString('en-PH', {year:'numeric', month:'short', day:'numeric'})
     + ' · ' + d.toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
 }
+function openDayLeaves(date){
+  const leaves = (window._currentLeaveMap && window._currentLeaveMap[date]) || [];
+  const colors = window._currentLeaveColors || {statusColors:{}, typeColors:{}};
+  let modal = document.getElementById('day-leaves-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'day-leaves-modal';
+    modal.className = 'ov';
+    modal.onclick = function(e){ if(e.target===modal) modal.classList.remove('open'); };
+    document.body.appendChild(modal);
+  }
+  const dObj = new Date(date+'T00:00:00');
+  const label = dObj.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+  modal.innerHTML = '<div class="modal" style="width:420px;max-height:80vh;overflow-y:auto">'
+    + '<h3>📅 '+label+'</h3>'
+    + '<div style="font-size:11px;color:var(--text3);margin-bottom:14px">'+leaves.length+' leave request'+(leaves.length!==1?'s':'')+' on this day</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    + leaves.map(r=>{
+        const sc = colors.statusColors[r.status]||'#c4a8ff';
+        const tc = colors.typeColors[r.type]||'#c4a8ff';
+        const name = leaveEmpName(r);
+        return '<div onclick="document.getElementById(\'day-leaves-modal\').classList.remove(\'open\');openReviewLeave(\''+r.id+'\')" style="padding:10px 12px;background:#0d0818;border:1px solid #3a2868;border-left:4px solid '+sc+';border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
+          + '<div><span style="color:'+tc+';font-weight:700;font-size:12px">'+r.type+'</span> <span style="color:var(--text);font-size:13px">'+name+'</span></div>'
+          + '<span style="font-size:10px;color:'+sc+';font-weight:600">'+r.status+'</span>'
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '<button class="btn light" onclick="document.getElementById(\'day-leaves-modal\').classList.remove(\'open\')" style="width:100%;margin-top:16px">Close</button>'
+    + '</div>';
+  modal.classList.add('open');
+}
+
 function openReviewLeave(id){
   // Anyone can view leave details; approve/decline requires edit mode
   _reviewingLeaveId = id;
@@ -7058,6 +7090,10 @@ function renderLeavesCalendar(reqs){
       d.setDate(d.getDate()+1);
     }
   });
+  // Make available to the "+X more" popup so it shows exactly what's
+  // currently filtered/displayed, not a separate unfiltered lookup.
+  window._currentLeaveMap = leaveMap;
+  window._currentLeaveColors = {statusColors, typeColors};
 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   let html = '<div style="font-size:13px;font-weight:700;color:#c4a8ff;margin-bottom:8px">'+MONTH_NAMES[start.getMonth()]+' '+start.getFullYear()
@@ -7094,7 +7130,7 @@ function renderLeavesCalendar(reqs){
           +'<span style="color:'+tc2+';font-weight:700">'+rt+'</span> <span style="color:var(--text2)">'+rn+'</span></div>';
       })(_rid,_rn,_rt,_rs,sc,tc);
     });
-    if(leaves.length>3) html += '<div style="font-size:9px;color:var(--text3);padding-left:4px">+' +(leaves.length-3)+' more</div>';
+    if(leaves.length>3) html += '<div style="font-size:9px;color:#c4a8ff;padding-left:4px;cursor:pointer;text-decoration:underline" onclick="openDayLeaves(\''+d+'\')">+' +(leaves.length-3)+' more</div>';
     html += '</td>';
     dayIdx++;
   });
