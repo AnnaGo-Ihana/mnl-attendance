@@ -1703,6 +1703,16 @@ const gk=(n,d)=>n+'||'+d;
 // Timesheet intentionally does NOT use this, so historical worked days remain
 // visible/exportable for payroll even after someone leaves.
 function activeEmployees(){ return (state.employees||[]).filter(e=>e.status!=='Inactive'); }
+function canAccessEmployee(emp){
+  // Some full-access accounts are restricted to a single department across
+  // the entire app (Tracker, Timesheet, Schedule, Leaves) — everyone else
+  // has no such restriction.
+  if(!currentUser || !currentUser.restrictedDept) return true;
+  return emp && emp.team === currentUser.restrictedDept;
+}
+function scopedActiveEmployees(){
+  return activeEmployees().filter(canAccessEmployee);
+}
 const fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const pd=s=>new Date(s+'T00:00:00');
 const dd=s=>{const d=pd(s);return d.getDate()+'-'+MONTHS[d.getMonth()];};
@@ -2593,7 +2603,7 @@ function calcStats(emps,dates){
 function renderDash(){
   buildDateSel();
   const dates=getActiveDates();
-  const all=activeEmployees();
+  const all=scopedActiveEmployees();
   const ov=calcStats(all,dates);
 
   const items=[
@@ -2616,7 +2626,7 @@ function renderDash(){
   renderLeaveSummary();
 
   // Leadership cards
-  const leaders=activeEmployees().filter(e=>e.team==='Leadership');
+  const leaders=(currentUser && currentUser.restrictedDept) ? [] : activeEmployees().filter(e=>e.team==='Leadership');
   const ROLE_CLASS={Director:'role-Director','Team Lead':'role-TL','Deputy Team Lead':'role-Deputy',Manager:'role-TL','Deputy Manager':'role-Deputy'};
   const ROLE_SHORT={Director:'DIR','Team Lead':'TL','Deputy Team Lead':'DTL',Manager:'TL','Deputy Manager':'DTL','Deputy Team Lead':'DTL'};
   const leaderCards=leaders.map(e=>{
@@ -2677,6 +2687,7 @@ function renderDash(){
     {id:'HouseKeeping & Admin',label:'HouseKeeping & Admin'}
   ];
   document.getElementById('team-grid').innerHTML=teams.map(td=>{
+    if(currentUser && currentUser.restrictedDept && td.id!==currentUser.restrictedDept) return '';
     const emps=activeEmployees().filter(e=>e.team===td.id);
     if(!emps.length)return'';
     const st=calcStats(emps,dates);
@@ -3355,7 +3366,7 @@ function renderTable(){
     }
   }
 
-  let emps=activeEmployees().filter(e=>{
+  let emps=scopedActiveEmployees().filter(e=>{
     if(tf&&e.team!==tf)return false;
     if(nf&&!e.name.toLowerCase().includes(nf))return false;
     if(sf)return visibleDates.some(d=>state.attendance[gk(e.name,d)]===sf);
@@ -3868,11 +3879,12 @@ function renderLeaveSummary() {
 
   const TEAM_COLORS = {CS:'#1a6b9a',KYC:'#6b3a9a',Funding:'#1a7a4a',Marketing:'#9a2060',Operations:'#1a5a7a',Finance:'#5a6a10','HouseKeeping & Admin':'#7a4a1a'};
   const TEAM_BG = {CS:'#e4f2f8',KYC:'#f0eafc',Funding:'#e4f8ec',Marketing:'#fce8f4',Operations:'#e4f0f8',Finance:'#f4f8e0','HouseKeeping & Admin':'#f8ecdc'};
-  const teams = ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
+  const teams = (currentUser && currentUser.restrictedDept) ? [currentUser.restrictedDept] : ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
 
   // Top strip — overall leave health
   let totalVLall=0,totalSLall=0,lowVLall=0,lowSLall=0,empCount=0;
   state.employees.forEach(e=>{
+    if(!canAccessEmployee(e)) return;
     if(VL_BASE[e.name]===undefined) return;
     empCount++;
     const vl=getLeaveBalance(e.name,'VL');
@@ -3884,6 +3896,7 @@ function renderLeaveSummary() {
 
   // Top Absentees — sorted by absence count
   const allEmpStats = state.employees
+    .filter(e=>canAccessEmployee(e))
     .filter(e=>e.team!=='Leadership')
     .map(e=>{
       const tracked = state.dates.filter(d=>state.attendance[gk(e.name,d)]);
@@ -4778,7 +4791,7 @@ function populateTsEmpFilter(){
   const dept = document.getElementById('ts-dept-filter').value;
   const sel = document.getElementById('ts-emp-filter');
   const cur = sel.value;
-  const emps = activeEmployees().filter(e=>!dept||e.team===dept);
+  const emps = scopedActiveEmployees().filter(e=>!dept||e.team===dept);
   sel.innerHTML = '<option value="">All Employees</option>'
     + emps.map(e=>'<option value="'+e.name+'">'+e.name+'</option>').join('');
   sel.value = cur;
@@ -4845,7 +4858,7 @@ function renderTimesheet(){
 
   populateTsEmpFilter();
 
-  let emps = activeEmployees().filter(e=>{
+  let emps = scopedActiveEmployees().filter(e=>{
     if(deptF && e.team!==deptF) return false;
     if(empF && e.name!==empF) return false;
     return true;
@@ -5315,7 +5328,7 @@ function exportTimesheetCSV(){
   if(dateFrom) dates = dates.filter(d=>d>=dateFrom);
   if(dateTo) dates = dates.filter(d=>d<=dateTo);
   let csv = 'Department,Employee,Date,Day,Schedule,Time In,Time Out,ND,Notes,Attendance\n';
-  const emps = activeEmployees().filter(e=>(!deptF||e.team===deptF) && (!empF||e.name===empF));
+  const emps = scopedActiveEmployees().filter(e=>(!deptF||e.team===deptF) && (!empF||e.name===empF));
   emps.forEach(emp=>{
     // Skip an employee entirely if they have zero attendance/timesheet data
     // in this exact date range — e.g. someone who resigned before this
@@ -5400,7 +5413,7 @@ function populateOTFilters(){
   if(!empSel) return;
   const cur = empSel.value;
   empSel.innerHTML = '<option value="">All Employees</option>'
-    + state.employees.map(e=>'<option value="'+e.name+'">'+e.name+'</option>').join('');
+    + scopedActiveEmployees().map(e=>'<option value="'+e.name+'">'+e.name+'</option>').join('');
   empSel.value = cur;
 }
 
@@ -5408,7 +5421,7 @@ function populateOTEmpSelect(){
   const dept = document.getElementById('ot-new-dept').value;
   const sel = document.getElementById('ot-new-emp');
   const mapped = Object.entries(OT_DEPT_MAP).filter(([k,v])=>v===dept).map(([k])=>k);
-  const emps = activeEmployees().filter(e=>mapped.includes(e.team)||e.team===dept);
+  const emps = scopedActiveEmployees().filter(e=>mapped.includes(e.team)||e.team===dept);
   sel.innerHTML = emps.map(e=>'<option value="'+e.name+'">'+e.name+'</option>').join('');
 }
 
@@ -5570,6 +5583,7 @@ function renderOT(){
   if(canEdit&&!isEditMode)isEditMode=true;
 
   let entries = getOTEntries().filter(e=>{
+    if(currentUser && currentUser.restrictedDept && e.dept!==currentUser.restrictedDept) return false;
     if(deptF && e.dept!==deptF) return false;
     if(empF  && e.emp!==empF)   return false;
     if(from  && e.date<from)    return false;
@@ -6020,7 +6034,7 @@ function renderSchedulePage(){
   const dateFrom = document.getElementById('sched-date-from')?document.getElementById('sched-date-from').value:'';
   const dateTo   = document.getElementById('sched-date-to')?document.getElementById('sched-date-to').value:'';
 
-  let emps = activeEmployees().filter(e=>!teamF||e.team===teamF);
+  let emps = scopedActiveEmployees().filter(e=>!teamF||e.team===teamF);
   let dates = [...state.dates].sort();
   if(dateFrom) dates=dates.filter(d=>d>=dateFrom);
   if(dateTo)   dates=dates.filter(d=>d<=dateTo);
@@ -6308,7 +6322,7 @@ function exportScheduleCSV(){
   const teamF = document.getElementById('sched-team-filter').value;
   const dateFrom = document.getElementById('sched-date-from').value;
   const dateTo = document.getElementById('sched-date-to').value;
-  let emps = activeEmployees().filter(e=>!teamF||e.team===teamF);
+  let emps = scopedActiveEmployees().filter(e=>!teamF||e.team===teamF);
   let dates = [...state.dates].sort();
   if(dateFrom) dates=dates.filter(d=>d>=dateFrom);
   if(dateTo) dates=dates.filter(d=>d<=dateTo);
@@ -7037,6 +7051,7 @@ function renderLeaves(){
   const isLeaveApprover = currentUser && currentUser.accessLevel==='leave_approver';
 
   let reqs = state.leaveRequests.filter(r=>{
+    if(currentUser && currentUser.restrictedDept && r.dept!==currentUser.restrictedDept) return false;
     if(deptF && r.dept!==deptF) return false;
     if(statF && r.status!==statF) return false;
     if(dateF && r.to && r.to < dateF) return false;
@@ -7243,12 +7258,12 @@ const LEAVE_APPROVER_STORAGE_KEY = 'att_leave_approver_unlocked';
 
 const ALL_CREDENTIALS = {
   'Anna Go': {pw:'CARE001', access:'full', admin:true},
-  'Ann Cruz': {pw:'CARE002', access:'full'},
+  'Ann Cruz': {pw:'CARE002', access:'full', restrictedDept:'CS'},
   'Kirsten Masilang': {pw:'CARE005', access:'full'},
-  'Catherine Rivera': {pw:'CARE008', access:'full'},
+  'Catherine Rivera': {pw:'CARE008', access:'full', restrictedDept:'CS'},
   'Susan Gonzalez': {pw:'CARE010', access:'full'},
   'Marie Antonette Alvarez': {pw:'CARE011', access:'full'},
-  'Emmanuel Martin': {pw:'CARE027', access:'full'},
+  'Emmanuel Martin': {pw:'CARE027', access:'full', restrictedDept:'CS'},
   'John Carlo Rapada': {pw:'CARE024', access:'full'},
   'Joshua Dela Cruz': {pw:'CARE037', access:'full'},
   'Lance Villafania': {pw:'CARE040', access:'full'},
@@ -7322,7 +7337,7 @@ const ALL_CREDENTIALS = {
   'Michelle Anne Barcelona': {pw:'CARE012', access:'leave_only'},
   'Niccorey Colina': {pw:'CARE070', access:'leave_only'},
   'Rachel Ann Dadivas': {pw:'CARE028', access:'leave_only'},
-  'Rachelle Sierra': {pw:'CARE003', access:'leave_only'},
+  'Rachelle Sierra': {pw:'CARE003', access:'full', restrictedDept:'CS'},
   'Rachelle Singh': {pw:'CARE032', access:'leave_only'},
   'Reigne Buccat': {pw:'CARE020', access:'leave_only'},
   'Riana Nakamoto': {pw:'CARE075', access:'leave_only'},
@@ -7586,7 +7601,8 @@ function checkRoleLogin(){
     return;
   }
   if(access==='full'){
-    const userData = {name, accessLevel:'full', isAdmin: !!(getCred(name) && getCred(name).admin)};
+    const cred = getCred(name);
+    const userData = {name, accessLevel:'full', isAdmin: !!(cred && cred.admin), restrictedDept: cred && cred.restrictedDept ? cred.restrictedDept : null};
     localStorage.setItem(PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(OT_PIN_STORAGE_KEY);
     localStorage.removeItem(LEAVE_STORAGE_KEY);
