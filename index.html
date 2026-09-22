@@ -1614,6 +1614,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
   <div class="modal" style="width:440px">
     <h3>📋 Review Leave Request</h3>
     <div id="review-leave-content" style="margin-bottom:14px"></div>
+    <div id="review-partial-cancel-wrap" style="display:none;background:rgba(255,143,92,.06);border:1px solid rgba(255,143,92,.25);border-radius:8px;padding:12px;margin-bottom:14px"></div>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Lead Notes</label>
     <textarea id="review-lead-notes" rows="2" placeholder="Add notes for the employee…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:14px"></textarea>
     <div class="ma">
@@ -2117,6 +2118,17 @@ async function loadFromDB(){
     });
     state._syncedRestDaysToTracker = true;
     if(synced > 0){ try{ await saveToDB(); }catch(e){} }
+  }
+  // One-time: restore Rachel Ann Dadivas' Sep 7-11 2026 VL marks. These were
+  // genuinely used but got incorrectly wiped when her Sep 14-16 leave got
+  // cancelled -- both dates were part of one single filed request, so
+  // reversing it cleared the whole range instead of just the cancelled part.
+  if(!state._restoredRachelAnnDadivasVL){
+    ['2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11'].forEach(d=>{
+      state.attendance[gk('Rachel Ann Dadivas', d)] = 'VL';
+    });
+    state._restoredRachelAnnDadivasVL = true;
+    try{ await saveToDB(); }catch(e){}
   }
   // One-time: backfill Tracker marks for leave requests that were already
   // approved before this feature existed (e.g. Jervin's approved Sep 9-11
@@ -6901,6 +6913,7 @@ function openReviewLeave(id){
   if(!req) return;
   const days = req.from===req.to ? dd(req.from) : dd(req.from)+' → '+dd(req.to);
   const statusColor = req.status==='Approved'?'#00e896':req.status==='Declined'?'#ff5c7a':'#ffcf3d';
+  const isMultiDay = req.from && req.to && req.from !== req.to;
   document.getElementById('review-leave-content').innerHTML =
     '<div style="background:#1a1035;border:1px solid #3a2868;border-radius:8px;padding:12px;font-size:12px">'
     +'<div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:6px">'+leaveEmpName(req)+'<span style="margin-left:8px;font-size:10px;background:rgba(93,184,255,.2);color:#5db8ff;padding:2px 8px;border-radius:10px">'+req.dept+'</span></div>'
@@ -6919,7 +6932,54 @@ function openReviewLeave(id){
   const decBtn = document.getElementById('btn-decline-leave');
   if(appBtn) appBtn.style.display = canReview ? '' : 'none';
   if(decBtn) decBtn.style.display = canReview ? '' : 'none';
+
+  // Partial cancellation — only relevant for a multi-day request that's
+  // currently Approved. Declining the whole request would revert every date
+  // in its range, even ones already genuinely taken; this lets a lead pick
+  // exactly which dates to walk back instead.
+  const partialWrap = document.getElementById('review-partial-cancel-wrap');
+  if(partialWrap){
+    if(canReview && isMultiDay && req.status==='Approved'){
+      const rangeDates = [];
+      const cur = new Date(req.from+'T00:00:00');
+      const end = new Date(req.to+'T00:00:00');
+      while(cur<=end){ rangeDates.push(fmt(cur)); cur.setDate(cur.getDate()+1); }
+      partialWrap.style.display = 'block';
+      partialWrap.innerHTML =
+        '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ff8f5c;display:block;margin-bottom:8px">🚫 Cancel Specific Dates</label>'
+        +'<div style="font-size:10px;color:var(--text3);margin-bottom:8px">Check only the dates that should be reverted — everything else in this request stays marked as-is.</div>'
+        +'<div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;margin-bottom:10px">'
+        +rangeDates.map(d=>'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><input type="checkbox" class="rp-cancel-date" value="'+d+'" style="width:auto">'+dd(d)+' ('+dow(d)+')</label>').join('')
+        +'</div>'
+        +'<button class="btn light" onclick="cancelSpecificLeaveDates()" style="width:100%;font-size:11px;background:rgba(255,143,92,.1);border-color:#ff8f5c;color:#ff8f5c">Cancel Selected Dates Only</button>';
+    } else {
+      partialWrap.style.display = 'none';
+      partialWrap.innerHTML = '';
+    }
+  }
   document.getElementById('review-leave-modal').classList.add('open');
+}
+
+function cancelSpecificLeaveDates(){
+  if(!_reviewingLeaveId) return;
+  const req = (state.leaveRequests||[]).find(r=>r.id===_reviewingLeaveId);
+  if(!req) return;
+  const checked = [...document.querySelectorAll('.rp-cancel-date:checked')].map(el=>el.value);
+  if(!checked.length){ toast('Select at least one date to cancel'); return; }
+  const empName = leaveEmpName(req);
+  let cleared = 0;
+  checked.forEach(d=>{
+    const k = gk(empName,d);
+    if(state.attendance[k]===req.type){ delete state.attendance[k]; cleared++; }
+  });
+  if(!req.cancelledDates) req.cancelledDates = [];
+  checked.forEach(d=>{ if(!req.cancelledDates.includes(d)) req.cancelledDates.push(d); });
+  req.leadNotes = document.getElementById('review-lead-notes').value.trim();
+  renderTable();
+  scheduleSave();
+  document.getElementById('review-leave-modal').classList.remove('open');
+  renderLeaves();
+  toast('🚫 Cancelled '+cleared+' date'+(cleared!==1?'s':'')+' — the rest of the request is untouched');
 }
 
 function reviewLeave(status){
@@ -6935,7 +6995,13 @@ function reviewLeave(status){
   // Mark (or unmark) the Tracker to match the approval decision
   const empName = leaveEmpName(req);
   if(req.from && req.to && empName){
-    const dates = (state.dates||[]).filter(d=>d>=req.from && d<=req.to);
+    let dates = (state.dates||[]).filter(d=>d>=req.from && d<=req.to);
+    // Skip any dates that were specifically cancelled already via partial
+    // cancellation — those shouldn't get re-marked if this gets re-approved,
+    // or touched again if it gets declined.
+    if(req.cancelledDates && req.cancelledDates.length){
+      dates = dates.filter(d=>!req.cancelledDates.includes(d));
+    }
     if(status==='Approved'){
       dates.forEach(d=>{ state.attendance[gk(empName,d)] = req.type; });
     } else if(prevStatus==='Approved'){
