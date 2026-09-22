@@ -1703,6 +1703,23 @@ const gk=(n,d)=>n+'||'+d;
 // Timesheet intentionally does NOT use this, so historical worked days remain
 // visible/exportable for payroll even after someone leaves.
 function activeEmployees(){ return (state.employees||[]).filter(e=>e.status!=='Inactive'); }
+const LEAD_ROLES = ['Team Lead','Deputy Team Lead','Manager','Deputy Manager'];
+function getEffectiveRestrictedDept(name){
+  // Explicit credential-level restriction always wins (e.g. an admin
+  // override, or someone deliberately given broader/narrower access).
+  const cred = getCred(name);
+  if(cred && cred.restrictedDept !== undefined) return cred.restrictedDept;
+  // Otherwise, derive it automatically from their role: anyone tagged as a
+  // Team Lead, Deputy Team Lead, Manager, or Deputy Manager gets restricted
+  // to their own department going forward, with zero manual credential
+  // maintenance needed as new leads get tagged this way.
+  const emp = (state.employees||[]).find(e=>e.name===name);
+  if(!emp || !LEAD_ROLES.includes(emp.role)) return null;
+  // Leadership-tracked leads store their real department in "dept" (their
+  // "team" field is just "Leadership"); others may already have their real
+  // department directly in "team".
+  return (emp.team==='Leadership' ? emp.dept : emp.team) || null;
+}
 function canAccessEmployee(emp){
   // Some full-access accounts are restricted to a single department across
   // the entire app (Tracker, Timesheet, Schedule, Leaves) — everyone else
@@ -7261,12 +7278,12 @@ const ALL_CREDENTIALS = {
   'Ann Cruz': {pw:'CARE002', access:'full', restrictedDept:'CS'},
   'Kirsten Masilang': {pw:'CARE005', access:'full'},
   'Catherine Rivera': {pw:'CARE008', access:'full', restrictedDept:'CS'},
-  'Susan Gonzalez': {pw:'CARE010', access:'full'},
-  'Marie Antonette Alvarez': {pw:'CARE011', access:'full'},
+  'Susan Gonzalez': {pw:'CARE010', access:'full', restrictedDept:'KYC'},
+  'Marie Antonette Alvarez': {pw:'CARE011', access:'full', restrictedDept:'KYC'},
   'Emmanuel Martin': {pw:'CARE027', access:'full', restrictedDept:'CS'},
   'John Carlo Rapada': {pw:'CARE024', access:'full'},
-  'Joshua Dela Cruz': {pw:'CARE037', access:'full'},
-  'Lance Villafania': {pw:'CARE040', access:'full'},
+  'Joshua Dela Cruz': {pw:'CARE037', access:'full', restrictedDept:'Funding'},
+  'Lance Villafania': {pw:'CARE040', access:'full', restrictedDept:'Funding'},
   'Allan Mangorangca': {pw:'CARE021', access:'ot_only:Funding'},
   'Jan Chiara Marie Palabrica': {pw:'CARE039', access:'ot_only:Funding'},
   'Pauline Lo': {pw:'CARE038', access:'ot_only:Funding'},
@@ -7276,7 +7293,7 @@ const ALL_CREDENTIALS = {
   'Jean Jeanice Velasco': {pw:'CARE051', access:'ot_only:Funding'},
   'Jules Christian Atun': {pw:'CARE053', access:'ot_only:Funding'},
   'Ria Milarca Bejasa': {pw:'CARE052', access:'ot_only:Funding'},
-  'John Dennis Clores': {pw:'CARE054', access:'ot_only:Funding'},
+  'John Dennis Clores': {pw:'CARE054', access:'full', restrictedDept:'Funding'},
   'Gracel Ayento': {pw:'CARE060', access:'ot_only:Funding'},
   'Errol Dexter Mamisao': {pw:'CARE063', access:'ot_only:Funding'},
   'Milagrose Gindap': {pw:'CARE062', access:'ot_only:Funding'},
@@ -7309,7 +7326,7 @@ const ALL_CREDENTIALS = {
   'Kanwarpal Gill': {pw:'FM2026!', access:'leave_approver:CS'},
   'Ria Hwang': {pw:'FM_2026!', access:'leave_approver:Operations'},
   'Dexter Yatco': {pw:'CARE068', access:'leave_only'},
-  'Diana Santiago': {pw:'CARE022', access:'leave_only'},
+  'Diana Santiago': {pw:'CARE022', access:'full', restrictedDept:'Finance'},
   'Earl Insierto': {pw:'CARE066', access:'leave_only'},
   'Evangeline De Ocampo': {pw:'CARE019', access:'leave_only'},
   'Ferlene Rafael': {pw:'CARE069', access:'leave_only'},
@@ -7333,7 +7350,7 @@ const ALL_CREDENTIALS = {
   'Maria Patrisha Lopez': {pw:'CARE095', access:'leave_only'},
   'Mark Francis Obias': {pw:'CARE103', access:'leave_only'},
   'Mark Jabez Ninonuevo': {pw:'CARE035', access:'leave_only'},
-  'Merry Datul': {pw:'CARE017', access:'leave_only'},
+  'Merry Datul': {pw:'CARE017', access:'full', restrictedDept:'KYC'},
   'Michelle Anne Barcelona': {pw:'CARE012', access:'leave_only'},
   'Niccorey Colina': {pw:'CARE070', access:'leave_only'},
   'Rachel Ann Dadivas': {pw:'CARE028', access:'leave_only'},
@@ -7602,7 +7619,7 @@ function checkRoleLogin(){
   }
   if(access==='full'){
     const cred = getCred(name);
-    const userData = {name, accessLevel:'full', isAdmin: !!(cred && cred.admin), restrictedDept: cred && cred.restrictedDept ? cred.restrictedDept : null};
+    const userData = {name, accessLevel:'full', isAdmin: !!(cred && cred.admin), restrictedDept: getEffectiveRestrictedDept(name)};
     localStorage.setItem(PIN_STORAGE_KEY, btoa(JSON.stringify(userData)));
     localStorage.removeItem(OT_PIN_STORAGE_KEY);
     localStorage.removeItem(LEAVE_STORAGE_KEY);
