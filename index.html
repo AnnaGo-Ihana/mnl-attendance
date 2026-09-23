@@ -2565,10 +2565,47 @@ window.addEventListener('beforeunload', function(e){
 });
 
 let _hasUnsavedChanges = false;
+const UNSAVED_PUNS = [
+  "Whoa, hold your horses! 🐴 Your changes haven't been saved yet — click Save before they gallop away.",
+  "Save yourself the drama! 🎭 Hit 'Save Changes' before this turns into a tragedy.",
+  "Your edits are currently living life on the edge 🎢 — click Save before they fall off.",
+  "Plot twist: nothing's saved yet! 📝 Click Save for a happy ending.",
+  "Error 404: Save not found 💾 — click 'Save Changes' before your edits vanish into the void.",
+  "Unsaved changes spotted in the wild 🦁 — tame them with a click of Save.",
+  "Houston, we have unsaved changes 🚀 — save before they're lost in space.",
+  "Don't leave your edits on read 📲 — hit Save before they lose hope.",
+  "This is not a drill! 🚨 Well, it kind of is — but your changes still need saving.",
+  "Your changes are floating like a lost sock in the laundry 🧦 — SAVE them before they disappear.",
+  "Better safe than sorry, better SAVED than scary 👻 — click Save Changes.",
+  "Great edit! Shame if something happened to it 😅 — click Save just in case."
+];
+function showUnsavedPopup(){
+  const msg = UNSAVED_PUNS[Math.floor(Math.random()*UNSAVED_PUNS.length)];
+  let el = document.getElementById('unsaved-popup');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'unsaved-popup';
+    el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:9998;background:linear-gradient(135deg,#ff8f5c,#ff5c7a);color:#1a0d2e;font-weight:700;font-size:13px;font-family:var(--font);padding:12px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(255,92,122,.4);max-width:460px;text-align:center;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  requestAnimationFrame(()=>{
+    el.style.opacity = '1';
+    el.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  clearTimeout(el._hideTimeout);
+  el._hideTimeout = setTimeout(()=>{
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-50%) translateY(-20px)';
+  }, 4000);
+}
 function scheduleSave(){
+  const wasSaved = !_hasUnsavedChanges;
   _pendingSave = true;
   _hasUnsavedChanges = true;
   updateSaveButtonUI();
+  if(wasSaved) showUnsavedPopup(); // only pops up on the first edit after a
+                                    // save, not on every single keystroke
   clearTimeout(saveTimeout);
   setSyncStatus('syncing');
   // This auto-save is now just a safety net (in case someone forgets to
