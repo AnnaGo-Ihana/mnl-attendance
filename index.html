@@ -1638,15 +1638,19 @@ let globalDateFrom = '';
 let globalDateTo   = '';
 
 // ─── LEAVE CREDITS (as of April 15, 2026, in days) ───────────────────────────
-const VL_BASE = {"Aaron Vigilla":4.75,"Abigael Callos":13.95,"Alain Sebastian":13.28,"Allan Mangorangca":5.33,"Alyssa Ahsley Anareta":4.58,"Andreas Schmidt":6.25,"Angelica Labajo":10.54,"Angeline Amamio":6.09,"Ann Cruz":0.7,"Anna Go":17.83,"Ardel Delos Reyes":5.42,"Arielle Jesena":12.5,"Blesilda Lutchavez":7.73,"Brian Caramonte":4.75,"Camelle Dumayas":0.33,"Carlos Dimailig":4.75,"Catherine Rivera":11.83,"Cecille Verano":2.2,"Charina Silva":1.11,"Charmea Cruz":4.75,"Cheene B. Dapadap":5.42,"Clemente D. Manabat III":5.42,"Danilo Tabontabon":6.25,"Dexter Yatco":6.25,"Diana Santiago":10.81,"Earl Insierto":6.24,"Emmanuel Martin":16.87,"Errol Dexter Mamisao":10.33,"Evangeline De Ocampo":6.8,"Ferlene Rafael":6.25,"Gracel Ayento":6.33,"Gretchen Liao":13.96,"Hannah Tampoc":17.4,"Ivy Madrigal":6.75,"Jan Chiara Marie Palabrica":9.67,"Janell Kae Damayon Aganan":5.42,"Jax Tan":7.32,"Jay-Ann Oteros":2.59,"Jean Jeanice Velasco":12.67,"Jenieme Antong":6.25,"Jervin Tan":13.67,"Jessamae Candongo":15.58,"Jessica Solneo":13.58,"John Carlo Rapada":10.82,"John Dennis Clores":9.08,"Jonnel Ulit":14.09,"Joshua Dela Cruz":2.13,"Juana May De Mesa":11.18,"Jules Christian Atun":11.67,"Karen Orcales":10.25,"Kiesha Pastrana":10.24,"Kirsten Masilang":1.11,"Kristalyn Añonuevo":16.82,"Kristine Joy Israel":4.58,"Lailani Palle":4.75,"Lance Villafania":14.25,"Lemuel Yu":7.01,"Leomar Papa":7.08,"Lorenzo Bayana":10.06,"Ma. Luisa Nemenzo Moreno":5.42,"Maria Patrisha Lopez":4.75,"Marie Antonette Alvarez":16.63,"Mark Francis Obias":4.75,"Mark Jabez Ninonuevo":4.56,"Merry Datul":11.88,"Michelle Anne Barcelona":15.77,"Mikee Valencia":11.05,"Milagrose Gindap":9.33,"Niccorey Colina":6.25,"Pauline Lo":6.25,"Rachel Ann Dadivas":17.19,"Rachelle Sierra":5.89,"Rachelle Singh":5.0,"Reigne Buccat":6.41,"Ria Milarca Bejasa":8.67,"Riana Nakamoto":6.25,"Susan Gonzalez":1.05,"Wendel Lexis Rivera":4.58,"Yuri Bulahan":5.62,"Yvonne Tang":4.75,"Zan Juanes":11.24};;
-const SL_BASE = {"Aaron Vigilla":2.37,"Abigael Callos":10.0,"Alain Sebastian":10.0,"Allan Mangorangca":10.0,"Alyssa Ahsley Anareta":2.29,"Andreas Schmidt":3.12,"Angelica Labajo":5.0,"Angeline Amamio":9.0,"Ann Cruz":10.0,"Anna Go":10.0,"Ardel Delos Reyes":2.71,"Arielle Jesena":5.25,"Blesilda Lutchavez":10.0,"Brian Caramonte":2.37,"Camelle Dumayas":0.17,"Carlos Dimailig":2.37,"Catherine Rivera":9.0,"Cecille Verano":10.0,"Charina Silva":8.0,"Charmea Cruz":2.37,"Cheene B. Dapadap":2.71,"Clemente D. Manabat III":2.71,"Danilo Tabontabon":3.12,"Dexter Yatco":3.12,"Diana Santiago":10.0,"Earl Insierto":3.12,"Emmanuel Martin":9.0,"Errol Dexter Mamisao":10.0,"Evangeline De Ocampo":10.0,"Ferlene Rafael":3.12,"Gracel Ayento":10.0,"Gretchen Liao":1.0,"Hannah Tampoc":10.0,"Ivy Madrigal":1.38,"Jan Chiara Marie Palabrica":9.0,"Janell Kae Damayon Aganan":2.71,"Jax Tan":8.0,"Jay-Ann Oteros":6.5,"Jean Jeanice Velasco":8.0,"Jenieme Antong":3.12,"Jervin Tan":10.0,"Jessamae Candongo":9.0,"Jessica Solneo":6.0,"John Carlo Rapada":9.0,"John Dennis Clores":10.0,"Jonnel Ulit":10.0,"Joshua Dela Cruz":10.0,"Juana May De Mesa":9.0,"Jules Christian Atun":9.0,"Karen Orcales":5.12,"Kiesha Pastrana":7.0,"Kirsten Masilang":10.0,"Kristalyn Añonuevo":10.0,"Kristine Joy Israel":2.29,"Lailani Palle":2.37,"Lance Villafania":4.5,"Lemuel Yu":10.0,"Leomar Papa":3.54,"Lorenzo Bayana":10.0,"Ma. Luisa Nemenzo Moreno":2.71,"Maria Patrisha Lopez":2.37,"Marie Antonette Alvarez":10.0,"Mark Francis Obias":2.37,"Mark Jabez Ninonuevo":10.0,"Merry Datul":9.5,"Michelle Anne Barcelona":8.0,"Mikee Valencia":10.0,"Milagrose Gindap":10.0,"Niccorey Colina":3.12,"Pauline Lo":9.0,"Rachel Ann Dadivas":10.0,"Rachelle Sierra":9.0,"Rachelle Singh":8.0,"Reigne Buccat":4.5,"Ria Milarca Bejasa":10.0,"Riana Nakamoto":3.12,"Susan Gonzalez":0.0,"Wendel Lexis Rivera":2.29,"Yuri Bulahan":0.35,"Yvonne Tang":2.37,"Zan Juanes":6.5};;
+const VL_BASE = {"Aaron Vigilla":5.58,"Abigael Callos":14.78,"Alain Sebastian":14.1,"Allan Mangorangca":6.17,"Alyssa Ahsley Anareta":5.42,"Andreas Schmidt":7.08,"Angelica Labajo":11.37,"Angeline Amamio":6.42,"Ann Cruz":1.53,"Anna Go":18.67,"Ardel Delos Reyes":6.25,"Arielle Jesena":13.33,"Blesilda Lutchavez":8.56,"Brian Caramonte":5.58,"Camelle Dumayas":0.33,"Carlos Dimailig":5.58,"Catherine Rivera":12.67,"Cecille Verano":3.03,"Charina Silva":1.94,"Charmea Cruz":5.57,"Cheene B. Dapadap":6.25,"Clemente D. Manabat III":6.24,"Danilo Tabontabon":7.08,"Dexter Yatco":7.08,"Diana Santiago":11.64,"Earl Insierto":7.06,"Emmanuel Martin":13.7,"Errol Dexter Mamisao":11.17,"Evangeline De Ocampo":7.64,"Ferlene Rafael":7.08,"Gracel Ayento":6.17,"Gretchen Liao":13.96,"Hannah Tampoc":18.24,"Ivy Madrigal":6.75,"Jan Chiara Marie Palabrica":10.5,"Janell Kae Damayon Aganan":6.25,"Jax Tan":5.15,"Jay-Ann Oteros":3.42,"Jean Jeanice Velasco":13.5,"Jenieme Antong":7.08,"Jervin Tan":11.5,"Jessamae Candongo":16.42,"Jessica Solneo":14.41,"John Carlo Rapada":10.82,"John Dennis Clores":9.92,"Jonnel Ulit":13.92,"Joshua Dela Cruz":2.96,"Juana May De Mesa":12.01,"Jules Christian Atun":12.5,"Karen Orcales":10.25,"Kiesha Pastrana":11.08,"Kirsten Masilang":1.95,"Kristalyn Añonuevo":17.65,"Kristine Joy Israel":5.42,"Lailani Palle":5.58,"Lance Villafania":15.08,"Lemuel Yu":5.82,"Leomar Papa":7.08,"Lorenzo Bayana":15.4,"Ma. Luisa Nemenzo Moreno":6.25,"Maria Patrisha Lopez":5.58,"Marie Antonette Alvarez":17.47,"Mark Francis Obias":5.58,"Mark Jabez Ninonuevo":5.39,"Merry Datul":12.71,"Michelle Anne Barcelona":11.61,"Mikee Valencia":11.88,"Milagrose Gindap":7.17,"Niccorey Colina":6.25,"Pauline Lo":7.08,"Rachel Ann Dadivas":12.02,"Rachelle Sierra":6.73,"Rachelle Singh":5.83,"Reigne Buccat":6.41,"Ria Milarca Bejasa":7.5,"Riana Nakamoto":7.08,"Susan Gonzalez":1.89,"Wendel Lexis Rivera":5.42,"Yuri Bulahan":1.96,"Yvonne Tang":5.58,"Zan Juanes":8.07};
+const SL_BASE = {"Aaron Vigilla":2.79,"Abigael Callos":10.0,"Alain Sebastian":10.0,"Allan Mangorangca":10.0,"Alyssa Ahsley Anareta":2.71,"Andreas Schmidt":3.54,"Angelica Labajo":5.0,"Angeline Amamio":9.0,"Ann Cruz":9.0,"Anna Go":10.0,"Ardel Delos Reyes":3.12,"Arielle Jesena":5.67,"Blesilda Lutchavez":10.0,"Brian Caramonte":2.79,"Camelle Dumayas":0.17,"Carlos Dimailig":2.79,"Catherine Rivera":9.0,"Cecille Verano":10.0,"Charina Silva":8.0,"Charmea Cruz":2.79,"Cheene B. Dapadap":3.12,"Clemente D. Manabat III":3.12,"Danilo Tabontabon":3.54,"Dexter Yatco":3.54,"Diana Santiago":10.0,"Earl Insierto":3.54,"Emmanuel Martin":9.0,"Errol Dexter Mamisao":10.0,"Evangeline De Ocampo":10.0,"Ferlene Rafael":3.54,"Gracel Ayento":10.0,"Gretchen Liao":1.0,"Hannah Tampoc":10.0,"Ivy Madrigal":1.38,"Jan Chiara Marie Palabrica":9.0,"Janell Kae Damayon Aganan":3.12,"Jax Tan":8.0,"Jay-Ann Oteros":6.5,"Jean Jeanice Velasco":8.0,"Jenieme Antong":3.54,"Jervin Tan":10.0,"Jessamae Candongo":9.0,"Jessica Solneo":6.0,"John Carlo Rapada":9.0,"John Dennis Clores":10.0,"Jonnel Ulit":10.0,"Joshua Dela Cruz":10.0,"Juana May De Mesa":9.0,"Jules Christian Atun":9.0,"Karen Orcales":5.12,"Kiesha Pastrana":6.0,"Kirsten Masilang":9.5,"Kristalyn Añonuevo":10.0,"Kristine Joy Israel":2.71,"Lailani Palle":2.79,"Lance Villafania":4.5,"Lemuel Yu":10.0,"Leomar Papa":3.54,"Lorenzo Bayana":10.0,"Ma. Luisa Nemenzo Moreno":3.12,"Maria Patrisha Lopez":2.79,"Marie Antonette Alvarez":10.0,"Mark Francis Obias":2.79,"Mark Jabez Ninonuevo":10.0,"Merry Datul":9.5,"Michelle Anne Barcelona":8.0,"Mikee Valencia":10.0,"Milagrose Gindap":10.0,"Niccorey Colina":3.54,"Pauline Lo":8.0,"Rachel Ann Dadivas":10.0,"Rachelle Sierra":9.0,"Rachelle Singh":8.0,"Reigne Buccat":4.5,"Ria Milarca Bejasa":10.0,"Riana Nakamoto":3.54,"Susan Gonzalez":0.0,"Wendel Lexis Rivera":2.71,"Yuri Bulahan":0.35,"Yvonne Tang":2.79,"Zan Juanes":6.5};
 
 function getLeaveBalance(name, type) {
   const base = type==='VL' ? (VL_BASE[name]||0) : (SL_BASE[name]||0);
   // Count usages in attendance tracker AFTER the base date. Refreshed from
-  // HR's official VL/SL Monitoring ledger as of Aug 30, 2026 cutoff.
+  // HR's official VL/SL Monitoring ledger — the "Final Accrued" column is
+  // mislabeled "As of August 30, 2026" but payroll confirmed it actually
+  // accounts for everything through Sep 13, 2026 (the end of that cutoff
+  // period), so usage only needs counting from after that date to avoid
+  // double-subtracting what's already reflected in the base figure.
   const used = state.dates
-    .filter(d => d > '2026-08-30')
+    .filter(d => d > '2026-09-13')
     .filter(d => state.attendance[gk(name,d)] === type)
     .length;
   return Math.max(base - used, 0);
@@ -2080,6 +2084,15 @@ async function loadFromDB(){
     state._updatedLeaveNoteV3 = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: refresh the leave balance note after the September 2026
+  // VL/SL Monitoring update — payroll confirmed the "Final Accrued" figures
+  // in that file, despite being labeled "As of August 30," actually reflect
+  // everything through Sep 13, 2026.
+  if(!state._updatedLeaveNoteV4Sep){
+    state.leaveBalanceNote = "Last updated: Sep 19, 2026 based on VL/SL Monitoring as of Sep 13, 2026. Will refresh after the next payout.";
+    state._updatedLeaveNoteV4Sep = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
   // SL_BASE values from the latest payroll refresh. This override layer
   // (written by both the Import Leave Credits tool and the Edit Credits
@@ -2186,6 +2199,24 @@ async function loadFromDB(){
       if(state.attendance[k]==='VL') delete state.attendance[k];
     });
     state._fixedDadivasSep1416Cancellation = true;
+    try{ await saveToDB(); }catch(e){}
+  }
+  // One-time: sync _leaveOverrides to match the Sep 2026 VL/SL Monitoring
+  // refresh (and the corrected Sep 13 cutoff date), same pattern as the
+  // earlier reconciliation passes -- prevents a stale override left over
+  // from an earlier import/edit from continuing to win over the newly
+  // corrected VL_BASE/SL_BASE values.
+  if(!state._reconciledLeaveOverridesV3Sep){
+    if(!state._leaveOverrides) state._leaveOverrides = {};
+    Object.keys(VL_BASE).forEach(name=>{
+      if(!state._leaveOverrides[name]) state._leaveOverrides[name] = {};
+      state._leaveOverrides[name].vl = VL_BASE[name];
+    });
+    Object.keys(SL_BASE).forEach(name=>{
+      if(!state._leaveOverrides[name]) state._leaveOverrides[name] = {};
+      state._leaveOverrides[name].sl = SL_BASE[name];
+    });
+    state._reconciledLeaveOverridesV3Sep = true;
     try{ await saveToDB(); }catch(e){}
   }
   // One-time: backfill Tracker marks for leave requests that were already
