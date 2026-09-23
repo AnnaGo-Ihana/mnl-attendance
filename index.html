@@ -475,6 +475,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       </div>
       <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;max-width:100%">
         <button class="btn" id="btn-theme-toggle" onclick="toggleTheme()" title="Switch light/dark" style="flex:0 0 auto;background:rgba(157,111,255,.12);border-color:#9d6fff;color:#c4a8ff;padding:5px 9px">🌙</button>
+        <button class="btn" id="btn-save-changes" onclick="manualSaveNow()" style="display:none;flex:0 0 auto;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896;min-width:110px;font-weight:700">✅ Saved</button>
         <button class="btn" id="btn-lock" onclick="toggleLock()" style="flex:0 0 auto;background:rgba(251,146,60,.15);border-color:#fb923c;color:#fb923c;min-width:80px">🔒 Sign In</button>
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin">
           <div style="display:flex;align-items:center;gap:5px;flex:0 0 auto;background:rgba(255,255,255,.07);border:1px solid rgba(196,168,255,.3);border-radius:6px;padding:4px 8px">
@@ -2367,33 +2368,52 @@ async function saveToDB(){
   setSyncStatus('syncing');
   if(currentUser) state._lastEditedBy = currentUser.name.split(' ')[0];
   try{
-    // Check whether someone else has saved since we last knew about the
-    // server's state. If so, merge their changes in first instead of
-    // blindly overwriting them with our own full snapshot — this is the
-    // actual fix for data disappearing when multiple leads save around the
-    // same time (e.g. everyone finalizing attendance right before a cutoff
-    // closes on Sunday).
-    try{
-      const rows = await sbFetch('attendance?id=eq.state&select=data,updated_at');
-      if(rows && rows.length){
-        const remoteTs = rows[0].updated_at;
-        if(_lastKnownRemoteTimestamp && remoteTs && remoteTs !== _lastKnownRemoteTimestamp){
+    // Atomic compare-and-swap instead of a plain check-then-write: the
+    // earlier version fetched the remote timestamp, decided whether to
+    // merge, and THEN saved — but another lead's save could slip through
+    // in the gap between that check and this write, especially with
+    // several people saving Tracker edits within the same second or two.
+    // This closes that gap: the update only actually applies if the row's
+    // updated_at still exactly matches what we last knew. If someone else
+    // saved in between, the conditional match fails, we fetch + merge their
+    // changes, and retry — no window where a concurrent save can vanish
+    // unnoticed.
+    let saved = false;
+    let attempts = 0;
+    while(!saved && attempts < 5){
+      attempts++;
+      const saveTs = new Date().toISOString();
+      const path = _lastKnownRemoteTimestamp
+        ? 'attendance?id=eq.state&updated_at=eq.'+encodeURIComponent(_lastKnownRemoteTimestamp)
+        : 'attendance?id=eq.state';
+      const result = await sbFetch(path, {
+        method:'PATCH',
+        prefer:'return=representation',
+        body: JSON.stringify({data: state, updated_at: saveTs})
+      });
+      if(result && result.length > 0){
+        _lastKnownRemoteTimestamp = saveTs;
+        saved = true;
+      } else {
+        // Conditional update matched zero rows — someone else saved in
+        // between. Pull their latest version, merge it into ours, and
+        // retry against the fresh timestamp.
+        const rows = await sbFetch('attendance?id=eq.state&select=data,updated_at');
+        if(rows && rows.length){
           mergeRemoteIntoLocal(rows[0].data);
+          _lastKnownRemoteTimestamp = rows[0].updated_at;
+        } else {
+          break; // shouldn't happen, but avoid spinning forever
         }
       }
-    }catch(e){ /* if this pre-check fails, fall through and save anyway */ }
-
-    const saveTs = new Date().toISOString();
-    await sbFetch('attendance?id=eq.state', {
-      method:'PATCH',
-      prefer:'return=minimal',
-      body: JSON.stringify({data: state, updated_at: saveTs})
-    });
-    _lastKnownRemoteTimestamp = saveTs;
+    }
+    if(!saved) throw new Error('Could not save after repeated conflict retries');
     setSyncStatus('ok');
     _pendingSave = false; // only clear on confirmed success — a failed save
                           // means local edits are still ahead of the DB, so
                           // the poll must keep treating them as unsaved
+    _hasUnsavedChanges = false;
+    updateSaveButtonUI();
     _saveRetryCount = 0;
     hideSaveFailBanner();
     // Auto-backup on a real time interval (not a session-only save counter,
@@ -2442,18 +2462,47 @@ function hideSaveFailBanner(){
 // this is the actual safety net against silent data loss: closing the tab
 // or navigating away no longer just discards a failed/pending save quietly.
 window.addEventListener('beforeunload', function(e){
-  if(_pendingSave){
+  if(_pendingSave || _hasUnsavedChanges){
     e.preventDefault();
     e.returnValue = '';
     return '';
   }
 });
 
+let _hasUnsavedChanges = false;
 function scheduleSave(){
   _pendingSave = true;
+  _hasUnsavedChanges = true;
+  updateSaveButtonUI();
   clearTimeout(saveTimeout);
   setSyncStatus('syncing');
-  saveTimeout = setTimeout(()=>saveToDB(), 800);
+  // This auto-save is now just a safety net (in case someone forgets to
+  // click Save, or closes the tab despite the warning) — the expected way
+  // to save is the manual "Save Changes" button, so multiple leads aren't
+  // each triggering a save on every single keystroke/cell edit at nearly
+  // the same moment. A much longer delay means edits get batched instead
+  // of firing constantly.
+  saveTimeout = setTimeout(()=>saveToDB(), 60000);
+}
+function updateSaveButtonUI(){
+  const btn = document.getElementById('btn-save-changes');
+  if(!btn) return;
+  if(_hasUnsavedChanges){
+    btn.style.display = '';
+    btn.style.background = 'rgba(255,143,92,.15)';
+    btn.style.borderColor = '#ff8f5c';
+    btn.style.color = '#ff8f5c';
+    btn.innerHTML = '💾 Save Changes';
+  } else {
+    btn.style.background = 'rgba(0,232,150,.1)';
+    btn.style.borderColor = '#00e896';
+    btn.style.color = '#00e896';
+    btn.innerHTML = '✅ Saved';
+  }
+}
+async function manualSaveNow(){
+  clearTimeout(saveTimeout);
+  await saveToDB();
 }
 
 async function syncNow(){
@@ -7507,7 +7556,7 @@ function enableEditMode(showToast=true){
   // Show all edit buttons
   const editBtns = ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl',
     'btn-manage-depts','btn-add-ot','btn-import-sched','btn-auto-sched',
-    'btn-add-date-range','btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'];
+    'btn-add-date-range','btn-contracts','sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn','btn-save-changes'];
   editBtns.forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='';
   });
@@ -7534,7 +7583,7 @@ function enableLeaveMode(showToast=true){
   // Make sure no edit/admin buttons are visible
   ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
-   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'].forEach(id=>{
+   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn','btn-save-changes'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   const settingsTab = document.getElementById('nav-tab-settings');
@@ -7565,7 +7614,7 @@ function enableLeaveApproverMode(showToast=true){
   // declining Leave requests for their assigned department.
   ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
-   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'].forEach(id=>{
+   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn','btn-save-changes'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   const settingsTab = document.getElementById('nav-tab-settings');
@@ -7610,7 +7659,7 @@ function disableEditMode(){
   localStorage.removeItem(LEAVE_APPROVER_STORAGE_KEY);
   ['btn-add-date','btn-add-emp','btn-bulk-mark','btn-edit-leave','btn-import-xl','btn-manage-depts',
    'btn-add-ot','btn-import-sched','btn-auto-sched','btn-add-date-range','btn-contracts',
-   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn'].forEach(id=>{
+   'sched-contacts-btn','sched-add-date-btn','sched-manage-btn','sched-import-btn','btn-save-changes'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   // Restore all nav tabs (leave_only mode hides everything but Leaves)
@@ -7931,14 +7980,18 @@ function startApp(){
     // Hide welcome banner if previously dismissed
     try{ if(localStorage.getItem('att_hide_banner')) document.getElementById('welcome-banner').style.display='none'; }catch(e){}
     setInterval(async()=>{
-      if(_pendingSave) return; // never clobber unsaved local edits — wait for
-                               // the current save to actually confirm first
+      if(_pendingSave||_hasUnsavedChanges) return; // never clobber unsaved
+                               // local edits — with manual saving, edits can
+                               // sit unsaved for a while, so this check must
+                               // cover that whole window, not just an
+                               // in-flight save request
       try{
         const rows=await sbFetch('attendance?id=eq.state&select=data,updated_at');
         if(rows&&rows.length){
           const ns=rows[0].data;
-          if(_pendingSave) return; // re-check — an edit may have started
-                                    // while this fetch was in flight
+          if(_pendingSave||_hasUnsavedChanges) return; // re-check — an edit
+                                    // may have started while this fetch was
+                                    // in flight
           if(JSON.stringify(ns)!==JSON.stringify(state)){
             state=ns;buildDateSel();renderDash();renderTable();
             toast('Updated by another user');
