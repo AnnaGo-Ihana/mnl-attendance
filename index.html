@@ -1783,6 +1783,10 @@ async function loadFromDB(){
     state = JSON.parse(JSON.stringify(INIT_DATA));
     await saveToDB();
   }
+  // Snapshot attendance/timesheet as loaded, so the first save's diff
+  // computation only sends what actually changes during this session.
+  _lastSavedAttendance = JSON.parse(JSON.stringify(state.attendance || {}));
+  _lastSavedTimesheet = JSON.parse(JSON.stringify(state.timesheet || {}));
   const fixedCount = normalizeLeaveRequests();
   if(fixedCount > 0){
     // Persist the repair permanently so the DB itself is clean and this
@@ -2307,6 +2311,8 @@ let _lastBackupAt = 0;
 let _pendingSave = false;
 let _saveRetryCount = 0;
 let _lastKnownRemoteTimestamp = null;
+let _lastSavedAttendance = {};
+let _lastSavedTimesheet = {};
 
 function mergeRemoteIntoLocal(remoteData){
   // Merge remote changes into local state before saving, instead of blindly
@@ -2363,11 +2369,69 @@ function mergeRemoteIntoLocal(remoteData){
   }
 }
 
+function computeDictDiff(current, snapshot){
+  // Compares two flat key->value dictionaries (attendance or timesheet) and
+  // returns exactly what changed: keys to add/update, and keys that existed
+  // in the snapshot but are gone now (deletions). Used to send only the
+  // true delta to the database instead of the whole object.
+  const add = {};
+  const remove = [];
+  const cur = current || {};
+  const snap = snapshot || {};
+  Object.keys(cur).forEach(k=>{
+    if(JSON.stringify(cur[k]) !== JSON.stringify(snap[k])) add[k] = cur[k];
+  });
+  Object.keys(snap).forEach(k=>{
+    if(!(k in cur)) remove.push(k);
+  });
+  return {add, remove, changed: Object.keys(add).length>0 || remove.length>0};
+}
+
 async function saveToDB(){
   _pendingSave = true;
   setSyncStatus('syncing');
   if(currentUser) state._lastEditedBy = currentUser.name.split(' ')[0];
   try{
+    // True per-cell saving for the two highest-churn, highest-conflict
+    // fields (attendance and timesheet): instead of writing the whole
+    // object and hoping nobody else's whole-object write collides with it,
+    // send only the specific cells that actually changed to a database
+    // function that merges them in atomically. PostgreSQL serializes
+    // concurrent calls to this function automatically, so two leads editing
+    // different employees' attendance at the exact same moment both
+    // survive intact — verified directly against a real Postgres instance
+    // before relying on this, including true concurrent calls.
+    const attDiff = computeDictDiff(state.attendance, _lastSavedAttendance);
+    const tsDiff = computeDictDiff(state.timesheet, _lastSavedTimesheet);
+    if(attDiff.changed || tsDiff.changed){
+      const patched = await sbFetch('rpc/patch_attendance_data', {
+        method:'POST',
+        prefer:'return=representation',
+        body: JSON.stringify({
+          add_attendance: attDiff.add,
+          remove_attendance: attDiff.remove,
+          add_timesheet: tsDiff.add,
+          remove_timesheet: tsDiff.remove
+        })
+      });
+      if(patched){
+        // Adopt the true merged server state (which may include other
+        // people's concurrent edits we didn't have locally yet) rather
+        // than assuming our own pre-patch copy was complete.
+        state.attendance = patched.attendance || {};
+        state.timesheet = patched.timesheet || {};
+        _lastSavedAttendance = JSON.parse(JSON.stringify(state.attendance));
+        _lastSavedTimesheet = JSON.parse(JSON.stringify(state.timesheet));
+      }
+    }
+
+    // Everything else (employees, leaveRequests, dates, cutoffs, and all
+    // other lower-churn fields) still goes through the whole-block
+    // compare-and-swap below. attendance/timesheet are included in that
+    // payload too, but harmlessly — they were just updated above to match
+    // the server's true merged value, so this just re-writes the same
+    // correct data rather than risking overwriting it.
+    //
     // Atomic compare-and-swap instead of a plain check-then-write: the
     // earlier version fetched the remote timestamp, decided whether to
     // merge, and THEN saved — but another lead's save could slip through
@@ -7994,6 +8058,8 @@ function startApp(){
                                     // in flight
           if(JSON.stringify(ns)!==JSON.stringify(state)){
             state=ns;buildDateSel();renderDash();renderTable();
+            _lastSavedAttendance = JSON.parse(JSON.stringify(state.attendance || {}));
+            _lastSavedTimesheet = JSON.parse(JSON.stringify(state.timesheet || {}));
             toast('Updated by another user');
           }
           _lastKnownRemoteTimestamp = rows[0].updated_at;
