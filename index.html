@@ -2158,6 +2158,31 @@ async function loadFromDB(){
     state._restoredRachelAnnDadivasVL = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: fix the actual root cause of Sep 14-16 reappearing as VL for
+  // Rachel Ann Dadivas. Her single Sep 4-16 leave request has stayed
+  // "Approved" the whole time, with only a plain-text note ("Agent
+  // Cancelled 14-16") recording the partial cancellation -- never actual
+  // structured data. The earlier backfill-approved-leaves-to-Tracker
+  // migration saw those blank cells inside an Approved request and refilled
+  // them with VL, with no way to know they'd been deliberately cancelled.
+  // Record the cancellation properly on the request itself (so this and any
+  // future backfill/re-approval correctly skips them), and clear the marks
+  // this specific bug reintroduced.
+  if(!state._fixedDadivasSep1416Cancellation){
+    const req = (state.leaveRequests||[]).find(r=>r.id==='1780502422036_n3e7e3bkcvo');
+    if(req){
+      if(!req.cancelledDates) req.cancelledDates = [];
+      ['2026-09-14','2026-09-15','2026-09-16'].forEach(d=>{
+        if(!req.cancelledDates.includes(d)) req.cancelledDates.push(d);
+      });
+    }
+    ['2026-09-14','2026-09-15','2026-09-16'].forEach(d=>{
+      const k = gk('Rachel Ann Dadivas', d);
+      if(state.attendance[k]==='VL') delete state.attendance[k];
+    });
+    state._fixedDadivasSep1416Cancellation = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: backfill Tracker marks for leave requests that were already
   // approved before this feature existed (e.g. Jervin's approved Sep 9-11
   // leave showing blank in the Tracker instead of the leave type).
@@ -2168,6 +2193,7 @@ async function loadFromDB(){
       const empName = leaveEmpName(req);
       if(!empName) return;
       (state.dates||[]).filter(d=>d>=req.from && d<=req.to).forEach(d=>{
+        if(req.cancelledDates && req.cancelledDates.includes(d)) return;
         const k = gk(empName,d);
         if(!state.attendance[k]){ state.attendance[k] = req.type; marked++; }
       });
