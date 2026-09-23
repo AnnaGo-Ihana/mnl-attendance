@@ -2100,6 +2100,21 @@ async function loadFromDB(){
     state._updatedLeaveNoteV4Sep = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: retroactively revoke login access for everyone already
+  // marked Inactive before this policy existed (going forward, marking
+  // someone inactive automatically revokes their login too).
+  if(!state._revokedAccessForExistingInactive){
+    if(!state.credentialOverrides) state.credentialOverrides = {};
+    let revoked = 0;
+    (state.employees||[]).forEach(e=>{
+      if(e.status==='Inactive'){
+        state.credentialOverrides[e.name] = {...(state.credentialOverrides[e.name]||{}), removed: true};
+        revoked++;
+      }
+    });
+    state._revokedAccessForExistingInactive = true;
+    if(revoked > 0){ try{ await saveToDB(); }catch(e){} }
+  }
   // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
   // SL_BASE values from the latest payroll refresh. This override layer
   // (written by both the Import Leave Credits tool and the Edit Credits
@@ -3894,8 +3909,12 @@ function setEmpInactive(name, reason, effDate){
   empObj.status = 'Inactive';
   empObj.inactiveReason = reason;
   empObj.inactiveDate = effDate;
+  // Revoke login access automatically — someone who's left shouldn't be
+  // able to sign back in just because their credentials still exist.
+  if(!state.credentialOverrides) state.credentialOverrides = {};
+  state.credentialOverrides[name] = {...(state.credentialOverrides[name]||{}), removed: true};
   renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
-  toast('🚫 '+name+' marked inactive');
+  toast('🚫 '+name+' marked inactive — login access revoked');
   return true;
 }
 function setEmpActive(name){
@@ -3904,8 +3923,12 @@ function setEmpActive(name){
   empObj.status = 'Active';
   delete empObj.inactiveReason;
   delete empObj.inactiveDate;
+  // Restore login access on reactivation
+  if(state.credentialOverrides && state.credentialOverrides[name]){
+    delete state.credentialOverrides[name].removed;
+  }
   renderTable();renderDash();renderTimesheet_ifOpen();scheduleSave();
-  toast('✅ '+name+' reactivated');
+  toast('✅ '+name+' reactivated — login access restored');
   return true;
 }
 function markEmpInactive(){
