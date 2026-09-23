@@ -604,6 +604,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <div class="so" id="bm-scope-emp" onclick="setBulkScope('employee')" style="flex:1;background:#1a1035;color:var(--text2)">👤 Individual</div>
       <div class="so" id="bm-scope-dept" onclick="setBulkScope('dept')" style="flex:1;background:#1a1035;color:var(--text2)">🏢 Department</div>
+      <div class="so" id="bm-scope-group" onclick="setBulkScope('group')" style="flex:1;background:#1a1035;color:var(--text2)">👥 Group</div>
     </div>
 
     <div id="bm-emp-wrap" style="display:none;margin-bottom:12px">
@@ -613,6 +614,12 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div id="bm-dept-wrap" style="display:none;margin-bottom:12px">
       <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Department</label>
       <select id="bm-dept-select" style="width:100%"></select>
+    </div>
+    <div id="bm-group-wrap" style="display:none;margin-bottom:12px">
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Pick anyone, from any department</label>
+      <input type="text" id="bm-group-search" placeholder="Search name…" oninput="renderBulkGroupList()" style="width:100%;margin-bottom:8px">
+      <div id="bm-group-list" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:8px"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px" id="bm-group-count"></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -6058,13 +6065,41 @@ function updateAllDeptSelects(){
 
 // ─── BULK MARK ───────────────────────────────────────────────────────────────
 let bulkScope = 'employee';
+let bulkGroupSelected = new Set();
 function setBulkScope(scope){
   bulkScope = scope;
   document.getElementById('bm-scope-emp').classList.toggle('sel', scope==='employee');
   document.getElementById('bm-scope-dept').classList.toggle('sel', scope==='dept');
+  document.getElementById('bm-scope-group').classList.toggle('sel', scope==='group');
   document.getElementById('bm-emp-wrap').style.display = scope==='employee' ? 'block' : 'none';
   document.getElementById('bm-dept-wrap').style.display = scope==='dept' ? 'block' : 'none';
+  document.getElementById('bm-group-wrap').style.display = scope==='group' ? 'block' : 'none';
+  if(scope==='group') renderBulkGroupList();
   updateBulkPreview();
+}
+function renderBulkGroupList(){
+  const search = (document.getElementById('bm-group-search').value||'').toLowerCase();
+  const list = document.getElementById('bm-group-list');
+  const emps = activeEmployees()
+    .filter(e=>!search || e.name.toLowerCase().includes(search))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  list.innerHTML = emps.map(e=>{
+    const checked = bulkGroupSelected.has(e.name) ? 'checked' : '';
+    return '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);padding:3px 0">'
+      +'<input type="checkbox" '+checked+' onchange="toggleBulkGroupMember(\''+e.name.replace(/'/g,"\\'")+'\')" style="width:auto">'
+      +e.name+' <span style="color:var(--text3);font-size:10px">('+(e.team||'—')+')</span>'
+      +'</label>';
+  }).join('') || '<div style="color:var(--text3);font-size:11px;padding:6px 0">No matches</div>';
+  updateBulkGroupCount();
+}
+function toggleBulkGroupMember(name){
+  if(bulkGroupSelected.has(name)) bulkGroupSelected.delete(name);
+  else bulkGroupSelected.add(name);
+  updateBulkGroupCount();
+  updateBulkPreview();
+}
+function updateBulkGroupCount(){
+  document.getElementById('bm-group-count').textContent = bulkGroupSelected.size+' selected';
 }
 function openBulkMark(){
   const empSel = document.getElementById('bm-emp-select');
@@ -6075,6 +6110,8 @@ function openBulkMark(){
   const sorted = [...state.dates].sort();
   document.getElementById('bm-date-from').value = sorted[0] || '';
   document.getElementById('bm-date-to').value = sorted[sorted.length-1] || '';
+  bulkGroupSelected = new Set(); // fresh pick each time the modal opens
+  document.getElementById('bm-group-search').value = '';
   setBulkScope('employee');
   document.getElementById('bulk-mark-modal').classList.add('open');
   ['bm-emp-select','bm-dept-select','bm-date-from','bm-date-to','bm-status-select','bm-skip-filled'].forEach(id=>{
@@ -6093,6 +6130,8 @@ function getBulkTargets(){
   if(bulkScope==='employee'){
     const name = document.getElementById('bm-emp-select').value;
     emps = activeEmployees().filter(e=>e.name===name);
+  } else if(bulkScope==='group'){
+    emps = activeEmployees().filter(e=>bulkGroupSelected.has(e.name));
   } else {
     const dept = document.getElementById('bm-dept-select').value;
     emps = activeEmployees().filter(e=>e.team===dept);
@@ -6110,7 +6149,7 @@ function getBulkTargets(){
 function updateBulkPreview(){
   const {emps, dates, pairs} = getBulkTargets();
   const el = document.getElementById('bm-preview');
-  if(!emps.length){ el.textContent = 'Select an employee or department.'; return; }
+  if(!emps.length){ el.textContent = 'Select an employee, department, or group.'; return; }
   if(!dates.length){ el.textContent = 'No tracked dates in that range.'; return; }
   el.innerHTML = `Will mark <strong style="color:var(--text)">${pairs.length}</strong> day(s) across <strong style="color:var(--text)">${emps.length}</strong> employee(s).`;
 }
