@@ -1749,6 +1749,11 @@ function canAccessEmployee(emp){
   if(!currentUser || !currentUser.restrictedDept) return true;
   if(!emp) return false;
   const depts = Array.isArray(currentUser.restrictedDept) ? currentUser.restrictedDept : [currentUser.restrictedDept];
+  // Checking "Leadership" specifically means "can also see every team
+  // lead/deputy/manager across all departments" (on top of whatever other
+  // departments are checked), rather than trying to match a literal
+  // department that Leadership-tracked people never actually have.
+  if(depts.includes('Leadership') && emp.team==='Leadership') return true;
   // Leadership-tracked people (team leads/deputies) store their real
   // department in "dept" — their own "team" field just says "Leadership".
   // Without this, a restricted lead couldn't see their own deputy/co-lead,
@@ -3383,7 +3388,7 @@ function openAccessEdit(name){
   }
   document.getElementById('access-edit-modal').classList.add('open');
 }
-const ALL_DEPTS_FOR_RESTRICTION = ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
+const ALL_DEPTS_FOR_RESTRICTION = ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin','Leadership'];
 function onAccessLevelChange(){
   const level = document.getElementById('access-edit-level').value;
   document.getElementById('access-edit-otdept-wrap').style.display = level==='ot_only' ? 'block' : 'none';
@@ -5965,7 +5970,7 @@ function renderOT(){
       const syncBadge = e._tsSync ? '<span style="font-size:9px;background:rgba(0,207,255,.2);color:#00cfff;border:1px solid #00cfff;border-radius:10px;padding:1px 6px;margin-left:6px">⇄ from timesheet</span>' : '';
       // Reason cell - editable if canEdit
       const reasonCell = canEdit
-        ? '<td style="padding:4px 8px;border:1px solid #3a2868;max-width:280px"><input type="text" value="'+( e.reason||'')+'" placeholder="Add reason/notes…" data-ot-id="'+e.id+'" style="width:100%;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#ffcf3d;padding:4px 6px;font-size:11px;font-family:var(--font)" onchange="updateOTReason(this.dataset.otId,this.value)"></td>'
+        ? '<td style="padding:4px 8px;border:1px solid #3a2868;max-width:280px"><input type="text" value="'+( e.reason||'')+'" placeholder="Add reason/notes…" data-ot-id="'+e.id+'" style="width:100%;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#ffcf3d;padding:4px 6px;font-size:11px;font-family:var(--font)" oninput="updateOTReason(this.dataset.otId,this.value)"></td>'
         : '<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);font-size:11px;max-width:300px">'+( e.reason||'<span style=\'color:var(--text3)\'>—</span>')+'</td>';
       tr.innerHTML = '<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);white-space:nowrap">'+dd(e.date)+' <span style="color:var(--text3);font-size:10px">'+dow(e.date)+'</span></td>'
         +'<td style="padding:8px 12px;border:1px solid #3a2868;font-weight:600;color:var(--text)">'+e.emp+syncBadge+'</td>'
@@ -6006,8 +6011,12 @@ function updateOTReason(id, reason){
 
 function exportOTCSV(){
   const deptF = document.getElementById('ot-dept-filter').value;
+  const from = document.getElementById('ot-date-from').value;
+  const to = document.getElementById('ot-date-to').value;
   let entries = getOTEntries();
   if(deptF) entries = entries.filter(e=>e.dept===deptF);
+  if(from) entries = entries.filter(e=>e.date>=from);
+  if(to) entries = entries.filter(e=>e.date<=to);
   entries.sort((a,b)=>a.dept<b.dept?-1:a.dept>b.dept?1:a.date<b.date?-1:1);
 
   const NL = '\n';
@@ -6018,7 +6027,7 @@ function exportOTCSV(){
   const grandTotal = entries.reduce((s,e)=>s+e.hrs,0);
   rows.push('OVERTIME SUMMARY REPORT');
   rows.push('Generated: '+new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}));
-  rows.push('Filter: '+(deptF||'All Departments'));
+  rows.push('Filter: '+(deptF||'All Departments')+(from||to?' | '+(from||'…')+' to '+(to||'…'):''));
   rows.push('Grand Total OT Hours: '+grandTotal);
   rows.push('');
 
