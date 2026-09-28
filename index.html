@@ -1499,6 +1499,10 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">OT Department</label>
       <input type="text" id="access-edit-otdept" placeholder="e.g. Funding" style="width:100%">
     </div>
+    <div id="access-edit-restrict-wrap" style="display:none;margin-bottom:10px">
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Restrict to Department(s) <span style="font-weight:400">(leave all unchecked for full, unrestricted access)</span></label>
+      <div id="access-edit-restrict-list" style="display:flex;flex-wrap:wrap;gap:6px;background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:8px"></div>
+    </div>
     <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Password</label>
     <input type="text" id="access-edit-pw" placeholder="e.g. CARE123" style="width:100%;margin-bottom:16px">
     <div class="pa">
@@ -1733,12 +1737,24 @@ function getEffectiveRestrictedDept(name){
   // department directly in "team".
   return (emp.team==='Leadership' ? emp.dept : emp.team) || null;
 }
+function getRestrictedDeptsArray(){
+  if(!currentUser || !currentUser.restrictedDept) return null;
+  return Array.isArray(currentUser.restrictedDept) ? currentUser.restrictedDept : [currentUser.restrictedDept];
+}
 function canAccessEmployee(emp){
-  // Some full-access accounts are restricted to a single department across
-  // the entire app (Tracker, Timesheet, Schedule, Leaves) — everyone else
-  // has no such restriction.
+  // Some full-access accounts are restricted to one or more departments
+  // across the entire app (Tracker, Timesheet, Schedule, Leaves) —
+  // everyone else has no such restriction. restrictedDept can be a single
+  // department string, or an array of several.
   if(!currentUser || !currentUser.restrictedDept) return true;
-  return emp && emp.team === currentUser.restrictedDept;
+  if(!emp) return false;
+  const depts = Array.isArray(currentUser.restrictedDept) ? currentUser.restrictedDept : [currentUser.restrictedDept];
+  // Leadership-tracked people (team leads/deputies) store their real
+  // department in "dept" — their own "team" field just says "Leadership".
+  // Without this, a restricted lead couldn't see their own deputy/co-lead,
+  // since that person's "team" wouldn't match the restriction at all.
+  const empDept = emp.team==='Leadership' ? emp.dept : emp.team;
+  return depts.includes(empDept);
 }
 function scopedActiveEmployees(){
   return activeEmployees().filter(canAccessEmployee);
@@ -2934,7 +2950,7 @@ function renderDash(){
     {id:'HouseKeeping & Admin',label:'HouseKeeping & Admin'}
   ];
   document.getElementById('team-grid').innerHTML=teams.map(td=>{
-    if(currentUser && currentUser.restrictedDept && td.id!==currentUser.restrictedDept) return '';
+    if(currentUser && currentUser.restrictedDept && !(getRestrictedDeptsArray()||[]).includes(td.id)) return '';
     const emps=activeEmployees().filter(e=>e.team===td.id);
     if(!emps.length)return'';
     const st=calcStats(emps,dates);
@@ -3341,11 +3357,30 @@ function openAccessEdit(name){
   document.getElementById('access-edit-otdept').value = cred && cred.access && cred.access.startsWith('ot_only') ? cred.access.split(':')[1] : '';
   document.getElementById('access-edit-pw').value = cred ? (cred.pw||'') : '';
   onAccessLevelChange();
+  if(levelSel.value==='full'){
+    const rd = getEffectiveRestrictedDept(name);
+    const depts = rd ? (Array.isArray(rd) ? rd : [rd]) : [];
+    renderAccessRestrictList(depts);
+  }
   document.getElementById('access-edit-modal').classList.add('open');
 }
+const ALL_DEPTS_FOR_RESTRICTION = ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
 function onAccessLevelChange(){
   const level = document.getElementById('access-edit-level').value;
   document.getElementById('access-edit-otdept-wrap').style.display = level==='ot_only' ? 'block' : 'none';
+  const restrictWrap = document.getElementById('access-edit-restrict-wrap');
+  restrictWrap.style.display = level==='full' ? 'block' : 'none';
+  if(level==='full') renderAccessRestrictList();
+}
+function renderAccessRestrictList(checkedDepts){
+  checkedDepts = checkedDepts || [];
+  const list = document.getElementById('access-edit-restrict-list');
+  list.innerHTML = ALL_DEPTS_FOR_RESTRICTION.map(d=>{
+    const checked = checkedDepts.includes(d) ? 'checked' : '';
+    return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 9px">'
+      +'<input type="checkbox" class="access-restrict-dept" value="'+d+'" '+checked+' style="width:auto">'+d
+      +'</label>';
+  }).join('');
 }
 function closeAccessEdit(){
   document.getElementById('access-edit-modal').classList.remove('open');
@@ -3370,7 +3405,16 @@ function saveAccessEdit(){
       if(!dept){ toast('Enter an OT department'); return; }
       access = 'ot_only:'+dept;
     }
-    state.credentialOverrides[_accessEditName] = {pw, access};
+    const override = {pw, access};
+    if(level==='full'){
+      const checkedDepts = [...document.querySelectorAll('.access-restrict-dept:checked')].map(el=>el.value);
+      // Explicitly store null (not just omit) so this always wins over the
+      // automatic role-based restriction below — an admin choosing "no
+      // departments checked" means deliberately unrestricted, not "didn't
+      // decide yet".
+      override.restrictedDept = checkedDepts.length ? checkedDepts : null;
+    }
+    state.credentialOverrides[_accessEditName] = override;
   }
   scheduleSave();
   closeAccessEdit();
@@ -4134,7 +4178,7 @@ function renderLeaveSummary() {
 
   const TEAM_COLORS = {CS:'#1a6b9a',KYC:'#6b3a9a',Funding:'#1a7a4a',Marketing:'#9a2060',Operations:'#1a5a7a',Finance:'#5a6a10','HouseKeeping & Admin':'#7a4a1a'};
   const TEAM_BG = {CS:'#e4f2f8',KYC:'#f0eafc',Funding:'#e4f8ec',Marketing:'#fce8f4',Operations:'#e4f0f8',Finance:'#f4f8e0','HouseKeeping & Admin':'#f8ecdc'};
-  const teams = (currentUser && currentUser.restrictedDept) ? [currentUser.restrictedDept] : ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
+  const teams = (currentUser && currentUser.restrictedDept) ? getRestrictedDeptsArray() : ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
 
   // Top strip — overall leave health
   let totalVLall=0,totalSLall=0,lowVLall=0,lowSLall=0,empCount=0;
@@ -5838,7 +5882,7 @@ function renderOT(){
   if(canEdit&&!isEditMode)isEditMode=true;
 
   let entries = getOTEntries().filter(e=>{
-    if(currentUser && currentUser.restrictedDept && e.dept!==currentUser.restrictedDept) return false;
+    if(currentUser && currentUser.restrictedDept && !(getRestrictedDeptsArray()||[]).includes(e.dept)) return false;
     if(deptF && e.dept!==deptF) return false;
     if(empF  && e.emp!==empF)   return false;
     if(from  && e.date<from)    return false;
@@ -7357,7 +7401,7 @@ function renderLeaves(){
   const isOwnLeaveOnly = currentUser && currentUser.accessLevel==='leave_only';
 
   let reqs = state.leaveRequests.filter(r=>{
-    if(currentUser && currentUser.restrictedDept && r.dept!==currentUser.restrictedDept) return false;
+    if(currentUser && currentUser.restrictedDept && !(getRestrictedDeptsArray()||[]).includes(r.dept)) return false;
     if(deptF && r.dept!==deptF) return false;
     if(statF && r.status!==statF) return false;
     if(dateF && r.to && r.to < dateF) return false;
