@@ -2131,6 +2131,25 @@ async function loadFromDB(){
     state._revokedAccessForExistingInactive = true;
     if(revoked > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: fix existing 9PM-6AM Timesheet entries showing 8 hours Night
+  // Differential instead of the correct 7. calcActualND() had a bug that
+  // specifically excluded 9PM-start shifts from the same "-1 hour" lunch
+  // adjustment every other overnight shift correctly received.
+  if(!state._fixed9pmToSixAmND){
+    let fixed = 0;
+    Object.keys(state.timesheet||{}).forEach(k=>{
+      const entry = state.timesheet[k];
+      if(entry._ndManual) return;
+      if(!entry.schedule || !entry.timeIn || !entry.timeOut) return;
+      const recalculated = calcActualND(entry.schedule, entry.timeIn, entry.timeOut, SCHEDULE_ND[entry.schedule]||0);
+      if(recalculated !== entry.nd){
+        entry.nd = recalculated;
+        fixed++;
+      }
+    });
+    state._fixed9pmToSixAmND = true;
+    if(fixed > 0){ try{ await saveToDB(); }catch(e){} }
+  }
   // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
   // SL_BASE values from the latest payroll refresh. This override layer
   // (written by both the Import Leave Credits tool and the Edit Credits
@@ -4779,7 +4798,7 @@ const SCHEDULE_ND = {
   '12AM-9AM':6,'1AM-10AM':5,'2AM-11AM':4,'3AM-12PM':3,'4AM-1PM':2,'5AM-2PM':1,
   '6AM-3PM':0,'7AM-4PM':0,'8AM-5PM':0,'9AM-6PM':0,'10AM-7PM':0,'11AM-8PM':0,
   '12PM-9PM':0,'1PM-10PM':0,'2PM-11PM':1,'3PM-12AM':2,'4PM-1AM':3,'5PM-2AM':4,
-  '6PM-3AM':4,'7PM-4AM':5,'8PM-5AM':6,'9PM-6AM':8,'10PM-7AM':7,'11PM-8AM':6,
+  '6PM-3AM':4,'7PM-4AM':5,'8PM-5AM':6,'9PM-6AM':7,'10PM-7AM':7,'11PM-8AM':6,
   'RD':0,'RDOT':0,'Custom':0
 };
 const TS_NOTES = ['','RD','RDOT','Paid VL','Paid SL','Unpaid SL','VL - No Pay','SL - No Pay','Suspended','UT','Late','Half Day','Adjusted sched','OT','Holiday','No Call No Show','On Leave','Custom'];
@@ -4865,7 +4884,7 @@ function calcActualND(schedule, timeIn, timeOut, baseND){
     const earlyND = Math.max(0, Math.min(oH, 6) - iH);
     nd += earlyND;
   }
-  if(nd >= 5 && iH !== 21) nd = Math.max(0, nd - 1);
+  if(nd >= 5) nd = Math.max(0, nd - 1);
   if(nd > 0 && nd < 0.25) nd = 0.25;
   return Math.round(nd * 4) / 4;
 }
