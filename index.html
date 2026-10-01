@@ -2184,6 +2184,23 @@ async function loadFromDB(){
     state._fixedMerryDatulLeadership = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: fix activeCutoffId stuck pointing to an older cutoff period.
+  // A genuine bug in the merge-on-save logic meant a newly-started cutoff
+  // could get silently reverted if another session's browser tab (still
+  // holding the previous activeCutoffId in memory) saved anything else
+  // afterward -- the cutoff record itself stayed correctly in the array,
+  // but the pointer to "which one is active" got overwritten backward.
+  // Point it at whichever existing cutoff actually starts latest.
+  if(!state._fixedStaleActiveCutoffId){
+    if(state.cutoffs && state.cutoffs.length){
+      const latest = [...state.cutoffs].sort((a,b)=>a.start.localeCompare(b.start)).pop();
+      if(latest && latest.id !== state.activeCutoffId){
+        state.activeCutoffId = latest.id;
+      }
+    }
+    state._fixedStaleActiveCutoffId = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
   // SL_BASE values from the latest payroll refresh. This override layer
   // (written by both the Import Leave Credits tool and the Edit Credits
@@ -2488,6 +2505,21 @@ function mergeRemoteIntoLocal(remoteData){
     if(!Array.isArray(state.cutoffs)) state.cutoffs = [];
     const localIds = new Set(state.cutoffs.map(c=>c.id));
     remoteData.cutoffs.forEach(c=>{ if(!localIds.has(c.id)) state.cutoffs.push(c); });
+  }
+
+  // activeCutoffId: a plain scalar field with no natural "union" — if two
+  // sessions disagree (e.g. one has an older browser tab open from before
+  // someone else started a newer cutoff), prefer whichever cutoff actually
+  // starts later, rather than letting whichever session happens to save
+  // last silently revert an already-activated newer period back to an
+  // older one. This was the actual cause of a newly-started cutoff
+  // reverting back to the previous one.
+  if(remoteData.activeCutoffId && remoteData.activeCutoffId !== state.activeCutoffId){
+    const localCutoff = (state.cutoffs||[]).find(c=>c.id===state.activeCutoffId);
+    const remoteCutoff = (state.cutoffs||[]).find(c=>c.id===remoteData.activeCutoffId);
+    if(remoteCutoff && (!localCutoff || remoteCutoff.start > localCutoff.start)){
+      state.activeCutoffId = remoteData.activeCutoffId;
+    }
   }
 }
 
