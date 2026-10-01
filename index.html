@@ -1412,6 +1412,12 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     </div>
 
     <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📥 Download Backup</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Downloads everything — attendance, timesheets, schedules, leave requests, employees — as one file. Keep it somewhere safe. If something ever goes missing, send this file to Claude and it can be used to recover the exact data that was lost, without needing to dig through the database manually.</div>
+      <button class="btn light" onclick="downloadFullBackup()" style="width:100%;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">Download Backup Now</button>
+    </div>
+
+    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🗓️ Manage Schedules</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once. Also available to leads from the Schedule page toolbar.</div>
       <button class="btn light" onclick="openManageSchedulesModal()" style="width:100%">Open Manage Schedules</button>
@@ -3520,6 +3526,21 @@ function renderCutoffBadge(){
   }
   const noteInput = document.getElementById('settings-leave-note-input');
   if(noteInput) noteInput.value = state.leaveBalanceNote || '';
+}
+
+function downloadFullBackup(){
+  const payload = JSON.stringify(state, null, 2);
+  const blob = new Blob([payload], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  a.href = url;
+  a.download = 'attendance-backup-'+ts+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast('📥 Backup downloaded — keep it somewhere safe');
 }
 
 function saveLeaveBalanceNote(){
