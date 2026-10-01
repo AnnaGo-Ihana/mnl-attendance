@@ -1755,11 +1755,11 @@ function canAccessEmployee(emp){
   if(!currentUser || !currentUser.restrictedDept) return true;
   if(!emp) return false;
   const depts = Array.isArray(currentUser.restrictedDept) ? currentUser.restrictedDept : [currentUser.restrictedDept];
-  // Checking "Leadership" specifically means "can also see every team
-  // lead/deputy/manager across all departments" (on top of whatever other
-  // departments are checked), rather than trying to match a literal
-  // department that Leadership-tracked people never actually have.
-  if(depts.includes('Leadership') && emp.team==='Leadership') return true;
+  // Any department-restricted lead can always see everyone under
+  // Leadership, across every department, not just their own — this is the
+  // default, built-in behavior rather than something that needs to be
+  // explicitly checked per account.
+  if(emp.team==='Leadership') return true;
   // Leadership-tracked people (team leads/deputies) store their real
   // department in "dept" — their own "team" field just says "Leadership".
   // Without this, a restricted lead couldn't see their own deputy/co-lead,
