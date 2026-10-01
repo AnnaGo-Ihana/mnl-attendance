@@ -2155,6 +2155,21 @@ async function loadFromDB(){
     state._fixed9pmToSixAmND = true;
     if(fixed > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: fix Merry Datul's employee record so she correctly appears
+  // under the Leadership team/department filter, matching the other KYC
+  // leads (Susan Gonzalez, Marie Antonette Alvarez). She was added after
+  // the original roster was seeded and her team/role/dept fields weren't
+  // set to match that pattern.
+  if(!state._fixedMerryDatulLeadership){
+    const emp = (state.employees||[]).find(e=>e.name==='Merry Datul');
+    if(emp){
+      emp.team = 'Leadership';
+      emp.dept = 'KYC';
+      emp.role = 'Deputy Team Lead';
+    }
+    state._fixedMerryDatulLeadership = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
   // SL_BASE values from the latest payroll refresh. This override layer
   // (written by both the Import Leave Credits tool and the Edit Credits
