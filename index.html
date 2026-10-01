@@ -2155,6 +2155,20 @@ async function loadFromDB(){
     state._fixed9pmToSixAmND = true;
     if(fixed > 0){ try{ await saveToDB(); }catch(e){} }
   }
+  // One-time: fix Merry Datul's employee record so she correctly shows up
+  // under the Leadership team filter, matching the other KYC leads (Susan
+  // Gonzalez, Marie Antonette Alvarez). She was added after the original
+  // roster was seeded and likely never got tagged team:'Leadership'.
+  if(!state._fixedMerryDatulLeadership){
+    const emp = (state.employees||[]).find(e=>e.name==='Merry Datul');
+    if(emp){
+      emp.team = 'Leadership';
+      emp.role = 'Deputy Team Lead';
+      emp.dept = 'KYC';
+    }
+    state._fixedMerryDatulLeadership = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: fix Merry Datul's employee record so she correctly appears
   // under the Leadership team/department filter, matching the other KYC
   // leads (Susan Gonzalez, Marie Antonette Alvarez). She was added after
