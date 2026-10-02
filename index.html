@@ -2621,6 +2621,18 @@ async function saveToDB(){
         _lastSavedAttendance = JSON.parse(JSON.stringify(state.attendance));
         _lastSavedTimesheet = JSON.parse(JSON.stringify(state.timesheet));
       }
+      // The RPC call above also bumps the row's updated_at on the server.
+      // Without refreshing our own record of that timestamp here, the
+      // compare-and-swap save right below would always think something
+      // else changed the row first (when it was actually this exact RPC
+      // call), triggering an unnecessary fetch-and-retry cycle on every
+      // single save that touches attendance/timesheet — and during that
+      // extra round-trip, an unrelated edit made in the same save (like an
+      // Overtime note typed moments earlier) could end up getting lost.
+      try{
+        const freshRow = await sbFetch('attendance?id=eq.state&select=updated_at');
+        if(freshRow && freshRow.length) _lastKnownRemoteTimestamp = freshRow[0].updated_at;
+      }catch(e){}
     }
 
     // Everything else (employees, leaveRequests, dates, cutoffs, and all
