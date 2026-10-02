@@ -2207,6 +2207,22 @@ async function loadFromDB(){
     state._fixedStaleActiveCutoffId = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: clean up Emmanuel Martin's stale Friday "Off" mark left over
+  // from his previous Fri-Sat rest day pattern, now that it's Sat-Sun. The
+  // Schedule tab's weekly-pattern editor didn't sync Rest Day changes to
+  // the Tracker at all before this, so changing the pattern never updated
+  // or cleared the old days' marks.
+  if(!state._clearedStaleEmmanuelFriOff){
+    (state.dates||[]).forEach(d=>{
+      const sched = getScheduleForEmp('Emmanuel Martin', d);
+      const k = gk('Emmanuel Martin', d);
+      if(sched !== 'RD' && state.attendance[k]==='Off'){
+        delete state.attendance[k];
+      }
+    });
+    state._clearedStaleEmmanuelFriOff = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
   // SL_BASE values from the latest payroll refresh. This override layer
   // (written by both the Import Leave Credits tool and the Edit Credits
@@ -3359,6 +3375,7 @@ function saveScheduleOverride(){
       (state.dates||[]).filter(d=>d>=todayStr && d<=untilDate).forEach(d=>{
         const dayName = DAYS_OF_WEEK[new Date(d+'T00:00:00').getDay()];
         const sched = pattern[dayName];
+        const prevSched = getScheduleForEmp(name, d);
         const k = tsk(name, d);
         if(!state.timesheet) state.timesheet = {};
         if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
@@ -3370,15 +3387,22 @@ function saveScheduleOverride(){
           else { entry.timeIn=''; entry.timeOut=''; }
           entry.nd = calcActualND(sched, entry.timeIn, entry.timeOut, SCHEDULE_ND[sched]||0);
         }
+        syncRestDayToTracker(name, d, sched, prevSched);
       });
     });
   } else {
     // Indefinite: a proper weekly override, applied to today+future dates
     if(!state.scheduleOverrides) state.scheduleOverrides = {};
+    const prevSchedByName = {};
+    affectedNames.forEach(name=>{
+      prevSchedByName[name] = {};
+      (state.dates||[]).filter(d=>d>=todayStr).forEach(d=>{ prevSchedByName[name][d] = getScheduleForEmp(name, d); });
+    });
     affectedNames.forEach(name=>{ state.scheduleOverrides[name] = pattern; });
     affectedNames.forEach(name=>{
       (state.dates||[]).filter(d=>d>=todayStr).forEach(d=>{
         const sched = getScheduleForEmp(name, d);
+        const prevSched = prevSchedByName[name][d];
         const k = tsk(name, d);
         if(!state.timesheet) state.timesheet = {};
         if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
@@ -3390,6 +3414,7 @@ function saveScheduleOverride(){
           else { entry.timeIn=''; entry.timeOut=''; }
           entry.nd = calcActualND(sched, entry.timeIn, entry.timeOut, SCHEDULE_ND[sched]||0);
         }
+        syncRestDayToTracker(name, d, sched, prevSched);
       });
     });
   }
@@ -6607,6 +6632,25 @@ function onSchedEditChange(){
   }
 }
 
+function syncRestDayToTracker(empName, date, newSched, prevSched){
+  // Keep the Tracker in sync with the Schedule tab for Rest Days:
+  // - Setting a Rest Day marks the Tracker as Off, but only if that cell is
+  //   currently blank, so it never silently overwrites a genuine leave
+  //   status (VL/SL/EL/BL/etc.) marked there for a different reason.
+  // - If a day STOPS being a Rest Day (the weekly pattern changed, e.g. a
+  //   lead moves someone's rest days from Fri-Sat to Sat-Sun), and the
+  //   Tracker cell is still exactly "Off" from the old pattern, that stale
+  //   mark gets cleared — otherwise Friday would keep showing as a rest day
+  //   forever even after it stops being one.
+  const attKey = gk(empName, date);
+  const currentAtt = state.attendance[attKey] || '';
+  if(newSched === 'RD' && !currentAtt){
+    state.attendance[attKey] = 'Off';
+  } else if(newSched !== 'RD' && prevSched === 'RD' && currentAtt === 'Off'){
+    delete state.attendance[attKey];
+  }
+}
+
 function confirmSchedEdit(){
   if(!_schedEditCtx) return;
   const {empName, date, oldSched} = _schedEditCtx;
@@ -6636,16 +6680,7 @@ function confirmSchedEdit(){
     state.timesheet[k].timeOut = ct.timeOut;
   }
 
-  // Keep the Tracker in sync: setting a Rest Day here should also mark the
-  // Tracker as Off, so the two views don't disagree with each other. Only
-  // does this when the Tracker cell is currently blank, so it never
-  // silently overwrites a genuine leave status (VL/SL/EL/BL/etc.) that's
-  // already been marked there for a different reason.
-  const attKey = gk(empName, date);
-  const currentAtt = state.attendance[attKey] || '';
-  if(newSched === 'RD' && !currentAtt){
-    state.attendance[attKey] = 'Off';
-  }
+  syncRestDayToTracker(empName, date, newSched, oldSched);
 
   document.getElementById('sched-edit-modal').classList.remove('open');
   scheduleSave();
