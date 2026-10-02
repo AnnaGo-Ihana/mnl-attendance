@@ -3403,6 +3403,7 @@ function saveScheduleOverride(){
         if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
         const entry = state.timesheet[k];
         entry.schedule = sched;
+        entry._scheduleManual = true;
         if(!entry._timesManual){
           const ct = getScheduleClockTimes(sched);
           if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
@@ -3430,6 +3431,7 @@ function saveScheduleOverride(){
         if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
         const entry = state.timesheet[k];
         entry.schedule = sched;
+        entry._scheduleManual = true;
         if(!entry._timesManual){
           const ct = getScheduleClockTimes(sched);
           if(ct){ entry.timeIn = ct.timeIn; entry.timeOut = ct.timeOut; }
@@ -4890,8 +4892,8 @@ function autoPopulateSchedules(silent) {
     state.dates.forEach(d => {
       const k = tsk(emp.name, d);
       const existing = state.timesheet[k];
-      // Only fill if schedule is empty
-      if(!existing || !existing.schedule) {
+      // Only fill if schedule is empty and not manually locked
+      if((!existing || !existing.schedule) && !(existing && existing._scheduleManual)) {
         const sched = getScheduleForEmp(emp.name, d);
         if(sched) {
           if(!state.timesheet[k]) state.timesheet[k] = {schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
@@ -6688,6 +6690,9 @@ function confirmSchedEdit(){
   const k = tsk(empName, date);
   if(!state.timesheet[k]) state.timesheet[k]={schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
   state.timesheet[k].schedule = newSched;
+  // Lock this as manually set — only Import Schedule is allowed to change
+  // it after this, not any automatic/default-filling process.
+  state.timesheet[k]._scheduleManual = true;
   // Update ND based on new schedule
   state.timesheet[k].nd = SCHEDULE_ND[newSched] || 0;
   state.timesheet[k]._ndManual = false;
@@ -6797,12 +6802,19 @@ function importSchedExcel(input){
                 if(!state.timesheet) state.timesheet={};
                 const k=tsk(currentEmp,dateStr);
                 if(!state.timesheet[k]) state.timesheet[k]={schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
-                if(!state.timesheet[k].schedule){
+                // Import Schedule is the one bulk action meant to be
+                // authoritative — it overwrites even a manually-locked
+                // schedule (_scheduleManual), since a fresh import for
+                // everyone is explicitly meant to refresh things. Anything
+                // set through Manage Schedules or the single-day edit modal
+                // stays untouched by every other automatic process, but not
+                // by this.
+                if(state.timesheet[k].schedule !== sched){
                   state.timesheet[k].schedule=sched;
+                  state.timesheet[k]._scheduleManual=false;
                   state.timesheet[k].nd=SCHEDULE_ND[sched]||0;
                   const ct=getScheduleClockTimes(sched);
-                  if(ct&&!state.timesheet[k].timeIn) state.timesheet[k].timeIn=ct.timeIn;
-                  if(ct&&!state.timesheet[k].timeOut) state.timesheet[k].timeOut=ct.timeOut;
+                  if(ct){ state.timesheet[k].timeIn=ct.timeIn; state.timesheet[k].timeOut=ct.timeOut; }
                   imported++;
                 }
               }
