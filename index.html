@@ -2223,6 +2223,28 @@ async function loadFromDB(){
     state._clearedStaleEmmanuelFriOff = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: comprehensive sync of Rest Day -> Tracker "Off" across every
+  // employee and every currently-tracked date. The earlier backfill only
+  // ran once, before later cutoffs' dates existed, so anyone whose rest
+  // days come from a default/recurring pattern (rather than an explicit
+  // re-save through Manage Schedules) never got synced for those newer
+  // dates -- e.g. most of Leadership showing blank instead of "Off" for
+  // Sep 28-Oct 11's weekend rest days.
+  if(!state._comprehensiveRestDaySyncV2){
+    let synced = 0;
+    (state.employees||[]).forEach(emp=>{
+      (state.dates||[]).forEach(d=>{
+        const sched = getScheduleForEmp(emp.name, d);
+        const k = gk(emp.name, d);
+        if(sched === 'RD' && !state.attendance[k]){
+          state.attendance[k] = 'Off';
+          synced++;
+        }
+      });
+    });
+    state._comprehensiveRestDaySyncV2 = true;
+    if(synced > 0){ try{ await saveToDB(); }catch(e){} }
+  }
   // One-time: reconcile state._leaveOverrides with the verified VL_BASE/
   // SL_BASE values from the latest payroll refresh. This override layer
   // (written by both the Import Leave Credits tool and the Edit Credits
@@ -4887,6 +4909,7 @@ function autoPopulateSchedules(silent) {
           // Auto-set holiday note
           const holiday = getPHHoliday(d);
           if(holiday && !state.timesheet[k]._notesManual) state.timesheet[k].notes = holiday;
+          syncRestDayToTracker(emp.name, d, sched, null);
           filled++;
         }
       }
