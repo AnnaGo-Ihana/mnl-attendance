@@ -7244,6 +7244,12 @@ let _reviewingLeaveId = null;
 // name (e.g. bulk Excel imports done outside this app). Normalize on read so
 // nothing ever renders as "undefined", and backfill r.name so every other
 // code path (duplicate checks, CSV export, contract lookups) works too.
+function leaveDaysLabel(r){
+  const base = r.from===r.to ? dd(r.from) : dd(r.from)+' → '+dd(r.to);
+  const c = (r.cancelledDates||[]).filter(d=>d>=r.from && d<=r.to).sort();
+  if(!c.length) return base;
+  return base+' <span style="color:#ff8f5c;font-size:10px">(cancelled: '+c.map(dd).join(', ')+')</span>';
+}
 function leaveEmpName(r){
   if(!r) return '(Unknown)';
   const n = r.name || r.agent || r.employee || r.employeeName || r.empName || r.fullName || r.emp_name || r.emp;
@@ -7448,7 +7454,7 @@ function openReviewLeave(id){
   _reviewingLeaveId = id;
   const req = (state.leaveRequests||[]).find(r=>r.id===id);
   if(!req) return;
-  const days = req.from===req.to ? dd(req.from) : dd(req.from)+' → '+dd(req.to);
+  const days = leaveDaysLabel(req);
   const statusColor = req.status==='Approved'?'#00e896':req.status==='Declined'?'#ff5c7a':req.status==='Cancelled'?'#7a68a8':'#ffcf3d';
   const isMultiDay = req.from && req.to && req.from !== req.to;
   document.getElementById('review-leave-content').innerHTML =
@@ -7476,17 +7482,23 @@ function openReviewLeave(id){
   // exactly which dates to walk back instead.
   const partialWrap = document.getElementById('review-partial-cancel-wrap');
   if(partialWrap){
-    if(canReview && isMultiDay && req.status==='Approved'){
+    if(canReview && isMultiDay && (req.status==='Approved' || req.status==='Pending')){
       const rangeDates = [];
       const cur = new Date(req.from+'T00:00:00');
       const end = new Date(req.to+'T00:00:00');
       while(cur<=end){ rangeDates.push(fmt(cur)); cur.setDate(cur.getDate()+1); }
+      const alreadyCancelled = req.cancelledDates || [];
       partialWrap.style.display = 'block';
       partialWrap.innerHTML =
         '<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ff8f5c;display:block;margin-bottom:8px">🚫 Cancel Specific Dates</label>'
         +'<div style="font-size:10px;color:var(--text3);margin-bottom:8px">Check only the dates that should be reverted — everything else in this request stays marked as-is.</div>'
         +'<div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;margin-bottom:10px">'
-        +rangeDates.map(d=>'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><input type="checkbox" class="rp-cancel-date" value="'+d+'" style="width:auto">'+dd(d)+' ('+dow(d)+')</label>').join('')
+        +rangeDates.map(d=>{
+          if(alreadyCancelled.includes(d)){
+            return '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3);text-decoration:line-through"><input type="checkbox" disabled style="width:auto">'+dd(d)+' ('+dow(d)+') — already cancelled</label>';
+          }
+          return '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><input type="checkbox" class="rp-cancel-date" value="'+d+'" style="width:auto">'+dd(d)+' ('+dow(d)+')</label>';
+        }).join('')
         +'</div>'
         +'<button class="btn light" onclick="cancelSpecificLeaveDates()" style="width:100%;font-size:11px;background:rgba(255,143,92,.1);border-color:#ff8f5c;color:#ff8f5c">Cancel Selected Dates Only</button>';
     } else {
@@ -7530,11 +7542,19 @@ function cancelSpecificLeaveDates(){
   if(!req.cancelledDates) req.cancelledDates = [];
   checked.forEach(d=>{ if(!req.cancelledDates.includes(d)) req.cancelledDates.push(d); });
   req.leadNotes = document.getElementById('review-lead-notes').value.trim();
+  // If every day in the request has now been cancelled individually, the
+  // request itself is effectively cancelled.
+  let allGone = true;
+  { const c = new Date(req.from+'T00:00:00'), e = new Date(req.to+'T00:00:00');
+    while(c<=e){ if(!req.cancelledDates.includes(fmt(c))){ allGone = false; break; } c.setDate(c.getDate()+1); } }
+  if(allGone) req.status = 'Cancelled';
   renderTable();
   scheduleSave();
   document.getElementById('review-leave-modal').classList.remove('open');
   renderLeaves();
-  toast('🚫 Cancelled '+cleared+' date'+(cleared!==1?'s':'')+' — the rest of the request is untouched');
+  toast('🚫 Cancelled '+checked.length+' date'+(checked.length!==1?'s':'')
+    +(allGone ? ' — every day is cancelled, so the whole request is now Cancelled' : ' — the rest of the request is untouched')
+    +' · click Save Changes');
 }
 
 function reviewLeave(status){
@@ -7644,7 +7664,7 @@ function renderLeaves(){
     +((canManage||isLeaveApprover||isOwnLeaveOnly)?'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Action</th>':'')
     +'</tr></thead><tbody>'
     +reqs.map(r=>{
-      const days = r.from===r.to ? dd(r.from) : dd(r.from)+' → '+dd(r.to);
+      const days = leaveDaysLabel(r);
       const sc = statusColors[r.status]||'#c4a8ff';
       const tc = typeColors[r.type]||'#c4a8ff';
       return '<tr style="border-bottom:1px solid #2d1f55">'
@@ -7716,8 +7736,13 @@ function renderLeavesCalendar(reqs){
     const d=new Date(s);
     while(d<=e){
       const k=fmt(d);
-      if(!leaveMap[k]) leaveMap[k]=[];
-      leaveMap[k].push(r);
+      // Days cancelled individually (Cancel Specific Dates) no longer
+      // show on the calendar, even though the request's overall range
+      // still spans them.
+      if(!(r.cancelledDates && r.cancelledDates.includes(k))){
+        if(!leaveMap[k]) leaveMap[k]=[];
+        leaveMap[k].push(r);
+      }
       d.setDate(d.getDate()+1);
     }
   });
