@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Attendance Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --bg:#0d0818;--surface:#1a1035;--surface2:#221545;--border:#3a2868;--border2:#4a3880;
-  --text:#f5f0ff;--text2:#b8a8e8;--text3:#7a68a8;
-  --accent:#9d6fff;--accent2:#1e1040;
-  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --bg:#070a2a;--surface:#0d1250;--surface2:#131a66;--border:#262e8c;--border2:#343da8;
+  --text:#eceeff;--text2:#b8bdf0;--text3:#8d93d6;
+  --accent:#9d6fff;--accent2:#111761;
+  --font:'Lato',system-ui,sans-serif;--mono:'Lato',system-ui,sans-serif;
   --P:#00e896;--P-bg:#003d28;
   --A:#ff5c7a;--A-bg:#3d0818;--A-bd:#7a1030;
   --HD:#ffcf3d;--HD-bg:#3d2800;
@@ -22,14 +22,14 @@
   --UHD:#c9960f;--UHD-bg:#2e1e00;
   --SL:#ffaa5c;--SL-bg:#3d1800;
   --EL:#ff8f5c;--EL-bg:#3d1200;
-  --BL:#9d6fff;--BL-bg:#241344;
+  --BL:#9d6fff;--BL-bg:#151b66;
   --HDVL:#5cd6ff;--HDVL-bg:#00303e;
   --HDSL:#ffbc7a;--HDSL-bg:#3d2200;
-  --Off:#8878b8;--Off-bg:#180d30;
+  --Off:#a8aef5;--Off-bg:#0f1450;
   --warn-bg:#1e0510;--ok-bg:#041a10;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{font-family:var(--font);font-variant-numeric:tabular-nums lining-nums;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 
 /* SETUP SCREEN */
 #setup-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:var(--bg);}
@@ -51,12 +51,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 /* MAIN APP */
 #app{display:none;}
-nav{background:linear-gradient(90deg,#0d0818 0%,#1a0d35 50%,#0d0818 100%);border-bottom:2px solid #9d6fff;color:#e2e8f0;padding:0 20px;display:flex;align-items:center;height:60px;position:sticky;top:0;z-index:200;gap:0;box-shadow:0 4px 24px rgba(157,111,255,.3);}
+nav{background:linear-gradient(90deg,#070a2a 0%,#0c1042 50%,#070a2a 100%);border-bottom:1px solid #262e8c;color:#e2e8f0;padding:0 20px;display:flex;align-items:center;height:60px;position:sticky;top:0;z-index:200;gap:0;box-shadow:0 4px 24px rgba(157,111,255,.3);}
 nav h1{font-size:15px;font-weight:700;flex:1;white-space:nowrap;display:flex;align-items:center;gap:12px;}
 .brand-logos{display:flex;align-items:center;gap:10px;}
 .brand-sep{width:1px;height:20px;background:rgba(196,181,253,.2);}
-.brand-fm{font-size:14px;font-weight:800;letter-spacing:.05em;background:linear-gradient(90deg,#c4b5fd,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.brand-fm span{font-size:9px;font-weight:400;display:block;letter-spacing:.15em;opacity:.7;-webkit-text-fill-color:#9b8ec4;}
+.brand-fm{font-size:14px;font-weight:800;letter-spacing:.05em;background:linear-gradient(90deg,#c0ccff,#722ccd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.brand-fm span{font-size:9px;font-weight:400;display:block;letter-spacing:.15em;opacity:.7;-webkit-text-fill-color:#a8aef5;}
 .nav-title{font-size:13px;color:rgba(196,181,253,.5);font-weight:400;letter-spacing:.05em;}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:#9d6fff;margin-right:8px;flex-shrink:0;transition:background .3s;box-shadow:0 0 10px rgba(157,111,255,.9);}
 @keyframes pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}100%{transform:scale(1);opacity:1}}
@@ -67,13 +67,13 @@ nav h1{font-size:15px;font-weight:700;flex:1;white-space:nowrap;display:flex;ali
 .nav-tabs{display:flex;height:100%;}
 .nav-tab{padding:0 12px;font-size:12px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;display:flex;align-items:center;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;}
 .nav-tab:hover{color:rgba(255,255,255,.9);}
-.nav-tab.active{color:#c4b5fd;border-bottom-color:#9d6fff;font-weight:600;}
+.nav-tab.active{color:#c0ccff;border-bottom-color:#9d6fff;font-weight:600;}
 .nav-actions{display:flex;gap:7px;margin-left:14px;}
 .btn{padding:6px 13px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:12px;cursor:pointer;font-family:var(--font);transition:background .15s;white-space:nowrap;}
 .btn:hover{background:rgba(255,255,255,.2);}
 .btn.light{background:var(--surface);color:var(--text);border-color:var(--border);}
 .btn.light:hover{background:var(--surface2);}
-.btn.go{background:linear-gradient(135deg,#9d6fff,#7c3aed);border-color:#9d6fff;color:#fff;font-weight:700;}
+.btn.go{background:linear-gradient(90deg,#722ccd,#1b12a3);border-color:#722ccd;color:#fff;font-weight:700;}
 .btn.danger{color:var(--A);border-color:var(--A-bd);background:var(--A-bg);}
 .page{display:none;position:relative;z-index:1;}.page.active{display:block;}
 
@@ -82,43 +82,43 @@ nav h1{font-size:15px;font-weight:700;flex:1;white-space:nowrap;display:flex;ali
 .dash-header h2{font-size:19px;font-weight:600;flex:1;}
 .drow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .drow label{font-size:12px;color:var(--text2);}
-input[type=date],select,input[type=text]{padding:6px 10px;border-radius:6px;border:1px solid #3a2868;background:#1a1035;color:var(--text);font-size:13px;font-family:var(--font);}
+input[type=date],select,input[type=text]{padding:6px 10px;border-radius:6px;border:1px solid #262e8c;background:#0d1250;color:var(--text);font-size:13px;font-family:var(--font);}
 select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6760' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px;}
 .legend{display:flex;gap:10px;flex-wrap:wrap;padding:14px 24px 0;}
 .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
 .leg-dot{width:8px;height:8px;border-radius:2px;}
-.sec-lbl{padding:16px 24px 8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#c4a8ff;}
+.sec-lbl{padding:16px 24px 8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#bfccff;}
 .overall-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;padding:0 24px 4px;}
-.oc{background:linear-gradient(135deg,#160d2e,#1e1240);border:1px solid #3a2868;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 24px rgba(157,111,255,.2);transition:transform .15s,box-shadow .15s;}
+.oc{background:linear-gradient(135deg,#0b0f3d,#111761);border:1px solid #262e8c;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 24px rgba(157,111,255,.2);transition:transform .15s,box-shadow .15s;}
 .oc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--mono);flex-shrink:0;}
 .oc-num{font-size:21px;font-weight:600;font-family:var(--mono);line-height:1;}
 .oc-lbl{font-size:10px;color:var(--text2);margin-top:2px;}
 .oc-pct{font-size:11px;font-weight:500;margin-top:1px;}
 .team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;padding:0 24px 24px;}
-.tc{background:linear-gradient(160deg,#160d2e,#0d0818);border:1px solid #3a2868;border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(157,111,255,.25);transition:transform .15s,box-shadow .15s;}
-.tc-head{padding:14px 18px 13px;border-bottom:1px solid #3a2868;display:flex;align-items:center;gap:8px;background:rgba(157,111,255,.08);}
+.tc{background:linear-gradient(160deg,#0b0f3d,#070a2a);border:1px solid #262e8c;border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(157,111,255,.25);transition:transform .15s,box-shadow .15s;}
+.tc-head{padding:14px 18px 13px;border-bottom:1px solid #262e8c;display:flex;align-items:center;gap:8px;background:rgba(157,111,255,.08);}
 .tc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .tc-head h3{font-size:14px;font-weight:600;}
 .tc-sub{font-size:11px;color:var(--text2);flex:1;}
 .tc-cnt{font-size:11px;color:var(--text2);background:var(--surface2);padding:2px 8px;border-radius:20px;}
-.mini-bar{height:5px;background:#221545;display:flex;overflow:hidden;}
+.mini-bar{height:5px;background:#131a66;display:flex;overflow:hidden;}
 .mbs{height:100%;}
 .prate{font-size:14px;font-weight:600;}
-.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#3a2868;}
-.si{background:#1a1035;padding:10px 6px;text-align:center;}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#262e8c;}
+.si{background:#0d1250;padding:10px 6px;text-align:center;}
 .si-n{font-size:17px;font-weight:600;font-family:var(--mono);line-height:1;}
 .si-l{font-size:9px;color:var(--text2);margin-top:2px;letter-spacing:.05em;text-transform:uppercase;}
 .si-p{font-size:10px;font-weight:500;margin-top:2px;}
 .emp-preview{padding:10px 16px;}
-.ep{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #2d1f55;}
+.ep{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1c2375;}
 .ep:last-child{border-bottom:none;}
 .ep-name{font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ep-stat{font-size:11px;font-family:var(--mono);}
-.lead-section{background:linear-gradient(135deg,#160d2e,#0d0818);border:1px solid #3a2868;border-radius:14px;margin:0 24px 0;overflow:hidden;box-shadow:0 8px 32px rgba(157,111,255,.25);}
-.lead-section-head{padding:14px 20px;border-bottom:1px solid #3a2868;display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(157,111,255,.15),transparent);}
+.lead-section{background:linear-gradient(135deg,#0b0f3d,#070a2a);border:1px solid #262e8c;border-radius:14px;margin:0 24px 0;overflow:hidden;box-shadow:0 8px 32px rgba(157,111,255,.25);}
+.lead-section-head{padding:14px 20px;border-bottom:1px solid #262e8c;display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(157,111,255,.15),transparent);}
 .lead-section-head h3{font-size:13px;font-weight:700;color:#d4b8ff;letter-spacing:.08em;text-transform:uppercase;}
 .lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0;background:var(--border);}
-.lead-card{background:#1a1035;padding:12px 16px;display:flex;flex-direction:column;gap:3px;border-right:1px solid #3a2868;}
+.lead-card{background:#0d1250;padding:12px 16px;display:flex;flex-direction:column;gap:3px;border-right:1px solid #262e8c;}
 .lead-name{font-size:13px;font-weight:600;}
 .lead-meta{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
 .lead-stats{display:flex;gap:6px;margin-top:3px;}
@@ -126,20 +126,20 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .role-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
 .role-Director{background:#001838;color:#5db8ff;border:1px solid #0a3868;}
 .role-TL{background:#003d28;color:#00e896;border:1px solid #0a5038;}
-.role-Deputy{background:#1e0845;color:#c49eff;border:1px solid #3a1868;}
+.role-Deputy{background:#1e0845;color:#c49eff;border:1px solid #2a2490;}
 .role-Manager{background:#003d28;color:#00e896;border:1px solid #0a5038;}
 
 /* TABLE */
-.tctrl{padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #3a2868;background:#0d0818;position:sticky;top:60px;z-index:99;flex-shrink:0;}
+.tctrl{padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #262e8c;background:#070a2a;position:sticky;top:60px;z-index:99;flex-shrink:0;}
 .tw{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 120px);position:relative;z-index:1;}
 .tw table{border-collapse:collapse;}
 table{border-collapse:collapse;min-width:100%;font-size:12px;}
 th,td{border:1px solid var(--border);white-space:nowrap;}
-thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;color:#c4a8ff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-color:#3a2868;position:sticky;top:0;z-index:15;}
-.nc{background:#1a1035;position:sticky;left:0;z-index:11;padding:0 10px;min-width:175px;border-right:1px solid #3a2868;}
+thead th{background:#070a2a;padding:8px 9px;font-weight:700;text-align:center;color:#bfccff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-color:#262e8c;position:sticky;top:0;z-index:15;}
+.nc{background:#0d1250;position:sticky;left:0;z-index:11;padding:0 10px;min-width:175px;border-right:1px solid #262e8c;}
 .nc input{border:none;background:transparent;font-size:12px;font-weight:500;color:var(--text);width:100%;font-family:var(--font);outline:none;padding:8px 0;height:36px;}
-.nc input:focus{background:#1e1240;padding:8px 4px;border-radius:3px;}
-.tbc{background:#160d2e;padding:0 8px;font-size:10px;font-weight:600;text-align:center;position:sticky;left:175px;z-index:11;border-right:1px solid #3a2868;min-width:72px;}
+.nc input:focus{background:#111761;padding:8px 4px;border-radius:3px;}
+.tbc{background:#0b0f3d;padding:0 8px;font-size:10px;font-weight:600;text-align:center;position:sticky;left:175px;z-index:11;border-right:1px solid #262e8c;min-width:72px;}
 .sc{text-align:center;padding:0;min-width:52px;cursor:pointer;}
 .ci{display:flex;align-items:center;justify-content:center;height:36px;font-size:11px;font-weight:600;font-family:var(--mono);transition:filter .1s;}
 .sc:hover .ci{filter:brightness(.9);}
@@ -153,19 +153,19 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .ci-UVL{background:#00232e;color:#0088aa;font-weight:700;}
 .ci-SL{background:#3d1800;color:#ffaa5c;font-weight:700;}
 .ci-EL{background:#3d1200;color:#ff8f5c;font-weight:700;}
-.ci-BL{background:#241344;color:#9d6fff;font-weight:700;}
+.ci-BL{background:#151b66;color:#9d6fff;font-weight:700;}
 .ci-HDVL{background:#00303e;color:#5cd6ff;font-weight:700;}
 .ci-HDSL{background:#3d2200;color:#ffbc7a;font-weight:700;}
-.ci-Off{background:#180d30;color:#8878b8;font-weight:700;}
+.ci-Off{background:#0f1450;color:#a8aef5;font-weight:700;}
 .ci-blank{background:transparent;color:transparent;}
-.sumc{text-align:center;padding:5px 8px;background:#160d2e;font-size:11px;font-family:var(--mono);}
+.sumc{text-align:center;padding:5px 8px;background:#0b0f3d;font-size:11px;font-family:var(--mono);}
 .rd{font-size:9px;color:var(--A);cursor:pointer;opacity:.5;display:block;margin-top:1px;}
 .rd:hover{opacity:1;}
 
 /* POPUP / MODAL */
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
 .ov.open{display:flex;}
-.popup{background:#1a1035;border-radius:14px;border:1px solid #3a2868;padding:22px;width:300px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(124,58,237,.3);}
+.popup{background:#0d1250;border-radius:14px;border:1px solid #262e8c;padding:22px;width:300px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(124,58,237,.3);}
 .popup h3{font-size:14px;margin-bottom:3px;}
 .pop-sub{font-size:12px;color:var(--text2);margin-bottom:14px;}
 .sg2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
@@ -181,14 +181,14 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .so-UVL{background:#00232e;color:#0088aa;}
 .so-UHD{background:#2e1e00;color:#c9960f;}
 .so-EL{background:#3d1200;color:#ff8f5c;}
-.so-BL{background:#241344;color:#9d6fff;}
+.so-BL{background:#151b66;color:#9d6fff;}
 .so-HDVL{background:#00303e;color:#5cd6ff;}
 .so-HDSL{background:#3d2200;color:#ffbc7a;}
 .so-SL{background:#3d1800;color:#ffaa5c;}
-.so-Off{background:#180d30;color:#8878b8;}
+.so-Off{background:#0f1450;color:#a8aef5;}
 .pa{display:flex;gap:8px;margin-top:14px;}
 .pa .btn{flex:1;padding:8px;font-size:12px;}
-.modal{background:#1a1035;border-radius:14px;padding:24px;width:360px;border:1px solid #3a2868;box-shadow:0 24px 80px rgba(124,58,237,.3);}
+.modal{background:#0d1250;border-radius:14px;padding:24px;width:360px;border:1px solid #262e8c;box-shadow:0 24px 80px rgba(124,58,237,.3);}
 .modal h3{font-size:15px;margin-bottom:16px;}
 .modal label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;}
 .modal input,.modal select{width:100%;margin-bottom:13px;}
@@ -197,9 +197,9 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 
 /* TEAM COLORS */
 .badge-CS{color:#5db8ff;background:#001838;border:1px solid #0a2848;}
-.badge-KYC{color:#c49eff;background:#1a1035;border:1px solid #3a2868;}
+.badge-KYC{color:#c49eff;background:#0d1250;border:1px solid #262e8c;}
 .badge-Funding{color:#00e896;background:#003d28;border:1px solid #0a5038;}
-.badge-Leadership{color:#d4b8ff;background:#1e1040;border:1px solid #5a45a0;}
+.badge-Leadership{color:#d4b8ff;background:#111761;border:1px solid #4d55b0;}
 .badge-Marketing{color:#ff7ac8;background:#2a0520;border:1px solid #5a1545;}
 .badge-Operations{color:#5db8ff;background:#001838;border:1px solid #0a2848;}
 .badge-Finance{color:#b8f050;background:#182800;border:1px solid #2a4810;}
@@ -208,56 +208,56 @@ thead th{background:#0d0818;padding:8px 9px;font-weight:700;text-align:center;co
 .color-CS{color:#5db8ff;}.color-KYC{color:#c49eff;}.color-Funding{color:#00e896;}
 .color-Marketing{color:#f472b6;}.color-Operations{color:#38bdf8;}.color-Finance{color:#84cc16;}
 
-#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#9d6fff,#7c3aed);color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;box-shadow:0 4px 24px rgba(157,111,255,.7);}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#9d6fff,#722ccd);color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;box-shadow:0 4px 24px rgba(157,111,255,.7);}
 #toast.show{opacity:1;}
 .loading-overlay{position:fixed;inset:0;background:rgba(13,8,24,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;gap:12px;}
-.spinner{width:32px;height:32px;border:3px solid #3a2868;border-top-color:#9d6fff;border-radius:50%;animation:spin .7s linear infinite;}
+.spinner{width:32px;height:32px;border:3px solid #262e8c;border-top-color:#9d6fff;border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-overlay p{font-size:13px;color:var(--text2);}
 
 /* ===== LIGHT MODE (Fusion Markets palette) ===== */
 html[data-theme="light"] {
-  --bg:#ffffff; --surface:#ffffff; --surface2:#f3f0ff; --border:#ddd6fe; --border2:#c4b5fd;
-  --text:#1e1b4b; --text2:#4b4a6b; --text3:#6b6b8a;
-  --accent:#7c3aed; --accent2:#ede9fe;
+  --bg:#ffffff; --surface:#ffffff; --surface2:#f5f6ff; --border:#dfe3fb; --border2:#c0ccff;
+  --text:#0d1350; --text2:#3b4080; --text3:#6a6f9f;
+  --accent:#722ccd; --accent2:#eef1ff;
   --warn-bg:#fee2e2; --ok-bg:#d1fae5;
 }
 html[data-theme="light"] body{background:#ffffff;}
-html[data-theme="light"] [style*="#0d0818"]{background-color:#ffffff !important;}
-html[data-theme="light"] [style*="#1a1035"]{background-color:#ffffff !important;}
-html[data-theme="light"] [style*="#160d2e"]{background-color:#f8f7ff !important;}
-html[data-theme="light"] [style*="#221545"]{background-color:#f3f0ff !important;}
-html[data-theme="light"] [style*="#1e1240"]{background-color:#f3f0ff !important;}
-html[data-theme="light"] [style*="#180d30"]{background-color:#f3f4f6 !important;}
-html[data-theme="light"] [style*="#1e1040"]{background-color:#f3f0ff !important;}
+html[data-theme="light"] [style*="#070a2a"]{background-color:#ffffff !important;}
+html[data-theme="light"] [style*="#0d1250"]{background-color:#ffffff !important;}
+html[data-theme="light"] [style*="#0b0f3d"]{background-color:#f7f8ff !important;}
+html[data-theme="light"] [style*="#131a66"]{background-color:#f5f6ff !important;}
+html[data-theme="light"] [style*="#111761"]{background-color:#f5f6ff !important;}
+html[data-theme="light"] [style*="#0f1450"]{background-color:#f3f4f6 !important;}
+html[data-theme="light"] [style*="#111761"]{background-color:#f5f6ff !important;}
 html[data-theme="light"] [style*="#003d28"]{background-color:#d1fae5 !important;}
 html[data-theme="light"] [style*="#3d0818"]{background-color:#fee2e2 !important;}
 html[data-theme="light"] [style*="#3d2800"]{background-color:#fef3c7 !important;}
 html[data-theme="light"] [style*="#001838"]{background-color:#dbeafe !important;}
 html[data-theme="light"] [style*="#003040"]{background-color:#cffafe !important;}
 html[data-theme="light"] [style*="#3d1800"]{background-color:#ffedd5 !important;}
-html[data-theme="light"] [style*="#1e0845"]{background-color:#ede9fe !important;}
+html[data-theme="light"] [style*="#1e0845"]{background-color:#eef1ff !important;}
 html[data-theme="light"] [style*="#7a1030"]{background-color:#fecdd3 !important;}
 html[data-theme="light"] [style*="#00232e"]{background-color:#cffafe !important;}
 html[data-theme="light"] [style*="#2e1e00"]{background-color:#fef3c7 !important;}
 html[data-theme="light"] [style*="#3d1200"]{background-color:#ffedd5 !important;}
-html[data-theme="light"] [style*="#241344"]{background-color:#ede9fe !important;}
+html[data-theme="light"] [style*="#151b66"]{background-color:#eef1ff !important;}
 html[data-theme="light"] [style*="#0a5038"]{background-color:#d1fae5 !important;}
 html[data-theme="light"] [style*="#1e0510"]{background-color:#fee2e2 !important;}
 html[data-theme="light"] [style*="#3a2800"]{background-color:#fef3c7 !important;}
 html[data-theme="light"] [style*="#041a10"]{background-color:#d1fae5 !important;}
 html[data-theme="light"] [style*="#0a2848"]{background-color:#dbeafe !important;}
-html[data-theme="light"] [style*="#3a2868"]{border-color:#ddd6fe !important;}
-html[data-theme="light"] [style*="#2d1f55"]{border-color:#e5e0f5 !important;}
-html[data-theme="light"] [style*="#4a3880"]{border-color:#c4b5fd !important;}
-html[data-theme="light"] [style*="#c4a8ff"]{color:#6d28d9 !important;}
-html[data-theme="light"] [style*="#c4b5fd"]{color:#5b21b6 !important;}
-html[data-theme="light"] [style*="#a78bfa"]{color:#6d28d9 !important;}
-html[data-theme="light"] [style*="#7a68a8"]{color:#5b5b7a !important;}
-html[data-theme="light"] [style*="#b8a8e8"]{color:#4b4a6b !important;}
-html[data-theme="light"] [style*="#9d6fff"]{color:#7c3aed !important;}
-html[data-theme="light"] [style*="#d4b8ff"]{color:#7c3aed !important;}
-html[data-theme="light"] [style*="#8878b8"]{color:#6b6b8a !important;}
+html[data-theme="light"] [style*="#262e8c"]{border-color:#dfe3fb !important;}
+html[data-theme="light"] [style*="#1c2375"]{border-color:#e8ebfb !important;}
+html[data-theme="light"] [style*="#343da8"]{border-color:#c0ccff !important;}
+html[data-theme="light"] [style*="#bfccff"]{color:#451eb7 !important;}
+html[data-theme="light"] [style*="#c0ccff"]{color:#36169f !important;}
+html[data-theme="light"] [style*="#a78bfa"]{color:#451eb7 !important;}
+html[data-theme="light"] [style*="#8d93d6"]{color:#5a5f90 !important;}
+html[data-theme="light"] [style*="#b8bdf0"]{color:#3b4080 !important;}
+html[data-theme="light"] [style*="#9d6fff"]{color:#722ccd !important;}
+html[data-theme="light"] [style*="#d4b8ff"]{color:#722ccd !important;}
+html[data-theme="light"] [style*="#a8aef5"]{color:#6a6f9f !important;}
 html[data-theme="light"] [style*="#8fb8ff"]{color:#2563eb !important;}
 html[data-theme="light"] [style*="#7c9dff"]{color:#2563eb !important;}
 /* Status badge classes defined in <style> (not inline) — override directly */
@@ -269,8 +269,8 @@ html[data-theme="light"] .so-HD{background:#fef3c7 !important;}
 html[data-theme="light"] .ci-HD{background:#fef3c7 !important;}
 html[data-theme="light"] .so-UHD{background:#fef3c7 !important;}
 html[data-theme="light"] .ci-UHD{background:#fef3c7 !important;}
-html[data-theme="light"] .so-UT{background:#ede9fe !important;}
-html[data-theme="light"] .ci-UT{background:#ede9fe !important;}
+html[data-theme="light"] .so-UT{background:#eef1ff !important;}
+html[data-theme="light"] .ci-UT{background:#eef1ff !important;}
 html[data-theme="light"] .so-L{background:#dbeafe !important;}
 html[data-theme="light"] .ci-L{background:#dbeafe !important;}
 html[data-theme="light"] .so-VL{background:#cffafe !important;}
@@ -281,48 +281,78 @@ html[data-theme="light"] .so-SL{background:#ffedd5 !important;}
 html[data-theme="light"] .ci-SL{background:#ffedd5 !important;}
 html[data-theme="light"] .so-EL{background:#ffedd5 !important;}
 html[data-theme="light"] .ci-EL{background:#ffedd5 !important;}
-html[data-theme="light"] .so-BL{background:#ede9fe !important;}
-html[data-theme="light"] .ci-BL{background:#ede9fe !important;}
+html[data-theme="light"] .so-BL{background:#eef1ff !important;}
+html[data-theme="light"] .ci-BL{background:#eef1ff !important;}
 html[data-theme="light"] .so-HDVL{background:#cffafe !important;}
 html[data-theme="light"] .ci-HDVL{background:#cffafe !important;}
 html[data-theme="light"] .so-HDSL{background:#ffedd5 !important;}
 html[data-theme="light"] .ci-HDSL{background:#ffedd5 !important;}
 html[data-theme="light"] .so-Off{background:#f3f4f6 !important;}
 html[data-theme="light"] .ci-Off{background:#f3f4f6 !important;}
-html[data-theme="light"] .nav-tab{color:rgba(30,27,75,.65) !important;}
-html[data-theme="light"] .nav-tab:hover{color:rgba(30,27,75,.9) !important;}
-html[data-theme="light"] .nav-tab.active{color:#6d28d9 !important;border-bottom-color:#7c3aed !important;}
-html[data-theme="light"] nav{background:linear-gradient(90deg,#ffffff 0%,#f8f7ff 50%,#ffffff 100%) !important;border-bottom-color:#ddd6fe !important;box-shadow:0 4px 24px rgba(124,58,237,.12) !important;}
-html[data-theme="light"] .btn{color:#1e1b4b;}
-html[data-theme="light"] .btn.go{background:#7c3aed !important;color:#fff !important;}
-html[data-theme="light"] input,html[data-theme="light"] select,html[data-theme="light"] textarea{background:#ffffff !important;color:#1e1b4b !important;border-color:#ddd6fe !important;}
+html[data-theme="light"] .nav-tab{color:rgba(13,19,80,.65) !important;}
+html[data-theme="light"] .nav-tab:hover{color:rgba(13,19,80,.9) !important;}
+html[data-theme="light"] .nav-tab.active{color:#451eb7 !important;border-bottom-color:#722ccd !important;}
+html[data-theme="light"] nav{background:linear-gradient(90deg,#ffffff 0%,#f7f8ff 50%,#ffffff 100%) !important;border-bottom-color:#dfe3fb !important;box-shadow:0 4px 24px rgba(124,58,237,.12) !important;}
+html[data-theme="light"] .btn{color:#0d1350;}
+html[data-theme="light"] .btn.go{background:linear-gradient(90deg,#722ccd,#1b12a3) !important;color:#fff !important;}
+html[data-theme="light"] input,html[data-theme="light"] select,html[data-theme="light"] textarea{background:#ffffff !important;color:#0d1350 !important;border-color:#dfe3fb !important;}
 /* Classes with hardcoded backgrounds defined directly in <style>, not inline */
-html[data-theme="light"] input[type=date],html[data-theme="light"] select,html[data-theme="light"] input[type=text]{background:#ffffff !important;border-color:#ddd6fe !important;}
-html[data-theme="light"] .mini-bar{background:#f3f0ff !important;}
-html[data-theme="light"] .sg{background:#ddd6fe !important;}
+html[data-theme="light"] input[type=date],html[data-theme="light"] select,html[data-theme="light"] input[type=text]{background:#ffffff !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] .mini-bar{background:#f5f6ff !important;}
+html[data-theme="light"] .sg{background:#dfe3fb !important;}
 html[data-theme="light"] .si{background:#ffffff !important;}
-html[data-theme="light"] .lead-card{background:#ffffff !important;border-color:#ddd6fe !important;}
-html[data-theme="light"] .tctrl{background:#ffffff !important;border-color:#ddd6fe !important;}
-html[data-theme="light"] thead th{background:#ffffff !important;color:#6d28d9 !important;border-color:#ddd6fe !important;}
-html[data-theme="light"] .nc{background:#ffffff !important;border-color:#ddd6fe !important;}
-html[data-theme="light"] .oc{background:linear-gradient(135deg,#f8f7ff,#ffffff) !important;border-color:#ddd6fe !important;box-shadow:0 4px 16px rgba(124,58,237,.08) !important;}
-html[data-theme="light"] .nc input:focus{background:#f3f0ff !important;}
-html[data-theme="light"] .tbc{background:#f8f7ff !important;border-color:#ddd6fe !important;}
-html[data-theme="light"] .sumc{background:#f8f7ff !important;}
-html[data-theme="light"] .popup{background:#ffffff !important;border-color:#ddd6fe !important;box-shadow:0 24px 60px rgba(124,58,237,.15) !important;}
-html[data-theme="light"] .modal{background:#ffffff !important;border-color:#ddd6fe !important;box-shadow:0 24px 60px rgba(124,58,237,.15) !important;}
-html[data-theme="light"] .step-body code{background:#f3f0ff !important;color:#4338ca !important;}
+html[data-theme="light"] .lead-card{background:#ffffff !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] .tctrl{background:#ffffff !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] thead th{background:#ffffff !important;color:#451eb7 !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] .nc{background:#ffffff !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] .oc{background:linear-gradient(135deg,#f7f8ff,#ffffff) !important;border-color:#dfe3fb !important;box-shadow:0 4px 16px rgba(124,58,237,.08) !important;}
+html[data-theme="light"] .nc input:focus{background:#f5f6ff !important;}
+html[data-theme="light"] .tbc{background:#f7f8ff !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] .sumc{background:#f7f8ff !important;}
+html[data-theme="light"] .popup{background:#ffffff !important;border-color:#dfe3fb !important;box-shadow:0 24px 60px rgba(124,58,237,.15) !important;}
+html[data-theme="light"] .modal{background:#ffffff !important;border-color:#dfe3fb !important;box-shadow:0 24px 60px rgba(124,58,237,.15) !important;}
+html[data-theme="light"] .step-body code{background:#f5f6ff !important;color:#4338ca !important;}
 html[data-theme="light"] .role-Director{background:#dbeafe !important;}
 html[data-theme="light"] .role-TL{background:#d1fae5 !important;}
-html[data-theme="light"] .role-Deputy{background:#ede9fe !important;}
+html[data-theme="light"] .role-Deputy{background:#eef1ff !important;}
 html[data-theme="light"] .role-Manager{background:#d1fae5 !important;}
 html[data-theme="light"] .badge-CS{background:#dbeafe !important;}
-html[data-theme="light"] .badge-KYC{background:#ede9fe !important;}
+html[data-theme="light"] .badge-KYC{background:#eef1ff !important;}
 html[data-theme="light"] .badge-Funding{background:#d1fae5 !important;}
-html[data-theme="light"] .badge-Leadership{background:#ede9fe !important;}
+html[data-theme="light"] .badge-Leadership{background:#eef1ff !important;}
 html[data-theme="light"] .badge-Marketing{background:#fce7f3 !important;}
 html[data-theme="light"] .badge-Operations{background:#dbeafe !important;}
 html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
+/* Light-mode readability: bright "dark theme" accent colors are too pale on white */
+html[data-theme="light"]{--P-bg:#d1fae5;--A-bg:#fee2e2;--A-bd:#fecdd3;--HD-bg:#fef3c7;--UT-bg:#eef1ff;--L-bg:#dbeafe;--VL-bg:#cffafe;--UVL-bg:#cffafe;--UHD-bg:#fef3c7;--SL-bg:#ffedd5;--EL-bg:#ffedd5;--BL-bg:#eef1ff;--HDVL-bg:#cffafe;--HDSL-bg:#ffedd5;--Off-bg:#f3f4f6;}
+html[data-theme="light"]{--P:#086646;--A:#b4233f;--HD:#8a6500;--UT:#5a24b0;--L:#2b4fb8;--VL:#0a5f89;--UVL:#0a5f89;--SL:#9a4a08;--EL:#8c2f1c;--BL:#5a24b0;--HDVL:#0a5f89;--HDSL:#9a4a08;--Off:#4b4fa6;}
+/* Inline dark gradients (team cards etc.) sit on top of the light background-color overrides, so drop the gradient image in light mode */
+html[data-theme="light"] [style*="linear-gradient"][style*="#0b0f3d"],
+html[data-theme="light"] [style*="linear-gradient"][style*="#070a2a"],
+html[data-theme="light"] [style*="linear-gradient"][style*="#111761"],
+html[data-theme="light"] [style*="linear-gradient"][style*="#0d1250"],
+html[data-theme="light"] [style*="linear-gradient"][style*="#131a66"]{background-image:none !important;}
+/* Schedule grid cells: colors are set from JS, so light mode styles them by type */
+html[data-theme="light"] td.sc-none{background:#f7f8ff !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] td.sc-ok{background:#d1fae5 !important;border-color:#a7f3d0 !important;}
+html[data-theme="light"] td.sc-holiday{background:#d1fae5 !important;border-color:#34d399 !important;}
+html[data-theme="light"] td.sc-A{background:#fee2e2 !important;border-color:#fca5a5 !important;}
+html[data-theme="light"] td.sc-VL{background:#cffafe !important;border-color:#67e8f9 !important;}
+html[data-theme="light"] td.sc-SL{background:#ffedd5 !important;border-color:#fdba74 !important;}
+html[data-theme="light"] td.sc-HD,html[data-theme="light"] td.sc-adj{background:#fef3c7 !important;border-color:#fcd34d !important;}
+html[data-theme="light"] td.sc-RD{background:#eceefb !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] .ts-total-row{background:#f5f6ff !important;border-top-color:#dfe3fb !important;}
+html[data-theme="light"] [style*="#060824"]{background-color:#f5f6ff !important;}
+html[data-theme="light"] .tc{background:#ffffff !important;border-color:#dfe3fb !important;box-shadow:0 4px 20px rgba(13,19,80,.08) !important;}
+html[data-theme="light"] .tc-head{background:#f5f6ff !important;border-color:#dfe3fb !important;}
+html[data-theme="light"] nav [style*="background-clip"]{background-image:linear-gradient(90deg,#451eb7,#722ccd,#451eb7) !important;}
+html[data-theme="light"] #btn-lock,html[data-theme="light"] #btn-manage-depts{color:#451eb7 !important;border-color:#c0ccff !important;background:#eef1ff !important;}
+html[data-theme="light"] [style^="color:#00e896"],html[data-theme="light"] [style*=";color:#00e896"],html[data-theme="light"] [style*="; color:#00e896"]{color:#086646 !important;}
+html[data-theme="light"] [style^="color:#ffcf3d"],html[data-theme="light"] [style*=";color:#ffcf3d"],html[data-theme="light"] [style*="; color:#ffcf3d"]{color:#8a6500 !important;}
+html[data-theme="light"] [style^="color:#5db8ff"],html[data-theme="light"] [style*=";color:#5db8ff"],html[data-theme="light"] [style*="; color:#5db8ff"]{color:#1d56b0 !important;}
+html[data-theme="light"] [style^="color:#00cfff"],html[data-theme="light"] [style*=";color:#00cfff"],html[data-theme="light"] [style*="; color:#00cfff"]{color:#0a5f89 !important;}
+html[data-theme="light"] [style^="color:#ffaa5c"],html[data-theme="light"] [style*=";color:#ffaa5c"],html[data-theme="light"] [style*="; color:#ffaa5c"]{color:#9a4a08 !important;}
+html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [style*=";color:#ff5c7a"],html[data-theme="light"] [style*="; color:#ff5c7a"]{color:#b4233f !important;}
 </style>
 </head>
 <body>
@@ -442,11 +472,11 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <div class="sync-dot" id="sync-dot" title="Sync status"></div>
       <div style="display:flex;align-items:center;gap:8px">
         <div style="text-align:center;padding:0 10px;border-right:1px solid rgba(240,180,41,.2)">
-          <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#c4b5fd">FUSION MARKETS</div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#c0ccff">FUSION MARKETS</div>
           <div style="font-size:8px;color:rgba(220,200,255,.6);letter-spacing:.08em">FX BROKER</div>
         </div>
         <div style="text-align:center;padding:0 10px;border-right:1px solid rgba(240,180,41,.2)">
-          <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#c4b5fd">GLOBAL PRIME</div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#c0ccff">GLOBAL PRIME</div>
           <div style="font-size:8px;color:rgba(196,181,253,.5);letter-spacing:.08em">FX BROKER</div>
         </div>
         <div style="text-align:center;padding:0 10px;border-right:1px solid rgba(240,180,41,.2)">
@@ -458,7 +488,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 
     <!-- CENTER: Title -->
     <div style="flex:1;text-align:center">
-      <div style="font-size:15px;font-weight:700;letter-spacing:.06em;background:linear-gradient(90deg,#c4b5fd,#9d6fff,#c4b5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.04em">📋 ATTENDANCE TRACKER</div>
+      <div style="font-size:15px;font-weight:700;letter-spacing:.06em;background:linear-gradient(90deg,#c0ccff,#9d6fff,#c0ccff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.04em">📋 ATTENDANCE TRACKER</div>
       <div id="cutoff-badge" style="display:none;font-size:10px;color:rgba(196,181,253,.65);margin-top:1px"></div>
     </div>
 
@@ -474,15 +504,15 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
         <div class="nav-tab" id="nav-tab-settings" data-page="settings" onclick="showPage('settings')" style="display:none">⚙️ Settings</div>
       </div>
       <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;max-width:100%">
-        <button class="btn" id="btn-theme-toggle" onclick="toggleTheme()" title="Switch light/dark" style="flex:0 0 auto;background:rgba(157,111,255,.12);border-color:#9d6fff;color:#c4a8ff;padding:5px 9px">🌙</button>
+        <button class="btn" id="btn-theme-toggle" onclick="toggleTheme()" title="Switch light/dark" style="flex:0 0 auto;background:rgba(157,111,255,.12);border-color:#9d6fff;color:#bfccff;padding:5px 9px">🌙</button>
         <button class="btn" id="btn-save-changes" onclick="manualSaveNow()" style="display:none;flex:0 0 auto;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896;min-width:110px;font-weight:700">✅ Saved</button>
         <button class="btn" id="btn-lock" onclick="toggleLock()" style="flex:0 0 auto;background:rgba(251,146,60,.15);border-color:#fb923c;color:#fb923c;min-width:80px">🔒 Sign In</button>
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin">
           <div style="display:flex;align-items:center;gap:5px;flex:0 0 auto;background:rgba(255,255,255,.07);border:1px solid rgba(196,168,255,.3);border-radius:6px;padding:4px 8px">
             <span style="font-size:10px;color:rgba(196,168,255,.7)">📅</span>
-            <input type="date" id="global-date-from" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#c4a8ff;font-size:11px;outline:none;padding:0;width:88px">
+            <input type="date" id="global-date-from" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#bfccff;font-size:11px;outline:none;padding:0;width:88px">
             <span style="font-size:10px;color:rgba(196,168,255,.5)">→</span>
-            <input type="date" id="global-date-to" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#c4a8ff;font-size:11px;outline:none;padding:0;width:88px">
+            <input type="date" id="global-date-to" onchange="onGlobalDateChange()" style="border:none;background:transparent;color:#bfccff;font-size:11px;outline:none;padding:0;width:88px">
             <button onclick="clearGlobalDates()" style="background:none;border:none;color:rgba(196,168,255,.5);cursor:pointer;font-size:10px;padding:0">✕</button>
           </div>
           <button class="btn" onclick="openAddDate()" id="btn-add-date" style="display:none;flex:0 0 auto">📅 + Date</button>
@@ -502,7 +532,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div id="welcome-banner" style="margin:16px 20px 0;padding:14px 18px;background:linear-gradient(135deg,rgba(157,111,255,.15),rgba(0,207,255,.08));border:1px solid rgba(157,111,255,.3);border-radius:12px;display:flex;align-items:flex-start;gap:12px">
   <div style="font-size:24px;flex-shrink:0">🎉</div>
   <div style="flex:1">
-    <div style="font-size:13px;font-weight:700;color:#c4a8ff;margin-bottom:4px">Welcome to the MNL Attendance Tracker!</div>
+    <div style="font-size:13px;font-weight:700;color:#bfccff;margin-bottom:4px">Welcome to the MNL Attendance Tracker!</div>
     <div style="font-size:12px;color:var(--text2);line-height:1.6">
       ✅ <strong style="color:var(--text)">Timesheet tab</strong> — auto-detects holidays, night diff, OT, late & undertime<br>
       ✅ <strong style="color:var(--text)">Overtime tab</strong> — log and track OT per department<br>
@@ -531,7 +561,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <div class="leg"><div class="leg-dot" style="background:#c49eff"></div>UT — Undertime</div>
       <div class="leg"><div class="leg-dot" style="background:#00cfff"></div>VL — Vacation Leave</div>
       <div class="leg"><div class="leg-dot" style="background:#ffaa5c"></div>SL — Sick Leave</div>
-      <div class="leg"><div class="leg-dot" style="background:#8878b8"></div>Off — Rest Day</div>
+      <div class="leg"><div class="leg-dot" style="background:#a8aef5"></div>Off — Rest Day</div>
     </div>
     <div class="sec-lbl">Overall Summary</div>
     <div class="overall-row" id="overall-row"></div>
@@ -587,7 +617,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <button class="btn light" onclick="openBulkMark()" id="btn-bulk-mark" style="display:none;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">🗂️ Bulk Mark</button>
       <button class="btn light" onclick="openLeaveEdit()" id="btn-edit-leave" style="display:none">✏️ Edit Credits</button>
       <button class="btn light" onclick="document.getElementById('xl-import-input').click()" id="btn-import-xl" style="display:none;background:rgba(52,211,153,.1);border-color:#34d399;color:#34d399">📥 Import Excel</button>
-      <button class="btn light" onclick="openManageDepts()" id="btn-manage-depts" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">🏢 Departments</button>
+      <button class="btn light" onclick="openManageDepts()" id="btn-manage-depts" style="display:none;background:rgba(196,168,255,.1);border-color:#bfccff;color:#bfccff">🏢 Departments</button>
       <input type="file" id="xl-import-input" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
     </div>
     <div class="tw"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
@@ -602,9 +632,9 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 
     <label style="font-size:10px;color:var(--text3);display:block;margin:12px 0 5px">Scope</label>
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <div class="so" id="bm-scope-emp" onclick="setBulkScope('employee')" style="flex:1;background:#1a1035;color:var(--text2)">👤 Individual</div>
-      <div class="so" id="bm-scope-dept" onclick="setBulkScope('dept')" style="flex:1;background:#1a1035;color:var(--text2)">🏢 Department</div>
-      <div class="so" id="bm-scope-group" onclick="setBulkScope('group')" style="flex:1;background:#1a1035;color:var(--text2)">👥 Group</div>
+      <div class="so" id="bm-scope-emp" onclick="setBulkScope('employee')" style="flex:1;background:#0d1250;color:var(--text2)">👤 Individual</div>
+      <div class="so" id="bm-scope-dept" onclick="setBulkScope('dept')" style="flex:1;background:#0d1250;color:var(--text2)">🏢 Department</div>
+      <div class="so" id="bm-scope-group" onclick="setBulkScope('group')" style="flex:1;background:#0d1250;color:var(--text2)">👥 Group</div>
     </div>
 
     <div id="bm-emp-wrap" style="display:none;margin-bottom:12px">
@@ -618,7 +648,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div id="bm-group-wrap" style="display:none;margin-bottom:12px">
       <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Pick anyone, from any department</label>
       <input type="text" id="bm-group-search" placeholder="Search name…" oninput="renderBulkGroupList()" style="width:100%;margin-bottom:8px">
-      <div id="bm-group-list" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:8px"></div>
+      <div id="bm-group-list" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;background:#070a2a;border:1px solid #262e8c;border-radius:8px;padding:8px"></div>
       <div style="font-size:10px;color:var(--text3);margin-top:4px" id="bm-group-count"></div>
     </div>
 
@@ -684,7 +714,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <div class="so so-Off" onclick="setSt('Off')">Off — Rest Day</div>
     </div>
 
-    <div id="pop-paytype-section" style="display:none;margin-top:10px;padding:10px;background:rgba(157,111,255,.08);border:1px solid #3a2868;border-radius:8px">
+    <div id="pop-paytype-section" style="display:none;margin-top:10px;padding:10px;background:rgba(157,111,255,.08);border:1px solid #262e8c;border-radius:8px">
       <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa;display:block;margin-bottom:6px" id="pop-paytype-label">Paid or Unpaid?</label>
       <div style="display:flex;gap:8px">
         <div class="so" id="pop-paytype-paid" onclick="setPayType('Paid')" style="flex:1;background:#003d28;color:#00e896">💰 Paid</div>
@@ -701,8 +731,8 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <div>
         <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa;display:block;margin-bottom:5px">📝 Notes / Reason</label>
         <textarea id="pop-notes" rows="2" placeholder="e.g. Medical certificate submitted, sick since Monday…"
-          style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #2d1f55;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;line-height:1.5;outline:none"
-          onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#2d1f55'"></textarea>
+          style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #1c2375;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font);resize:none;line-height:1.5;outline:none"
+          onfocus="this.style.borderColor='#722ccd'" onblur="this.style.borderColor='#1c2375'"></textarea>
       </div>
 
       <!-- Missed Onsite -->
@@ -710,17 +740,17 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
         <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fb923c;display:block;margin-bottom:5px">🏢 Missed Onsite (days)</label>
         <div style="display:flex;align-items:center;gap:8px">
           <input type="number" id="pop-onsite" min="0" max="30" step="0.5" placeholder="0"
-            style="width:80px;padding:7px 10px;border-radius:8px;border:1px solid #2d1f55;background:#0d0818;color:var(--text);font-size:13px;font-family:var(--mono);outline:none"
-            onfocus="this.style.borderColor='#fb923c'" onblur="this.style.borderColor='#2d1f55'">
+            style="width:80px;padding:7px 10px;border-radius:8px;border:1px solid #1c2375;background:#070a2a;color:var(--text);font-size:13px;font-family:var(--mono);outline:none"
+            onfocus="this.style.borderColor='#fb923c'" onblur="this.style.borderColor='#1c2375'">
           <span style="font-size:11px;color:var(--text2)">days missed in-office</span>
         </div>
       </div>
     </div>
 
     <div id="pop-role-section" style="display:none;margin-bottom:10px">
-      <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c4a8ff;display:block;margin-bottom:5px">👑 Role / Team</label>
+      <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#bfccff;display:block;margin-bottom:5px">👑 Role / Team</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <select id="pop-role" style="padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font)">
+        <select id="pop-role" style="padding:7px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font)">
           <option value="">— Agent (no role) —</option>
           <option value="Director">Director</option>
           <option value="Team Lead">Team Lead</option>
@@ -728,7 +758,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
           <option value="Manager">Manager</option>
           <option value="Deputy Manager">Deputy Manager</option>
         </select>
-        <select id="pop-team" style="padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font)">
+        <select id="pop-team" style="padding:7px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font)">
           <option value="CS">CS</option>
           <option value="KYC">KYC</option>
           <option value="Funding">Funding</option>
@@ -740,12 +770,12 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
         </select>
       </div>
       <label style="font-size:10px;color:var(--text3);display:block;margin-top:5px">Department (for leadership)</label>
-      <input type="text" id="pop-dept" placeholder="e.g. CS, KYC, All Departments" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-top:4px">
+      <input type="text" id="pop-dept" placeholder="e.g. CS, KYC, All Departments" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;margin-top:4px">
     </div>
     <div id="pop-inactive-section" style="display:none;margin-bottom:10px;padding:10px 12px;background:rgba(255,92,122,.06);border:1px solid rgba(255,92,122,.25);border-radius:8px">
       <label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ff5c7a;display:block;margin-bottom:6px">🚫 Employee Status</label>
       <div id="pop-active-status-view">
-        <select id="pop-inactive-reason" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);margin-bottom:6px">
+        <select id="pop-inactive-reason" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font);margin-bottom:6px">
           <option value="">— Select reason —</option>
           <option value="Resigned">Resigned</option>
           <option value="Terminated">Terminated</option>
@@ -754,7 +784,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
           <option value="Other">Other</option>
         </select>
         <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">Effective Date (last working day + 1, or exact date)</label>
-        <input type="date" id="pop-inactive-date" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:8px">
+        <input type="date" id="pop-inactive-date" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;margin-bottom:8px">
         <button class="btn danger" onclick="markEmpInactive()" style="width:100%">Mark Inactive</button>
       </div>
       <div id="pop-inactive-status-view" style="display:none">
@@ -867,15 +897,15 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <select id="ts-emp-filter" onchange="renderTimesheet()" style="min-width:160px">
       <option value="">All Employees</option>
     </select>
-    <div style="display:flex;align-items:center;gap:6px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 10px">
+    <div style="display:flex;align-items:center;gap:6px;background:#0d1250;border:1px solid #262e8c;border-radius:6px;padding:4px 10px">
       <span style="font-size:11px;color:var(--text3)">📅 From</span>
-      <input type="date" id="ts-date-from" onchange="renderTimesheet()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
+      <input type="date" id="ts-date-from" onchange="renderTimesheet()" style="border:none;background:transparent;color:#bfccff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
       <span style="font-size:11px;color:var(--text3)">→</span>
-      <input type="date" id="ts-date-to" onchange="renderTimesheet()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
+      <input type="date" id="ts-date-to" onchange="renderTimesheet()" style="border:none;background:transparent;color:#bfccff;font-size:12px;font-family:var(--font);outline:none;padding:0;cursor:pointer">
       <button onclick="clearTsDates()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px" title="Clear dates">✕</button>
     </div>
-    <button class="btn light" onclick="openTsAddDate()" style="background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">📅 + Add Date</button>
-    <button class="btn light" id="btn-import-sched" onclick="document.getElementById('sched-import-input').click()" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">📋 Import Schedule</button>
+    <button class="btn light" onclick="openTsAddDate()" style="background:rgba(196,168,255,.1);border-color:#bfccff;color:#bfccff">📅 + Add Date</button>
+    <button class="btn light" id="btn-import-sched" onclick="document.getElementById('sched-import-input').click()" style="display:none;background:rgba(196,168,255,.1);border-color:#bfccff;color:#bfccff">📋 Import Schedule</button>
     <button class="btn light" id="btn-auto-sched" onclick="autoPopulateSchedules()" style="display:none;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">🗓️ Auto-fill Schedules</button>
     <button class="btn light" onclick="recalcAllOTNotes()" style="background:rgba(255,143,92,.1);border-color:#ff8f5c;color:#ff8f5c">⚡ Recalculate OT/Notes</button>
     <input type="file" id="sched-import-input" accept=".xlsx,.xls" style="display:none" onchange="importScheduleExcel(this)">
@@ -909,7 +939,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <select id="ot-emp-filter" onchange="renderOT()" style="min-width:160px">
       <option value="">All Employees</option>
     </select>
-    <div style="display:flex;align-items:center;gap:6px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 10px">
+    <div style="display:flex;align-items:center;gap:6px;background:#0d1250;border:1px solid #262e8c;border-radius:6px;padding:4px 10px">
       <span style="font-size:11px;color:var(--text3)">📅 From</span>
       <input type="date" id="ot-date-from" onchange="renderOT()" style="border:none;background:transparent;color:var(--text);font-size:12px;outline:none;padding:0">
       <span style="font-size:11px;color:var(--text3)">To</span>
@@ -921,7 +951,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
   </div>
 
   <!-- OT Summary Bar -->
-  <div style="display:flex;gap:12px;padding:10px 20px;background:#0d0818;border-bottom:1px solid #3a2868;flex-wrap:wrap" id="ot-summary-bar"></div>
+  <div style="display:flex;gap:12px;padding:10px 20px;background:#070a2a;border-bottom:1px solid #262e8c;flex-wrap:wrap" id="ot-summary-bar"></div>
 
   <!-- OT Table by Department -->
   <div style="padding:16px 20px;overflow-x:auto" id="ot-content"></div>
@@ -978,13 +1008,13 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
         <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">OT Time</label>
         <div style="display:flex;align-items:center;gap:6px">
           <input type="text" id="ot-new-start" placeholder="e.g. 1" style="width:60px;margin-bottom:0;font-family:var(--mono);text-align:center">
-          <select id="ot-start-ampm" style="margin-bottom:0;padding:6px 8px;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#c4a8ff;font-size:12px;width:58px">
+          <select id="ot-start-ampm" style="margin-bottom:0;padding:6px 8px;background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:#bfccff;font-size:12px;width:58px">
             <option value="AM">AM</option>
             <option value="PM" selected>PM</option>
           </select>
           <span style="color:var(--text3)">—</span>
           <input type="text" id="ot-new-end" placeholder="e.g. 2" style="width:60px;margin-bottom:0;font-family:var(--mono);text-align:center">
-          <select id="ot-end-ampm" style="margin-bottom:0;padding:6px 8px;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#c4a8ff;font-size:12px;width:58px">
+          <select id="ot-end-ampm" style="margin-bottom:0;padding:6px 8px;background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:#bfccff;font-size:12px;width:58px">
             <option value="AM">AM</option>
             <option value="PM" selected>PM</option>
           </select>
@@ -1005,7 +1035,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <option value="Other">Other (type below)</option>
     </select>
     <textarea id="ot-new-reason" rows="2" placeholder="Additional notes or custom reason…"
-      style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:13px"></textarea>
+      style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:13px"></textarea>
     <div class="ma">
       <button class="btn go" onclick="confirmAddOT()" style="flex:1;padding:9px">Add Entry</button>
       <button class="btn light" onclick="document.getElementById('add-ot-modal').classList.remove('open')" style="flex:1;padding:9px">Cancel</button>
@@ -1019,7 +1049,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div style="font-size:28px;text-align:center;margin-bottom:8px">📥</div>
     <h3 style="text-align:center;margin-bottom:6px">Import Leave Credits</h3>
     <p style="font-size:12px;color:var(--text2);margin-bottom:16px;text-align:center">Reading your payroll Excel file…</p>
-    <div id="import-progress" style="background:#0d0818;border-radius:8px;padding:14px;font-size:12px;font-family:var(--mono);color:var(--text2);max-height:200px;overflow-y:auto;line-height:1.8"></div>
+    <div id="import-progress" style="background:#070a2a;border-radius:8px;padding:14px;font-size:12px;font-family:var(--mono);color:var(--text2);max-height:200px;overflow-y:auto;line-height:1.8"></div>
     <div id="import-summary" style="display:none;margin-top:12px;padding:12px;background:rgba(52,211,153,.1);border:1px solid #34d399;border-radius:8px;font-size:13px;color:#34d399;text-align:center"></div>
     <div class="ma" style="margin-top:16px">
       <button class="btn go" id="import-confirm-btn" onclick="confirmImport()" style="display:none;flex:1;padding:9px">✓ Apply Updates</button>
@@ -1034,7 +1064,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <h3>🏢 Manage Departments</h3>
     <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Add new departments or rename existing ones. Changes apply to all dropdowns.</p>
     <div id="dept-list" style="margin-bottom:14px"></div>
-    <div style="border-top:1px solid #3a2868;padding-top:14px">
+    <div style="border-top:1px solid #262e8c;padding-top:14px">
       <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;font-weight:600">Add New Department</label>
       <div style="display:flex;gap:8px">
         <input type="text" id="new-dept-name" placeholder="Department name…" style="flex:1">
@@ -1061,11 +1091,11 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <option value="Finance">Finance</option>
       <option value="HouseKeeping & Admin">HouseKeeping &amp; Admin</option>
     </select>
-    <div style="display:flex;align-items:center;gap:6px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 10px">
+    <div style="display:flex;align-items:center;gap:6px;background:#0d1250;border:1px solid #262e8c;border-radius:6px;padding:4px 10px">
       <span style="font-size:11px;color:var(--text3)">📅</span>
-      <input type="date" id="sched-date-from" onchange="renderSchedulePage()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;outline:none;padding:0;cursor:pointer">
+      <input type="date" id="sched-date-from" onchange="renderSchedulePage()" style="border:none;background:transparent;color:#bfccff;font-size:12px;outline:none;padding:0;cursor:pointer">
       <span style="font-size:11px;color:var(--text3)">→</span>
-      <input type="date" id="sched-date-to" onchange="renderSchedulePage()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;outline:none;padding:0;cursor:pointer">
+      <input type="date" id="sched-date-to" onchange="renderSchedulePage()" style="border:none;background:transparent;color:#bfccff;font-size:12px;outline:none;padding:0;cursor:pointer">
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-left:8px;font-size:11px">
       <span><span style="display:inline-block;width:12px;height:12px;background:#3a2800;border:1px solid #ffcf3d;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Adjusted</span>
@@ -1073,11 +1103,11 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <span><span style="display:inline-block;width:12px;height:12px;background:#003040;border:1px solid #00cfff;border-radius:2px;margin-right:4px;vertical-align:middle"></span>VL</span>
       <span><span style="display:inline-block;width:12px;height:12px;background:#003d28;border:1px solid #00e896;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Default</span>
     </div>
-    <button class="btn light" id="sched-add-date-btn" onclick="openSchedAddDate()" style="background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">📅 + Date</button>
+    <button class="btn light" id="sched-add-date-btn" onclick="openSchedAddDate()" style="background:rgba(196,168,255,.1);border-color:#bfccff;color:#bfccff">📅 + Date</button>
     <button class="btn light" id="sched-manage-btn" onclick="openManageSchedulesModal()" style="background:rgba(255,143,92,.1);border-color:#ff8f5c;color:#ff8f5c">🗓️ Manage Schedules</button>
     <button class="btn light" id="sched-import-btn" onclick="document.getElementById('sched-xl-input').click()" style="background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">📋 Import Schedule</button>
     <input type="file" id="sched-xl-input" accept=".xlsx,.xls" style="display:none" onchange="importSchedExcel(this)">
-    <button class="btn light" id="sched-contacts-btn" onclick="openContactsManager()" style="display:none;background:rgba(196,168,255,.1);border-color:#c4a8ff;color:#c4a8ff">👥 Contacts</button>
+    <button class="btn light" id="sched-contacts-btn" onclick="openContactsManager()" style="display:none;background:rgba(196,168,255,.1);border-color:#bfccff;color:#bfccff">👥 Contacts</button>
     <button class="btn light" id="sched-export-btn" onclick="exportScheduleCSV()" style="margin-left:auto;background:rgba(0,207,255,.1);border-color:#00cfff;color:#00cfff">📤 Export</button>
   </div>
   <div style="overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 120px)" id="sched-table-wrap">
@@ -1105,7 +1135,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 <div class="ov" id="sched-edit-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" style="width:380px">
     <h3>✏️ Edit Schedule</h3>
-    <div id="sched-edit-info" style="font-size:12px;color:var(--text2);margin-bottom:14px;padding:8px 12px;background:#0d0818;border-radius:8px;border:1px solid #2d1f55"></div>
+    <div id="sched-edit-info" style="font-size:12px;color:var(--text2);margin-bottom:14px;padding:8px 12px;background:#070a2a;border-radius:8px;border:1px solid #1c2375"></div>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Schedule</label>
     <select id="sched-edit-select" onchange="onSchedEditChange()" style="width:100%;margin-bottom:8px">
       <option value="">— Select schedule —</option>
@@ -1156,7 +1186,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div style="text-align:center;font-size:28px;margin-bottom:8px">✅</div>
     <h3 style="text-align:center;margin-bottom:6px">Notify Leave Approval</h3>
     <p style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:16px">Send approval notification to the employee?</p>
-    <div id="leave-notif-content" style="background:#1a1035;border:1px solid #3a2868;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7"></div>
+    <div id="leave-notif-content" style="background:#0d1250;border:1px solid #262e8c;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7"></div>
     <div class="ma" style="flex-direction:column;gap:8px">
       <button id="leave-wa-btn" class="btn go" style="width:100%;padding:10px;background:linear-gradient(135deg,#25d366,#128c7e);border-color:#25d366;font-size:13px">
         📱 Send via WhatsApp
@@ -1290,7 +1320,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       </select>
       <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;text-align:left">Payslip Password</label>
       <input type="password" id="login-pass" placeholder="e.g. CARE001"
-        style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #2d1f55;background:#0d0818;color:var(--text);font-family:var(--mono);font-size:14px;letter-spacing:.1em;margin-bottom:6px"
+        style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #1c2375;background:#070a2a;color:var(--text);font-family:var(--mono);font-size:14px;letter-spacing:.1em;margin-bottom:6px"
         onkeydown="if(event.key==='Enter')checkRoleLogin()">
     </div>
     <div id="pin-error" style="color:#f43f5e;font-size:12px;margin-bottom:12px;min-height:18px"></div>
@@ -1322,21 +1352,21 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       <option value="Declined">Declined</option>
       <option value="Cancelled">Cancelled</option>
     </select>
-    <div style="display:flex;align-items:center;gap:4px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 10px">
-      <input type="date" id="leaves-date-from" onchange="renderLeaves()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;outline:none;padding:0">
+    <div style="display:flex;align-items:center;gap:4px;background:#0d1250;border:1px solid #262e8c;border-radius:6px;padding:4px 10px">
+      <input type="date" id="leaves-date-from" onchange="renderLeaves()" style="border:none;background:transparent;color:#bfccff;font-size:12px;outline:none;padding:0">
       <span style="color:var(--text3);font-size:11px">→</span>
-      <input type="date" id="leaves-date-to" onchange="renderLeaves()" style="border:none;background:transparent;color:#c4a8ff;font-size:12px;outline:none;padding:0">
+      <input type="date" id="leaves-date-to" onchange="renderLeaves()" style="border:none;background:transparent;color:#bfccff;font-size:12px;outline:none;padding:0">
     </div>
-    <button onclick="setLeavesWeek(0)" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Week</button>
-    <button onclick="setLeavesWeek(-1)" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Last Week</button>
-    <button onclick="setLeavesMonth()" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Month</button>
+    <button onclick="setLeavesWeek(0)" style="background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Week</button>
+    <button onclick="setLeavesWeek(-1)" style="background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Last Week</button>
+    <button onclick="setLeavesMonth()" style="background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">This Month</button>
     <div style="display:flex;align-items:center;gap:2px">
-      <button onclick="shiftLeavesMonth(-1)" title="Previous month" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px;font-family:var(--font)">‹</button>
-      <button onclick="shiftLeavesMonth(1)" title="Next month" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px;font-family:var(--font)">›</button>
+      <button onclick="shiftLeavesMonth(-1)" title="Previous month" style="background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px;font-family:var(--font)">‹</button>
+      <button onclick="shiftLeavesMonth(1)" title="Next month" style="background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px;font-family:var(--font)">›</button>
     </div>
-    <button onclick="setLeavesAll()" style="background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">All</button>
+    <button onclick="setLeavesAll()" style="background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">All</button>
     <button id="btn-file-leave" onclick="openFileLeave()" style="background:rgba(0,232,150,.1);border:1px solid #00e896;color:#00e896;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600">📝 File Leave</button>
-    <div style="display:flex;gap:4px;background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:2px">
+    <div style="display:flex;gap:4px;background:#0d1250;border:1px solid #262e8c;border-radius:6px;padding:2px">
       <button id="leaves-view-list" onclick="setLeavesView('list')" style="background:transparent;border:none;color:var(--text2);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">☰ List</button>
       <button id="leaves-view-cal" onclick="setLeavesView('cal')" style="background:#9d6fff;border:none;color:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--font);font-weight:600">📅 Calendar</button>
     </div>
@@ -1348,23 +1378,23 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 
 <!-- SETTINGS PAGE (admin-only) -->
 <div class="page" id="page-settings" style="display:none;padding:24px 20px">
-  <div style="font-size:16px;font-weight:700;color:#c4a8ff;margin-bottom:4px">⚙️ Settings</div>
+  <div style="font-size:16px;font-weight:700;color:#bfccff;margin-bottom:4px">⚙️ Settings</div>
   <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Only visible to your account. Manage employees, departments, schedules and more from here.</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;max-width:1000px">
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">👤 Employees</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Add, edit, or remove team members</div>
       <button class="btn light" onclick="showPage('tracker');openAddEmp()" style="width:100%">+ Add Employee</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🏢 Departments</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Add or rename departments</div>
       <button class="btn light" onclick="openManageDepts()" style="width:100%">Manage Departments</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🗓️ Schedules</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Add a date or import a schedule file</div>
       <div style="display:flex;gap:8px">
@@ -1373,67 +1403,67 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
       </div>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">👥 Contacts</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">WhatsApp numbers & emails for notifications</div>
       <button class="btn light" onclick="openContactsManager()" style="width:100%">Manage Contacts</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">✏️ Leave Credits</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Update VL/SL balances for any employee</div>
       <button class="btn light" onclick="openLeaveEdit()" style="width:100%">Edit Leave Credits</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📋 Contracts</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Track status & contract milestones</div>
       <button class="btn light" onclick="openContractManager()" style="width:100%">Open Contracts</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📥 Import Attendance</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Bulk-import from Excel</div>
       <button class="btn light" onclick="showPage('tracker');document.getElementById('xl-import-input').click()" style="width:100%">Import Excel</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📦 Cutoff Period</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:4px" id="settings-cutoff-current">—</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:12px">Only you can start a new cutoff. This doesn't move or archive any data — it's just a label for the current period.</div>
       <button class="btn light" onclick="openNewCutoffModal()" style="width:100%">+ Start New Cutoff</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:520px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px;grid-column:1/-1;max-width:520px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📝 Leave Balance Note</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Shown under "Summary" on the Tracker so everyone knows how current the VL/SL balances are. Update this after each payout.</div>
-      <textarea id="settings-leave-note-input" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);margin-bottom:8px;resize:vertical"></textarea>
+      <textarea id="settings-leave-note-input" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font);margin-bottom:8px;resize:vertical"></textarea>
       <button class="btn light" onclick="saveLeaveBalanceNote()" style="width:100%">Save Note</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📥 Download Backup</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Downloads everything — attendance, timesheets, schedules, leave requests, employees — as one file. Keep it somewhere safe. If something ever goes missing, send this file to Claude and it can be used to recover the exact data that was lost, without needing to dig through the database manually.</div>
       <button class="btn light" onclick="downloadFullBackup()" style="width:100%;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">Download Backup Now</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🗓️ Manage Schedules</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once. Also available to leads from the Schedule page toolbar.</div>
       <button class="btn light" onclick="openManageSchedulesModal()" style="width:100%">Open Manage Schedules</button>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">👥 Manage Employees</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Department, hire date, active/resigned status, and default schedule — all in one place. For login access/password, use "Manage Team Access" below.</div>
-      <input type="text" id="emp-mgmt-search" placeholder="Search a name…" oninput="renderEmpMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:10px">
+      <input type="text" id="emp-mgmt-search" placeholder="Search a name…" oninput="renderEmpMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;margin-bottom:10px">
       <div id="emp-mgmt-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
     </div>
 
-    <div style="background:#1a1035;border:1px solid #3a2868;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🔑 Manage Team Access</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Control who has Full access, Leave-only access (files leave under their own name only), OT-only access, or no access at all.</div>
-      <input type="text" id="access-mgmt-search" placeholder="Search a name…" oninput="renderAccessMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;margin-bottom:10px">
+      <input type="text" id="access-mgmt-search" placeholder="Search a name…" oninput="renderAccessMgmtList()" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;margin-bottom:10px">
       <div id="access-mgmt-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
     </div>
 
@@ -1507,7 +1537,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     </div>
     <div id="access-edit-restrict-wrap" style="display:none;margin-bottom:10px">
       <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Restrict to Department(s) <span style="font-weight:400">(leave all unchecked for full, unrestricted access)</span></label>
-      <div id="access-edit-restrict-list" style="display:flex;flex-wrap:wrap;gap:6px;background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:8px"></div>
+      <div id="access-edit-restrict-list" style="display:flex;flex-wrap:wrap;gap:6px;background:#070a2a;border:1px solid #262e8c;border-radius:8px;padding:8px"></div>
     </div>
     <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Password</label>
     <input type="text" id="access-edit-pw" placeholder="e.g. CARE123" style="width:100%;margin-bottom:16px">
@@ -1524,14 +1554,14 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <h3>🗓️ Manage Schedules</h3>
     <div style="font-size:11px;color:var(--text3);margin-bottom:14px">Set a weekly recurring schedule for one person, or apply the same pattern to an entire team at once. Takes effect immediately.</div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <div class="so" id="sched-mgmt-mode-ind" onclick="setSchedMgmtMode('individual')" style="flex:1;background:#0d0818;color:var(--text2)">👤 Individual</div>
-      <div class="so" id="sched-mgmt-mode-grp" onclick="setSchedMgmtMode('group')" style="flex:1;background:#0d0818;color:var(--text2)">🏢 Whole Team</div>
+      <div class="so" id="sched-mgmt-mode-ind" onclick="setSchedMgmtMode('individual')" style="flex:1;background:#070a2a;color:var(--text2)">👤 Individual</div>
+      <div class="so" id="sched-mgmt-mode-grp" onclick="setSchedMgmtMode('group')" style="flex:1;background:#070a2a;color:var(--text2)">🏢 Whole Team</div>
     </div>
     <div id="sched-mgmt-target-wrap" style="margin-bottom:12px">
       <select id="sched-mgmt-target" onchange="loadSchedMgmtTarget()" style="width:100%"></select>
     </div>
 
-    <div style="background:#0d0818;border:1px solid #3a2868;border-radius:8px;padding:12px;margin-bottom:12px">
+    <div style="background:#070a2a;border:1px solid #262e8c;border-radius:8px;padding:12px;margin-bottom:12px">
       <label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a78bfa;display:block;margin-bottom:8px">⚡ Quick Fill</label>
       <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Working Time</label>
       <select id="sched-quick-time" style="width:100%;margin-bottom:8px"></select>
@@ -1567,8 +1597,8 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <h3>📦 Start New Cutoff</h3>
     <div style="font-size:11px;color:var(--text3);margin-bottom:14px">This just labels a new period for reference — it doesn't archive or move any attendance data. Activates immediately once saved.</div>
     <div style="display:flex;gap:8px;margin-bottom:14px">
-      <div class="so" id="nc-mode-auto" onclick="setNewCutoffMode('auto')" style="flex:1;background:#1a1035;color:var(--text2)">🔁 Auto-match next</div>
-      <div class="so" id="nc-mode-manual" onclick="setNewCutoffMode('manual')" style="flex:1;background:#1a1035;color:var(--text2)">✏️ Manual dates</div>
+      <div class="so" id="nc-mode-auto" onclick="setNewCutoffMode('auto')" style="flex:1;background:#0d1250;color:var(--text2)">🔁 Auto-match next</div>
+      <div class="so" id="nc-mode-manual" onclick="setNewCutoffMode('manual')" style="flex:1;background:#0d1250;color:var(--text2)">✏️ Manual dates</div>
     </div>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Start Date</label>
     <input type="date" id="new-cutoff-start" onchange="setNewCutoffMode('manual')" style="width:100%;margin-bottom:12px">
@@ -1618,7 +1648,7 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     </div>
     <div id="leave-notice-warn" style="display:none;padding:8px 12px;background:rgba(255,92,122,.1);border:1px solid #ff5c7a;border-radius:6px;font-size:12px;color:#ff5c7a;margin-bottom:10px"></div>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Reason</label>
-    <textarea id="leave-reason" rows="2" placeholder="Reason for leave…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:10px"></textarea>
+    <textarea id="leave-reason" rows="2" placeholder="Reason for leave…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:10px"></textarea>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Supporting Document Link <span style="color:var(--text3)">(optional — Google Drive/OneDrive)</span></label>
     <input type="text" id="leave-doc-link" placeholder="https://drive.google.com/…" style="width:100%;margin-bottom:14px">
     <div class="ma">
@@ -1635,11 +1665,11 @@ html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
     <div id="review-leave-content" style="margin-bottom:14px"></div>
     <div id="review-partial-cancel-wrap" style="display:none;background:rgba(255,143,92,.06);border:1px solid rgba(255,143,92,.25);border-radius:8px;padding:12px;margin-bottom:14px"></div>
     <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Lead Notes</label>
-    <textarea id="review-lead-notes" rows="2" placeholder="Add notes for the employee…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:14px"></textarea>
+    <textarea id="review-lead-notes" rows="2" placeholder="Add notes for the employee…" style="width:100%;padding:8px;border-radius:6px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:12px;font-family:var(--font);resize:none;margin-bottom:14px"></textarea>
     <div class="ma">
       <button onclick="reviewLeave('Approved')" id="btn-approve-leave" style="flex:1;padding:9px;background:rgba(0,232,150,.2);border:1px solid #00e896;color:#00e896;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">✅ Approve</button>
       <button onclick="reviewLeave('Declined')" id="btn-decline-leave" style="flex:1;padding:9px;background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">❌ Decline</button>
-      <button onclick="document.getElementById('review-leave-modal').classList.remove('open')" style="flex:1;padding:9px;background:#1a1035;border:1px solid #3a2868;color:var(--text2);border-radius:6px;cursor:pointer;font-family:var(--font)">Close</button>
+      <button onclick="document.getElementById('review-leave-modal').classList.remove('open')" style="flex:1;padding:9px;background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;cursor:pointer;font-family:var(--font)">Close</button>
     </div>
   </div>
 </div>
@@ -2780,7 +2810,7 @@ function showUnsavedPopup(){
   if(!el){
     el = document.createElement('div');
     el.id = 'unsaved-popup';
-    el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:9998;background:linear-gradient(135deg,#ff8f5c,#ff5c7a);color:#1a0d2e;font-weight:700;font-size:13px;font-family:var(--font);padding:12px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(255,92,122,.4);max-width:460px;text-align:center;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none';
+    el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:9998;background:linear-gradient(135deg,#ff8f5c,#ff5c7a);color:#0b0f3d;font-weight:700;font-size:13px;font-family:var(--font);padding:12px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(255,92,122,.4);max-width:460px;text-align:center;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none';
     document.body.appendChild(el);
   }
   el.textContent = msg;
@@ -3187,8 +3217,8 @@ function renderDash(){
       </div>
 
       <!-- TALLY ROW -->
-      <div style="padding:10px 14px;border-top:1px solid #3a2868;background:var(--bg)">
-        <div style="font-size:9px;color:#c4a8ff;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px">📊 Team Tally</div>
+      <div style="padding:10px 14px;border-top:1px solid #262e8c;background:var(--bg)">
+        <div style="font-size:9px;color:#bfccff;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px">📊 Team Tally</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${[
             {k:'P', label:'Present', color:'#00e896', bg:'#003d28'},
@@ -3198,7 +3228,7 @@ function renderDash(){
             {k:'UT',label:'Undertime',color:'#c49eff',bg:'#1e0845'},
             {k:'VL',label:'Vac. Leave',color:'#00cfff',bg:'#003040'},
             {k:'SL',label:'Sick Leave',color:'#ffaa5c',bg:'#3d1800'},
-            {k:'Off',label:'Rest Day', color:'#8878b8',bg:'#180d30'},
+            {k:'Off',label:'Rest Day', color:'#a8aef5',bg:'#0f1450'},
           ].filter(x=>(st[x.k]||0)>0).map(x=>`
             <div style="display:flex;align-items:center;gap:5px;background:${x.bg};border-radius:20px;padding:4px 10px">
               <span style="font-size:11px;font-weight:700;color:${x.color};font-family:var(--mono)">${st[x.k]||0}</span>
@@ -3259,11 +3289,11 @@ function renderEmpMgmtList(){
   wrap.innerHTML = emps.map(e=>{
     const statusColor = e.status==='Inactive' ? '#ff5c7a' : '#00e896';
     const statusText = e.status==='Inactive' ? 'Inactive' : 'Active';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#0d0818;border:1px solid #2d1f55;border-radius:6px">'
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#070a2a;border:1px solid #1c2375;border-radius:6px">'
       +'<div><span style="font-size:12px;color:var(--text)">'+e.name+'</span><span style="font-size:10px;color:var(--text3);margin-left:6px">'+(e.team||'')+'</span></div>'
       +'<div style="display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:10px;font-weight:700;color:'+statusColor+'">'+statusText+'</span>'
-      +'<button onclick="openEmpProfile(\''+e.name.replace(/'/g,"\\'")+'\')" style="background:rgba(196,168,255,.15);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Edit</button>'
+      +'<button onclick="openEmpProfile(\''+e.name.replace(/'/g,"\\'")+'\')" style="background:rgba(196,168,255,.15);border:1px solid #bfccff;color:#bfccff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Edit</button>'
       +'</div></div>';
   }).join('');
 }
@@ -3486,11 +3516,11 @@ function allKnownNames(){
   return [...names].sort();
 }
 function accessLabel(cred){
-  if(!cred) return {text:'No Access', color:'#7a68a8'};
+  if(!cred) return {text:'No Access', color:'#8d93d6'};
   if(cred.access==='full') return {text: cred.admin ? 'Full Access (Admin)' : 'Full Access', color:'#00e896'};
   if(cred.access==='leave_only') return {text:'Leave Only', color:'#5db8ff'};
   if(cred.access && cred.access.startsWith('ot_only')) return {text:'OT Only ('+cred.access.split(':')[1]+')', color:'#ffcf3d'};
-  return {text:'No Access', color:'#7a68a8'};
+  return {text:'No Access', color:'#8d93d6'};
 }
 function renderAccessMgmtList(){
   const wrap = document.getElementById('access-mgmt-list');
@@ -3502,11 +3532,11 @@ function renderAccessMgmtList(){
   wrap.innerHTML = names.map(name=>{
     const cred = getCred(name);
     const lbl = accessLabel(cred);
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#0d0818;border:1px solid #2d1f55;border-radius:6px">'
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#070a2a;border:1px solid #1c2375;border-radius:6px">'
       +'<span style="font-size:12px;color:var(--text)">'+name+'</span>'
       +'<div style="display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:10px;font-weight:700;color:'+lbl.color+'">'+lbl.text+'</span>'
-      +'<button onclick="openAccessEdit(\''+name.replace(/'/g,"\\'")+'\')" style="background:rgba(196,168,255,.15);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Edit</button>'
+      +'<button onclick="openAccessEdit(\''+name.replace(/'/g,"\\'")+'\')" style="background:rgba(196,168,255,.15);border:1px solid #bfccff;color:#bfccff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Edit</button>'
       +'</div></div>';
   }).join('');
 }
@@ -3545,7 +3575,7 @@ function renderAccessRestrictList(checkedDepts){
   const list = document.getElementById('access-edit-restrict-list');
   list.innerHTML = ALL_DEPTS_FOR_RESTRICTION.map(d=>{
     const checked = checkedDepts.includes(d) ? 'checked' : '';
-    return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);background:#1a1035;border:1px solid #3a2868;border-radius:6px;padding:4px 9px">'
+    return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);background:#0d1250;border:1px solid #262e8c;border-radius:6px;padding:4px 9px">'
       +'<input type="checkbox" class="access-restrict-dept" value="'+d+'" '+checked+' style="width:auto">'+d
       +'</label>';
   }).join('');
@@ -3747,7 +3777,7 @@ function renderWeeklyRankings(weekIdx){
 
   if(selWrap){
     selWrap.innerHTML = weeks.map((w,i)=>
-      '<button onclick="renderWeeklyRankings('+i+')" style="padding:4px 12px;border-radius:20px;border:1px solid '+(i===weekIdx?'#9d6fff':'var(--border)')+';background:'+(i===weekIdx?'rgba(157,111,255,.2)':'var(--surface)')+';color:'+(i===weekIdx?'#c4b5fd':'var(--text3)')+';font-size:11px;font-weight:'+(i===weekIdx?'700':'400')+';cursor:pointer;white-space:nowrap">'+w.label+'</button>'
+      '<button onclick="renderWeeklyRankings('+i+')" style="padding:4px 12px;border-radius:20px;border:1px solid '+(i===weekIdx?'#9d6fff':'var(--border)')+';background:'+(i===weekIdx?'rgba(157,111,255,.2)':'var(--surface)')+';color:'+(i===weekIdx?'#c0ccff':'var(--text3)')+';font-size:11px;font-weight:'+(i===weekIdx?'700':'400')+';cursor:pointer;white-space:nowrap">'+w.label+'</button>'
     ).join('');
   }
 
@@ -3782,7 +3812,7 @@ function renderWeeklyRankings(weekIdx){
 
     if(!scored.length) return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
-        <div style="font-size:11px;font-weight:700;color:#c4b5fd;margin-bottom:8px">${dept} <span style="color:var(--text3);font-weight:400">(${emps.length})</span></div>
+        <div style="font-size:11px;font-weight:700;color:#c0ccff;margin-bottom:8px">${dept} <span style="color:var(--text3);font-weight:400">(${emps.length})</span></div>
         <div style="font-size:11px;color:var(--text3)">No tracked data this week</div>
       </div>`;
 
@@ -3802,7 +3832,7 @@ function renderWeeklyRankings(weekIdx){
           </div>
           <span style="font-size:13px;font-weight:700;color:${color};font-family:var(--mono)">${s.pct!==null?s.pct+'%':'—'}</span>
         </div>
-        <div style="height:4px;background:#1e1240;border-radius:2px;overflow:hidden">
+        <div style="height:4px;background:#111761;border-radius:2px;overflow:hidden">
           <div style="height:100%;width:${bar}%;background:${color};border-radius:2px;transition:width .3s"></div>
         </div>
         <div style="font-size:9px;color:var(--text3);margin-top:2px">${s.present}P ${s.absent>0?s.absent+'A ':''} ${s.late>0?s.late+'L ':''} ${s.leave>0?s.leave+'L ':''} / ${s.tracked} days</div>
@@ -3811,7 +3841,7 @@ function renderWeeklyRankings(weekIdx){
 
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <span style="font-size:11px;font-weight:700;color:#c4b5fd">${dept}</span>
+        <span style="font-size:11px;font-weight:700;color:#c0ccff">${dept}</span>
         <span style="font-size:10px;color:var(--text3)">${scored.length}/${emps.length} tracked</span>
       </div>
       ${top2.length ? '<div style="font-size:9px;color:#22c55e;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">TOP ATTENDERS</div>'+top2.map(s=>empRow(s,true)).join('') : ''}
@@ -3852,11 +3882,11 @@ function renderTable(){
   const r1=document.createElement('tr'),r2=document.createElement('tr');
   const e0=document.createElement('th');
   e0.textContent='Employee';
-  e0.style.cssText='text-align:left;min-width:175px;position:sticky;left:0;top:0;z-index:30;background:var(--bg);border-right:1px solid #2d1f55;';
+  e0.style.cssText='text-align:left;min-width:175px;position:sticky;left:0;top:0;z-index:30;background:var(--bg);border-right:1px solid #1c2375;';
   r1.appendChild(e0);
   const t0=document.createElement('th');
   t0.textContent='Team / Role';
-  t0.style.cssText='min-width:72px;position:sticky;left:175px;top:0;z-index:30;background:var(--bg);border-right:1px solid #2d1f55;';
+  t0.style.cssText='min-width:72px;position:sticky;left:175px;top:0;z-index:30;background:var(--bg);border-right:1px solid #1c2375;';
   r1.appendChild(t0);
 
   visibleDates.forEach(d=>{
@@ -3886,7 +3916,7 @@ function renderTable(){
     const contract = getEmpContract(emp.name);
     if(contract.status && contract.status !== 'Regular'){
       const statusColors2={Probationary:'#ffcf3d',Trainee:'#5db8ff',Contractual:'#c49eff','Part-time':'#ffaa5c'};
-      const sc2=statusColors2[contract.status]||'#c4a8ff';
+      const sc2=statusColors2[contract.status]||'#bfccff';
       const badge2=document.createElement('span');
       badge2.style.cssText='font-size:8px;font-weight:700;color:'+sc2+';background:rgba(0,0,0,.3);border:1px solid '+sc2+';border-radius:10px;padding:1px 5px;margin-left:5px;vertical-align:middle';
       badge2.textContent=contract.status;
@@ -4293,7 +4323,7 @@ function buildAbsentToday(){
   if(!absent.length) return '<div style="font-size:12px;color:var(--text3);padding:12px 0;text-align:center">✅ No absences today!</div>';
   return absent.map(e=>{
     const note=state.notes&&state.notes[noteKey(e.name,today)]||'';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #3a2868">'
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #262e8c">'
       +'<div style="background:#3d0818;color:#ff5c7a;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0">A</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:12px;font-weight:600;color:var(--text)">'+e.name+'</div>'
@@ -4317,9 +4347,9 @@ function buildOnLeaveToday(){
   return onLeave.map(e=>{
     const s=state.attendance[gk(e.name,today)]||'';
     const note=state.notes&&state.notes[noteKey(e.name,today)]||'';
-    const c=SC2[s]||'#c4a8ff';
-    const bg=SB2[s]||'#1a1035';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #3a2868">'
+    const c=SC2[s]||'#bfccff';
+    const bg=SB2[s]||'#0d1250';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #262e8c">'
       +'<div style="background:'+bg+';color:'+c+';font-size:10px;font-weight:700;font-family:var(--mono);padding:2px 7px;border-radius:20px;flex-shrink:0">'+s+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e.name+'</div>'
@@ -4360,7 +4390,7 @@ function renderLeaveSummary() {
   if(!wrap) return;
 
   const TEAM_COLORS = {CS:'#1a6b9a',KYC:'#6b3a9a',Funding:'#1a7a4a',Marketing:'#9a2060',Operations:'#1a5a7a',Finance:'#5a6a10','HouseKeeping & Admin':'#7a4a1a'};
-  const TEAM_BG = {CS:'#e4f2f8',KYC:'#f0eafc',Funding:'#e4f8ec',Marketing:'#fce8f4',Operations:'#e4f0f8',Finance:'#f4f8e0','HouseKeeping & Admin':'#f8ecdc'};
+  const TEAM_BG = {CS:'#e4f2f8',KYC:'#f1f2ff',Funding:'#e4f8ec',Marketing:'#fce8f4',Operations:'#e4f0f8',Finance:'#f4f8e0','HouseKeeping & Admin':'#f8ecdc'};
   const teams = (currentUser && currentUser.restrictedDept) ? getRestrictedDeptsArray() : ['CS','KYC','Funding','Marketing','Operations','Finance','HouseKeeping & Admin'];
 
   // Top strip — overall leave health
@@ -4398,8 +4428,8 @@ function renderLeaveSummary() {
 
   const absenteeRows = topAbsentees.length>0
     ? topAbsentees.map((e,i)=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #3a2868">
-          <div style="width:20px;height:20px;border-radius:50%;background:${i===0?'#ff5c7a':i===1?'#ffaa5c':'#3a2868'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${i+1}</div>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #262e8c">
+          <div style="width:20px;height:20px;border-radius:50%;background:${i===0?'#ff5c7a':i===1?'#ffaa5c':'#262e8c'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${i+1}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}</div>
             <div style="font-size:10px;color:var(--text3)">${e.team}</div>
@@ -4414,8 +4444,8 @@ function renderLeaveSummary() {
   let html = `
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
     <!-- Top Absentees -->
-    <div style="background:var(--surface);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
-      <div style="padding:12px 16px;border-bottom:1px solid #3a2868;background:rgba(255,92,122,.06);display:flex;align-items:center;gap:8px">
+    <div style="background:var(--surface);border:1px solid #262e8c;border-radius:14px;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid #262e8c;background:rgba(255,92,122,.06);display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">🚨</span>
         <span style="font-size:12px;font-weight:700;color:#ff5c7a;letter-spacing:.08em;text-transform:uppercase">Top Absentees</span>
         <span style="margin-left:auto;font-size:11px;color:var(--text3)">${topAbsentees.length} flagged</span>
@@ -4423,8 +4453,8 @@ function renderLeaveSummary() {
       <div style="padding:4px 16px 10px">${absenteeRows}</div>
     </div>
     <!-- Recurring Absentees -->
-    <div style="background:var(--surface);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
-      <div style="padding:12px 16px;border-bottom:1px solid #3a2868;background:rgba(255,207,61,.05);display:flex;align-items:center;gap:8px">
+    <div style="background:var(--surface);border:1px solid #262e8c;border-radius:14px;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid #262e8c;background:rgba(255,207,61,.05);display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">🔄</span>
         <span style="font-size:12px;font-weight:700;color:#ffcf3d;letter-spacing:.08em;text-transform:uppercase">Recurring Absentees</span>
         <span style="margin-left:auto;font-size:11px;color:var(--text3)">absent 2+ times</span>
@@ -4435,8 +4465,8 @@ function renderLeaveSummary() {
     </div>
 
     <!-- Absent Today -->
-    <div style="background:var(--surface);border:1px solid #3a2868;border-radius:14px;overflow:hidden">
-      <div style="padding:12px 16px;border-bottom:1px solid #3a2868;background:rgba(255,92,122,.05);display:flex;align-items:center;gap:8px">
+    <div style="background:var(--surface);border:1px solid #262e8c;border-radius:14px;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid #262e8c;background:rgba(255,92,122,.05);display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">❌</span>
         <span style="font-size:12px;font-weight:700;color:#ff5c7a;letter-spacing:.08em;text-transform:uppercase">Absent Today</span>
         <span style="margin-left:auto;font-size:11px;color:var(--text3)" id="today-label"></span>
@@ -4474,7 +4504,7 @@ function renderLeaveSummary() {
       const slBarColor = slBal<=0?'#e53e3e':slBal<=1?'#e53e3e':'#d69e2e';
       const vlHrs = (vlBal*8).toFixed(0);
       const slHrs = (slBal*8).toFixed(0);
-      return `<div style="padding:7px 0;border-bottom:1px solid #2d1f55">
+      return `<div style="padding:7px 0;border-bottom:1px solid #1c2375">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
           <span style="font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</span>
           <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:${vlColor};background:${vlBal<=2?'#1e0510':'#041a10'};padding:2px 7px;border-radius:20px;white-space:nowrap">🏖️ ${vlBal.toFixed(1)}d <span style="opacity:.7;font-weight:400">(${vlHrs}h)</span></span>
@@ -4493,8 +4523,8 @@ function renderLeaveSummary() {
       </div>`;
     }).join('');
 
-    html += `<div style="background:linear-gradient(160deg,#160d2e,#0d0818);border:1px solid #2d1f55;border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(124,58,237,.2)">
-      <div style="background:linear-gradient(135deg,#1e1240,#160d2e);padding:12px 16px;border-bottom:1px solid #2d1f55">
+    html += `<div style="background:linear-gradient(160deg,#0b0f3d,#070a2a);border:1px solid #1c2375;border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(124,58,237,.2)">
+      <div style="background:linear-gradient(135deg,#111761,#0b0f3d);padding:12px 16px;border-bottom:1px solid #1c2375">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <div class="tc-dot dot-${team}"></div>
           <span style="font-size:14px;font-weight:700;color:${tc}">${team}</span>
@@ -4546,7 +4576,7 @@ function renderLeaveList(filter){
     const slBase = SL_BASE[e.name] !== undefined ? SL_BASE[e.name] : (leaveEdits[e.name]?.sl ?? 0);
     const editVL = leaveEdits[e.name]?.vl !== undefined ? leaveEdits[e.name].vl : vlBase;
     const editSL = leaveEdits[e.name]?.sl !== undefined ? leaveEdits[e.name].sl : slBase;
-    return `<div style="padding:8px 0;border-bottom:1px solid #2d1f55">
+    return `<div style="padding:8px 0;border-bottom:1px solid #1c2375">
       <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">${e.name} <span style="font-size:10px;color:var(--text3);font-weight:400">${e.team}</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div>
@@ -5371,7 +5401,7 @@ function renderTimesheet(){
   if(!saDiv){
     saDiv = document.createElement('div');
     saDiv.id='ts-select-all-bar';
-    saDiv.style.cssText='padding:8px 12px;background:#1a1035;border-bottom:1px solid #3a2868;display:flex;align-items:center;gap:10px';
+    saDiv.style.cssText='padding:8px 12px;background:#0d1250;border-bottom:1px solid #262e8c;display:flex;align-items:center;gap:10px';
     const saChk = document.createElement('input');
     saChk.type='checkbox'; saChk.id='chk-select-all';
     saChk.style.cssText='accent-color:#9d6fff;cursor:pointer;width:14px;height:14px';
@@ -5379,22 +5409,22 @@ function renderTimesheet(){
     saChk.onchange=()=>toggleAllComplete(saChk.checked, emps, dates);
     const saLbl = document.createElement('label');
     saLbl.htmlFor='chk-select-all';
-    saLbl.style.cssText='font-size:12px;color:#c4a8ff;cursor:pointer;font-weight:600';
+    saLbl.style.cssText='font-size:12px;color:#bfccff;cursor:pointer;font-weight:600';
     saLbl.textContent='☑ Mark All as Complete Attendance (auto-fill all times from schedule)';
     saDiv.appendChild(saChk); saDiv.appendChild(saLbl);
     document.getElementById('ts-table-wrap').insertBefore(saDiv, document.getElementById('ts-table-wrap').firstChild);
   }
 
   thead.innerHTML = '<tr>'
-    + '<th style="position:sticky;left:0;z-index:20;background:var(--bg);text-align:left;padding:8px 12px;min-width:160px;border:1px solid #3a2868;color:#c4a8ff">Employee</th>'
-    + '<th style="position:sticky;left:160px;z-index:20;background:var(--bg);text-align:left;padding:8px 10px;min-width:60px;border:1px solid #3a2868;color:#c4a8ff">Dept</th>'
-    + '<th style="background:#0d0818;padding:8px 10px;min-width:80px;border:1px solid #3a2868;color:#c4a8ff">Date</th>'
-    + '<th style="background:#0d0818;padding:8px 10px;min-width:45px;border:1px solid #3a2868;color:#c4a8ff">Day</th>'
-    + '<th style="background:#0d0818;padding:8px 10px;min-width:110px;border:1px solid #3a2868;color:#c4a8ff">Schedule</th>'
-    + '<th style="background:#0d0818;padding:8px 10px;min-width:90px;border:1px solid #3a2868;color:#c4a8ff">Time In</th>'
-    + '<th style="background:#0d0818;padding:8px 10px;min-width:90px;border:1px solid #3a2868;color:#c4a8ff">Time Out</th>'
-    + '<th style="background:#0d0818;padding:8px 10px;min-width:50px;border:1px solid #3a2868;color:#c4a8ff">ND</th>'
-    + '<th style="background:#0d0818;padding:8px 10px;min-width:140px;border:1px solid #3a2868;color:#c4a8ff">Notes</th>'
+    + '<th style="position:sticky;left:0;z-index:20;background:var(--bg);text-align:left;padding:8px 12px;min-width:160px;border:1px solid #262e8c;color:#bfccff">Employee</th>'
+    + '<th style="position:sticky;left:160px;z-index:20;background:var(--bg);text-align:left;padding:8px 10px;min-width:60px;border:1px solid #262e8c;color:#bfccff">Dept</th>'
+    + '<th style="background:#070a2a;padding:8px 10px;min-width:80px;border:1px solid #262e8c;color:#bfccff">Date</th>'
+    + '<th style="background:#070a2a;padding:8px 10px;min-width:45px;border:1px solid #262e8c;color:#bfccff">Day</th>'
+    + '<th style="background:#070a2a;padding:8px 10px;min-width:110px;border:1px solid #262e8c;color:#bfccff">Schedule</th>'
+    + '<th style="background:#070a2a;padding:8px 10px;min-width:90px;border:1px solid #262e8c;color:#bfccff">Time In</th>'
+    + '<th style="background:#070a2a;padding:8px 10px;min-width:90px;border:1px solid #262e8c;color:#bfccff">Time Out</th>'
+    + '<th style="background:#070a2a;padding:8px 10px;min-width:50px;border:1px solid #262e8c;color:#bfccff">ND</th>'
+    + '<th style="background:#070a2a;padding:8px 10px;min-width:140px;border:1px solid #262e8c;color:#bfccff">Notes</th>'
     + '</tr>';
 
   tbody.innerHTML = '';
@@ -5410,11 +5440,11 @@ function renderTimesheet(){
       const attColor = SC[attendance] || 'var(--text3)';
 
       const tr = document.createElement('tr');
-      tr.style.cssText = 'border-bottom:1px solid #3a2868';
+      tr.style.cssText = 'border-bottom:1px solid #262e8c';
 
       // Complete checkbox + Name
       const nameTd = document.createElement('td');
-      nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:var(--surface);padding:6px 12px;font-weight:600;color:var(--text);border:1px solid #3a2868;font-size:11px;white-space:nowrap';
+      nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:var(--surface);padding:6px 12px;font-weight:600;color:var(--text);border:1px solid #262e8c;font-size:11px;white-space:nowrap';
       // Check if "complete" - has both timeIn and timeOut matching schedule
       const ct0 = getScheduleClockTimes(entry.schedule);
       const isComplete = ct0 && entry.timeIn===ct0.timeIn && entry.timeOut===ct0.timeOut;
@@ -5435,13 +5465,13 @@ function renderTimesheet(){
 
       // Dept
       const deptTd = document.createElement('td');
-      deptTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:var(--surface);padding:6px 8px;font-size:10px;color:var(--text2);border:1px solid #3a2868';
+      deptTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:var(--surface);padding:6px 8px;font-size:10px;color:var(--text2);border:1px solid #262e8c';
       deptTd.textContent = emp.team;
       tr.appendChild(deptTd);
 
       // Date
       const dateTd = document.createElement('td');
-      dateTd.style.cssText = 'padding:6px 10px;color:var(--text2);font-size:11px;border:1px solid #3a2868;white-space:nowrap;min-width:90px';
+      dateTd.style.cssText = 'padding:6px 10px;color:var(--text2);font-size:11px;border:1px solid #262e8c;white-space:nowrap;min-width:90px';
       dateTd.textContent = dd(d);
       if(canEdit){
         const rmBtn = document.createElement('span');
@@ -5457,15 +5487,15 @@ function renderTimesheet(){
 
       // Day
       const dayTd = document.createElement('td');
-      dayTd.style.cssText = 'padding:6px 10px;color:var(--text3);font-size:11px;border:1px solid #3a2868;text-align:center';
+      dayTd.style.cssText = 'padding:6px 10px;color:var(--text3);font-size:11px;border:1px solid #262e8c;text-align:center';
       dayTd.textContent = dow(d);
       tr.appendChild(dayTd);
 
       // Schedule (dropdown always - canEdit or not)
       const schedTd = document.createElement('td');
-      schedTd.style.cssText = 'padding:4px 6px;border:1px solid #3a2868;min-width:110px';
+      schedTd.style.cssText = 'padding:4px 6px;border:1px solid #262e8c;min-width:110px';
       const schedSel = document.createElement('select');
-      schedSel.style.cssText = 'width:100%;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#c4a8ff;padding:4px;font-size:11px;font-family:var(--font)';
+      schedSel.style.cssText = 'width:100%;background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:#bfccff;padding:4px;font-size:11px;font-family:var(--font)';
       schedSel.disabled = !canEdit;
       SCHEDULES.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s||'—'; if(entry.schedule===s) o.selected=true; schedSel.appendChild(o); });
       schedSel.onchange = ()=>{
@@ -5498,15 +5528,15 @@ function renderTimesheet(){
 
       // ── TIME IN ──
       const tiTd = document.createElement('td');
-      tiTd.style.cssText = 'padding:4px 6px;border:1px solid #3a2868;min-width:120px';
+      tiTd.style.cssText = 'padding:4px 6px;border:1px solid #262e8c;min-width:120px';
       const tiInput = document.createElement('input');
       tiInput.type='text'; tiInput.list='time-suggestions';
       tiInput.value = entry.timeIn||'';
       tiInput.disabled = !canEdit;
       tiInput.placeholder = canEdit ? 'e.g. 10:00 AM' : '—';
-      tiInput.style.cssText = 'width:100%;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#00e896;padding:6px 8px;font-size:12px;font-family:var(--mono);outline:none';
+      tiInput.style.cssText = 'width:100%;background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:#00e896;padding:6px 8px;font-size:12px;font-family:var(--mono);outline:none';
       tiInput.onfocus=()=>tiInput.style.borderColor='#00e896';
-      tiInput.onblur =()=>{ tiInput.style.borderColor='#3a2868'; saveTimeEntry(); };
+      tiInput.onblur =()=>{ tiInput.style.borderColor='#262e8c'; saveTimeEntry(); };
       tiInput.oninput=()=>{ clearTimeout(tiInput._st); tiInput._st=setTimeout(saveTimeEntry,600); };
       tiInput.onkeydown=e=>{ if(e.key==='Enter'){ clearTimeout(tiInput._st); saveTimeEntry(); tiInput.blur(); } };
       tiTd.appendChild(tiInput);
@@ -5514,15 +5544,15 @@ function renderTimesheet(){
 
       // ── TIME OUT ──
       const toTd = document.createElement('td');
-      toTd.style.cssText = 'padding:4px 6px;border:1px solid #3a2868;min-width:120px';
+      toTd.style.cssText = 'padding:4px 6px;border:1px solid #262e8c;min-width:120px';
       const toInput = document.createElement('input');
       toInput.type='text'; toInput.list='time-suggestions';
       toInput.value = entry.timeOut||'';
       toInput.disabled = !canEdit;
       toInput.placeholder = canEdit ? 'e.g. 7:00 PM' : '—';
-      toInput.style.cssText = 'width:100%;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#ff5c7a;padding:6px 8px;font-size:12px;font-family:var(--mono);outline:none';
+      toInput.style.cssText = 'width:100%;background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:#ff5c7a;padding:6px 8px;font-size:12px;font-family:var(--mono);outline:none';
       toInput.onfocus=()=>toInput.style.borderColor='#ff5c7a';
-      toInput.onblur =()=>{ toInput.style.borderColor='#3a2868'; saveTimeEntry(); };
+      toInput.onblur =()=>{ toInput.style.borderColor='#262e8c'; saveTimeEntry(); };
       toInput.oninput=()=>{ clearTimeout(toInput._st); toInput._st=setTimeout(saveTimeEntry,600); };
       toInput.onkeydown=e=>{ if(e.key==='Enter'){ clearTimeout(toInput._st); saveTimeEntry(); toInput.blur(); } };
       toTd.appendChild(toInput);
@@ -5649,13 +5679,13 @@ function renderTimesheet(){
       }
       const actualND = displayND;
       const ndTd = document.createElement('td');
-      ndTd.style.cssText = 'padding:4px 6px;border:1px solid #3a2868;text-align:center;min-width:50px';
+      ndTd.style.cssText = 'padding:4px 6px;border:1px solid #262e8c;text-align:center;min-width:50px';
       const ndInp = document.createElement('input');
       ndInp.type = 'number'; ndInp.step = '0.5'; ndInp.min = '0'; ndInp.max = '24';
       ndInp.value = actualND;
       ndInp.disabled = !canEdit;
       ndInp.className = 'ts-nd-input';
-      ndInp.style.cssText = 'width:52px;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#c49eff;padding:4px;font-size:11px;font-family:var(--mono);text-align:center';
+      ndInp.style.cssText = 'width:52px;background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:#c49eff;padding:4px;font-size:11px;font-family:var(--mono);text-align:center';
       ndInp.onchange = ()=>{
         const k2=tsk(emp.name,d);
         if(!state.timesheet[k2]) state.timesheet[k2]={schedule:'',timeIn:'',timeOut:'',nd:0,notes:''};
@@ -5671,15 +5701,15 @@ function renderTimesheet(){
 
       // Notes - free text input with color coding
       const notesTd = document.createElement('td');
-      notesTd.style.cssText = 'padding:4px 6px;border:1px solid #3a2868;min-width:160px';
+      notesTd.style.cssText = 'padding:4px 6px;border:1px solid #262e8c;min-width:160px';
       const notesInp = document.createElement('input');
       notesInp.type = 'text';
       notesInp.value = entry.notes||'';
       notesInp.disabled = !canEdit; // always allow editing notes in edit mode
       notesInp.placeholder = canEdit ? 'Add note…' : '—';
       const noteColor = getNoteColor(entry.notes, attendance, d);
-      const noteBg = noteColor==='#ff5c7a'?'rgba(255,92,122,.08)':noteColor==='#00e896'?'rgba(0,232,150,.08)':noteColor==='#5db8ff'?'rgba(93,184,255,.08)':'#0d0818';
-      notesInp.style.cssText = 'width:100%;background:'+noteBg+';border:1px solid #3a2868;border-radius:4px;color:'+noteColor+';padding:4px;font-size:11px;font-family:var(--font);font-weight:600';
+      const noteBg = noteColor==='#ff5c7a'?'rgba(255,92,122,.08)':noteColor==='#00e896'?'rgba(0,232,150,.08)':noteColor==='#5db8ff'?'rgba(93,184,255,.08)':'#070a2a';
+      notesInp.style.cssText = 'width:100%;background:'+noteBg+';border:1px solid #262e8c;border-radius:4px;color:'+noteColor+';padding:4px;font-size:11px;font-family:var(--font);font-weight:600';
       notesInp.onchange = ()=>{
         setTsEntry(emp.name,d,'notes',notesInp.value);
         // Only mark manual if there's actually text left — an empty value
@@ -5692,7 +5722,7 @@ function renderTimesheet(){
         }
         // Update color on change
         const nc=getNoteColor(notesInp.value,attendance,d);
-        const nb=nc==='#ff5c7a'?'rgba(255,92,122,.08)':nc==='#00e896'?'rgba(0,232,150,.08)':nc==='#5db8ff'?'rgba(93,184,255,.08)':'#0d0818';
+        const nb=nc==='#ff5c7a'?'rgba(255,92,122,.08)':nc==='#00e896'?'rgba(0,232,150,.08)':nc==='#5db8ff'?'rgba(93,184,255,.08)':'#070a2a';
         notesInp.style.color=nc;
         notesInp.style.background=nb;
       };
@@ -5710,10 +5740,11 @@ function renderTimesheet(){
 
     // Total ND row per employee
     const totalTr = document.createElement('tr');
-    totalTr.style.cssText = 'background:#1e1240;border-top:2px solid #3a2868';
-    totalTr.innerHTML = '<td colspan="7" style="padding:6px 12px;font-size:11px;color:var(--text3);font-style:italic;border:1px solid #3a2868">'+emp.name+' — Total</td>'
-      +'<td style="padding:6px 10px;font-weight:700;color:#c49eff;font-family:var(--mono);border:1px solid #3a2868;text-align:center">'+empTotalND+'</td>'
-      +'<td style="border:1px solid #3a2868"></td>';
+    totalTr.style.cssText = 'background:#111761;border-top:2px solid #262e8c';
+    totalTr.className = 'ts-total-row';
+    totalTr.innerHTML = '<td colspan="7" style="padding:6px 12px;font-size:11px;color:var(--text3);font-style:italic;border:1px solid #262e8c">'+emp.name+' — Total</td>'
+      +'<td style="padding:6px 10px;font-weight:700;color:#c49eff;font-family:var(--mono);border:1px solid #262e8c;text-align:center">'+empTotalND+'</td>'
+      +'<td style="border:1px solid #262e8c"></td>';
     tbody.appendChild(totalTr);
 
     // Spacer
@@ -6103,7 +6134,7 @@ function renderOT(){
   entries.forEach(e=>{ byDept[e.dept]=(byDept[e.dept]||0)+e.hrs; });
   const bar = document.getElementById('ot-summary-bar');
   bar.innerHTML = '<div style="font-size:11px;color:#ffcf3d;font-weight:700">Total OT: <span style="font-family:var(--mono);font-size:14px">'+totalHrs.toFixed(1)+'</span> hrs</div>'
-    + Object.entries(byDept).map(([d,h])=>'<div style="font-size:11px;color:var(--text2);background:#1a1035;border:1px solid #3a2868;border-radius:20px;padding:3px 10px">'+d+': <strong style="color:#ffcf3d;font-family:var(--mono)">'+h.toFixed(1)+'h</strong></div>').join('')
+    + Object.entries(byDept).map(([d,h])=>'<div style="font-size:11px;color:var(--text2);background:#0d1250;border:1px solid #262e8c;border-radius:20px;padding:3px 10px">'+d+': <strong style="color:#ffcf3d;font-family:var(--mono)">'+h.toFixed(1)+'h</strong></div>').join('')
     + '<div style="font-size:11px;color:var(--text3);margin-left:auto">'+entries.length+' entries</div>';
 
   // Group by dept
@@ -6122,19 +6153,19 @@ function renderOT(){
     const section = document.createElement('div');
     section.style.cssText = 'margin-bottom:24px';
     section.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
-      +'<span style="font-size:13px;font-weight:700;color:#c4a8ff;letter-spacing:.08em;text-transform:uppercase">'+dept+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:#bfccff;letter-spacing:.08em;text-transform:uppercase">'+dept+'</span>'
       +'<span style="font-size:11px;color:#ffcf3d;background:#3d2800;border-radius:20px;padding:2px 10px;font-family:var(--mono)">'+deptTotal.toFixed(1)+' hrs total</span>'
       +'</div>';
 
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
     table.innerHTML = '<thead><tr>'
-      +'<th style="background:#0d0818;padding:8px 12px;text-align:left;border:1px solid #3a2868;color:#c4a8ff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:90px">Date</th>'
-      +'<th style="background:#0d0818;padding:8px 12px;text-align:left;border:1px solid #3a2868;color:#c4a8ff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:160px">Employee</th>'
-      +'<th style="background:#0d0818;padding:8px 10px;text-align:center;border:1px solid #3a2868;color:#c4a8ff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:60px">OT Hrs</th>'
-      +'<th style="background:#0d0818;padding:8px 10px;text-align:center;border:1px solid #3a2868;color:#c4a8ff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:120px">Time</th>'
-      +'<th style="background:#0d0818;padding:8px 12px;text-align:left;border:1px solid #3a2868;color:#c4a8ff;font-size:10px;letter-spacing:.06em;text-transform:uppercase">Reason / Remarks</th>'
-      +(canEdit?'<th style="background:#0d0818;padding:8px 10px;text-align:center;border:1px solid #3a2868;color:#c4a8ff;font-size:10px;text-transform:uppercase;min-width:60px">Action</th>':'')
+      +'<th style="background:#070a2a;padding:8px 12px;text-align:left;border:1px solid #262e8c;color:#bfccff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:90px">Date</th>'
+      +'<th style="background:#070a2a;padding:8px 12px;text-align:left;border:1px solid #262e8c;color:#bfccff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:160px">Employee</th>'
+      +'<th style="background:#070a2a;padding:8px 10px;text-align:center;border:1px solid #262e8c;color:#bfccff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:60px">OT Hrs</th>'
+      +'<th style="background:#070a2a;padding:8px 10px;text-align:center;border:1px solid #262e8c;color:#bfccff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;min-width:120px">Time</th>'
+      +'<th style="background:#070a2a;padding:8px 12px;text-align:left;border:1px solid #262e8c;color:#bfccff;font-size:10px;letter-spacing:.06em;text-transform:uppercase">Reason / Remarks</th>'
+      +(canEdit?'<th style="background:#070a2a;padding:8px 10px;text-align:center;border:1px solid #262e8c;color:#bfccff;font-size:10px;text-transform:uppercase;min-width:60px">Action</th>':'')
       +'</tr></thead>';
 
     const tbody = document.createElement('tbody');
@@ -6147,20 +6178,20 @@ function renderOT(){
 
     dEntries.forEach(e=>{
       const tr = document.createElement('tr');
-      tr.style.cssText = 'border-bottom:1px solid #3a2868';
+      tr.style.cssText = 'border-bottom:1px solid #262e8c';
       const timeStr = e.timeStart&&e.timeEnd?e.timeStart+' – '+e.timeEnd:e.timeStart||e.timeEnd||'—';
       // Synced from timesheet badge
       const syncBadge = e._tsSync ? '<span style="font-size:9px;background:rgba(0,207,255,.2);color:#00cfff;border:1px solid #00cfff;border-radius:10px;padding:1px 6px;margin-left:6px">⇄ from timesheet</span>' : '';
       // Reason cell - editable if canEdit
       const reasonCell = canEdit
-        ? '<td style="padding:4px 8px;border:1px solid #3a2868;max-width:280px"><input type="text" value="'+( e.reason||'')+'" placeholder="Add reason/notes…" data-ot-id="'+e.id+'" style="width:100%;background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:#ffcf3d;padding:4px 6px;font-size:11px;font-family:var(--font)" oninput="updateOTReason(this.dataset.otId,this.value)"></td>'
-        : '<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);font-size:11px;max-width:300px">'+( e.reason||'<span style=\'color:var(--text3)\'>—</span>')+'</td>';
-      tr.innerHTML = '<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);white-space:nowrap">'+dd(e.date)+' <span style="color:var(--text3);font-size:10px">'+dow(e.date)+'</span></td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;font-weight:600;color:var(--text)">'+e.emp+syncBadge+'</td>'
-        +'<td style="padding:8px 10px;border:1px solid #3a2868;text-align:center;font-weight:700;font-family:var(--mono);color:#ffcf3d">'+e.hrs+'</td>'
-        +'<td style="padding:8px 10px;border:1px solid #3a2868;text-align:center;font-size:11px;color:#5db8ff;font-family:var(--mono)">'+timeStr+'</td>'
+        ? '<td style="padding:4px 8px;border:1px solid #262e8c;max-width:280px"><input type="text" value="'+( e.reason||'')+'" placeholder="Add reason/notes…" data-ot-id="'+e.id+'" style="width:100%;background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:#ffcf3d;padding:4px 6px;font-size:11px;font-family:var(--font)" oninput="updateOTReason(this.dataset.otId,this.value)"></td>'
+        : '<td style="padding:8px 12px;border:1px solid #262e8c;color:var(--text2);font-size:11px;max-width:300px">'+( e.reason||'<span style=\'color:var(--text3)\'>—</span>')+'</td>';
+      tr.innerHTML = '<td style="padding:8px 12px;border:1px solid #262e8c;color:var(--text2);white-space:nowrap">'+dd(e.date)+' <span style="color:var(--text3);font-size:10px">'+dow(e.date)+'</span></td>'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;font-weight:600;color:var(--text)">'+e.emp+syncBadge+'</td>'
+        +'<td style="padding:8px 10px;border:1px solid #262e8c;text-align:center;font-weight:700;font-family:var(--mono);color:#ffcf3d">'+e.hrs+'</td>'
+        +'<td style="padding:8px 10px;border:1px solid #262e8c;text-align:center;font-size:11px;color:#5db8ff;font-family:var(--mono)">'+timeStr+'</td>'
         +reasonCell
-        +(canEdit?'<td style="padding:6px 10px;border:1px solid #3a2868;text-align:center"><button data-id="'+e.id+'" onclick="deleteOTEntry(this.dataset.id)" style="background:#3d0818;color:#ff5c7a;border:1px solid #7a1030;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Delete</button></td>':'');
+        +(canEdit?'<td style="padding:6px 10px;border:1px solid #262e8c;text-align:center"><button data-id="'+e.id+'" onclick="deleteOTEntry(this.dataset.id)" style="background:#3d0818;color:#ff5c7a;border:1px solid #7a1030;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Delete</button></td>':'');
       tbody.appendChild(tr);
     });
 
@@ -6168,13 +6199,13 @@ function renderOT(){
     const empTotalsDiv = document.createElement('div');
     empTotalsDiv.style.cssText = 'padding:10px 0 4px;display:flex;flex-wrap:wrap;gap:6px';
     const empLabel = document.createElement('div');
-    empLabel.style.cssText = 'font-size:10px;color:#c4a8ff;font-weight:700;letter-spacing:.06em;text-transform:uppercase;width:100%;margin-bottom:4px';
+    empLabel.style.cssText = 'font-size:10px;color:#bfccff;font-weight:700;letter-spacing:.06em;text-transform:uppercase;width:100%;margin-bottom:4px';
     empLabel.textContent = '👤 Individual OT Totals';
     empTotalsDiv.appendChild(empLabel);
     Object.entries(empOTMap).sort((a,b)=>b[1].reduce((s,x)=>s+x.hrs,0)-a[1].reduce((s,x)=>s+x.hrs,0)).forEach(([emp,entries])=>{
       const total = entries.reduce((s,x)=>s+x.hrs,0);
       const pill = document.createElement('div');
-      pill.style.cssText = 'background:#1a1035;border:1px solid #3a2868;border-radius:20px;padding:5px 12px;display:flex;align-items:center;gap:6px';
+      pill.style.cssText = 'background:#0d1250;border:1px solid #262e8c;border-radius:20px;padding:5px 12px;display:flex;align-items:center;gap:6px';
       pill.innerHTML = '<span style="font-size:11px;font-weight:600;color:var(--text)">'+(emp.split(' ').slice(0,2).join(' '))+'</span>'
         +'<span style="font-size:12px;font-weight:700;font-family:var(--mono);color:#ffcf3d">'+total+'h</span>';
       empTotalsDiv.appendChild(pill);
@@ -6306,11 +6337,11 @@ function renderDeptList(){
   list.innerHTML = depts.map(d => {
     const count = state.employees.filter(e=>e.team===d||e.dept===d).length;
     const isDefault = DEFAULT_DEPTS.includes(d);
-    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #3a2868">'
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #262e8c">'
       +'<div style="width:8px;height:8px;border-radius:50%;background:#9d6fff;flex-shrink:0"></div>'
       +'<span style="font-size:13px;font-weight:600;color:var(--text);flex:1">'+d+'</span>'
       +'<span style="font-size:11px;color:var(--text3)">'+count+' staff</span>'
-      +(isDefault?'<span style="font-size:10px;color:var(--text3);padding:2px 8px;background:#1a1035;border-radius:10px">default</span>':'<button onclick="removeDepartment(this.dataset.d)" data-d="'+d+'" style="background:#3d0818;color:#ff5c7a;border:1px solid #7a1030;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Remove</button>')
+      +(isDefault?'<span style="font-size:10px;color:var(--text3);padding:2px 8px;background:#0d1250;border-radius:10px">default</span>':'<button onclick="removeDepartment(this.dataset.d)" data-d="'+d+'" style="background:#3d0818;color:#ff5c7a;border:1px solid #7a1030;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font)">Remove</button>')
       +'</div>';
   }).join('');
 }
@@ -6587,11 +6618,11 @@ function renderSchedulePage(){
 
   // Header row
   let hdr = '<tr>'
-    +'<th style="position:sticky;left:0;z-index:20;background:var(--bg);padding:8px 14px;text-align:left;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;min-width:160px;white-space:nowrap">EMPLOYEE</th>'
-    +'<th style="position:sticky;left:160px;z-index:20;background:var(--bg);padding:8px 10px;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;min-width:60px">TEAM</th>';
+    +'<th style="position:sticky;left:0;z-index:20;background:var(--bg);padding:8px 14px;text-align:left;border:1px solid #262e8c;color:#bfccff;font-size:11px;min-width:160px;white-space:nowrap">EMPLOYEE</th>'
+    +'<th style="position:sticky;left:160px;z-index:20;background:var(--bg);padding:8px 10px;border:1px solid #262e8c;color:#bfccff;font-size:11px;min-width:60px">TEAM</th>';
   dates.forEach(d=>{
     const holiday = getPHHoliday(d);
-    hdr += '<th style="background:'+(holiday?'rgba(0,232,150,.1)':'#0d0818')+';padding:8px 10px;border:1px solid #3a2868;color:'+(holiday?'#00e896':'#c4a8ff')+';font-size:10px;text-align:center;min-width:100px">'
+    hdr += '<th style="background:'+(holiday?'rgba(0,232,150,.1)':'#070a2a')+';padding:8px 10px;border:1px solid #262e8c;color:'+(holiday?'#00e896':'#bfccff')+';font-size:10px;text-align:center;min-width:100px">'
       +'<div style="font-weight:700">'+dd(d)+'</div>'
       +'<div style="font-weight:400;opacity:.7">'+dow(d)+'</div>'
       +(holiday?'<div style="font-size:9px;color:#00e896">🎌</div>':'')
@@ -6604,23 +6635,23 @@ function renderSchedulePage(){
   tbody.innerHTML = '';
   emps.forEach(emp=>{
     const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid #3a2868';
+    tr.style.borderBottom = '1px solid #262e8c';
 
     // Name cell
     const nameTd = document.createElement('td');
-    nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:var(--surface);padding:7px 14px;font-weight:600;color:var(--text);border:1px solid #3a2868;font-size:12px;white-space:nowrap';
+    nameTd.style.cssText = 'position:sticky;left:0;z-index:5;background:var(--surface);padding:7px 14px;font-weight:600;color:var(--text);border:1px solid #262e8c;font-size:12px;white-space:nowrap';
     nameTd.textContent = emp.name;
     tr.appendChild(nameTd);
 
     // Team cell
     const teamTd = document.createElement('td');
-    teamTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:var(--surface);padding:7px 8px;font-size:10px;color:var(--text2);border:1px solid #3a2868;text-align:center';
+    teamTd.style.cssText = 'position:sticky;left:160px;z-index:5;background:var(--surface);padding:7px 8px;font-size:10px;color:var(--text2);border:1px solid #262e8c;text-align:center';
     teamTd.textContent = emp.team;
     tr.appendChild(teamTd);
 
     dates.forEach(d=>{
       const td = document.createElement('td');
-      td.style.cssText = 'padding:5px 8px;border:1px solid #3a2868;text-align:center;min-width:100px;cursor:'+(isEditMode?'pointer':'default');
+      td.style.cssText = 'padding:5px 8px;border:1px solid #262e8c;text-align:center;min-width:100px;cursor:'+(isEditMode?'pointer':'default');
 
       const tsEntry = getTsEntry(emp.name, d);
       const attendance = state.attendance[gk(emp.name,d)]||'';
@@ -6629,30 +6660,31 @@ function renderSchedulePage(){
       const actualSched = tsEntry.schedule || defaultSched;
 
       // Determine cell type
-      let bg='#0d0818', borderColor='#3a2868', textColor='var(--text2)', label=actualSched||'—', badge='';
+      let bg='#070a2a', borderColor='#262e8c', textColor='var(--text2)', label=actualSched||'—', badge='', cls='none';
 
       if(holiday){
-        bg='rgba(0,232,150,.08)'; borderColor='#00e896'; textColor='#00e896';
+        bg='rgba(0,232,150,.08)'; borderColor='#00e896'; textColor='#00e896'; cls='holiday';
         label = '🎌 Holiday'; badge='';
       } else if(attendance==='A'){
-        bg='#3d0818'; borderColor='#ff5c7a'; textColor='#ff5c7a'; label=actualSched||'—'; badge='A';
+        bg='#3d0818'; borderColor='#ff5c7a'; textColor='#ff5c7a'; label=actualSched||'—'; badge='A'; cls='A';
       } else if(attendance==='VL'){
-        bg='#003040'; borderColor='#00cfff'; textColor='#00cfff'; label='VL'; badge='VL';
+        bg='#003040'; borderColor='#00cfff'; textColor='#00cfff'; label='VL'; badge='VL'; cls='VL';
       } else if(attendance==='SL'){
-        bg='#3d1800'; borderColor='#ffaa5c'; textColor='#ffaa5c'; label='SL'; badge='SL';
+        bg='#3d1800'; borderColor='#ffaa5c'; textColor='#ffaa5c'; label='SL'; badge='SL'; cls='SL';
       } else if(attendance==='HD'){
-        bg='#3d2800'; borderColor='#ffcf3d'; textColor='#ffcf3d'; label=actualSched||'—'; badge='HD';
+        bg='#3d2800'; borderColor='#ffcf3d'; textColor='#ffcf3d'; label=actualSched||'—'; badge='HD'; cls='HD';
       } else if(defaultSched==='RD' || actualSched==='RD'){
-        bg='#18102e'; borderColor='#3a2868'; textColor='#5a4a80'; label='RD'; badge='';
+        bg='#0b0f3d'; borderColor='#262e8c'; textColor='#4a52a8'; label='RD'; badge=''; cls='RD';
       } else if(actualSched && defaultSched && actualSched!==defaultSched){
         // ADJUSTED - yellow highlight
-        bg='#3a2800'; borderColor='#ffcf3d'; textColor='#ffcf3d'; label=actualSched; badge='adj';
+        bg='#3a2800'; borderColor='#ffcf3d'; textColor='#ffcf3d'; label=actualSched; badge='adj'; cls='adj';
       } else if(actualSched){
-        bg='#003d28'; borderColor='#1a5038'; textColor='#00e896'; label=actualSched; badge='';
+        bg='#003d28'; borderColor='#1a5038'; textColor='#00e896'; label=actualSched; badge=''; cls='ok';
       }
 
       td.style.background = bg;
       td.style.borderColor = borderColor;
+      td.className = 'sc-'+cls;
 
       let inner = '<div style="font-size:11px;font-weight:700;color:'+textColor+'">'+label+'</div>';
       if(badge==='adj') inner += '<div style="font-size:9px;color:#ffcf3d;opacity:.8;margin-top:1px">⚡ ADJUSTED</div>';
@@ -6922,7 +6954,7 @@ function openContactsManager(){
 
   // Header
   const hdr = document.createElement('div');
-  hdr.style.cssText='display:grid;grid-template-columns:1fr 140px 180px;gap:8px;padding:6px 0;border-bottom:1px solid #3a2868;font-size:10px;color:#c4a8ff;font-weight:700;letter-spacing:.06em;text-transform:uppercase';
+  hdr.style.cssText='display:grid;grid-template-columns:1fr 140px 180px;gap:8px;padding:6px 0;border-bottom:1px solid #262e8c;font-size:10px;color:#bfccff;font-weight:700;letter-spacing:.06em;text-transform:uppercase';
   hdr.innerHTML='<span>Employee</span><span>📱 WhatsApp (PH)</span><span>📧 Company Email</span>';
   list.appendChild(hdr);
 
@@ -6932,8 +6964,8 @@ function openContactsManager(){
     row.style.cssText='display:grid;grid-template-columns:1fr 140px 180px;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(58,40,104,.4)';
     row.innerHTML=
       '<span style="font-size:12px;font-weight:600;color:var(--text)">'+emp.name+'<br><span style="font-size:10px;color:var(--text3)">'+emp.team+'</span></span>'
-      +'<input type="text" data-emp="'+emp.name+'" data-field="wa" placeholder="+639XXXXXXXXX" value="'+(c.wa||'')+'" style="padding:5px 8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:11px;font-family:var(--mono)">'
-      +'<input type="email" data-emp="'+emp.name+'" data-field="email" placeholder="name@company.com" value="'+(c.email||'')+'" style="padding:5px 8px;border-radius:6px;border:1px solid #3a2868;background:#0d0818;color:var(--text);font-size:11px">';
+      +'<input type="text" data-emp="'+emp.name+'" data-field="wa" placeholder="+639XXXXXXXXX" value="'+(c.wa||'')+'" style="padding:5px 8px;border-radius:6px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:11px;font-family:var(--mono)">'
+      +'<input type="email" data-emp="'+emp.name+'" data-field="email" placeholder="name@company.com" value="'+(c.email||'')+'" style="padding:5px 8px;border-radius:6px;border:1px solid #262e8c;background:#070a2a;color:var(--text);font-size:11px">';
     list.appendChild(row);
   });
 
@@ -6967,7 +6999,7 @@ function offerLeaveApprovalNotif(empName, date, leaveType){
     '<div style="margin-bottom:6px"><strong style="color:var(--text)">'+empName+'</strong>'
     +'<span style="margin-left:8px;font-size:10px;background:'+(leaveType==='VL'?'#003040':'#3d1800')+';color:'+(leaveType==='VL'?'#00cfff':'#ffaa5c')+';padding:2px 8px;border-radius:10px">'+leaveType+'</span></div>'
     +'<div style="color:var(--text2);margin-bottom:8px">📆 '+dateStr+'</div>'
-    +'<div style="font-style:italic;color:var(--text3);font-size:11px;border-top:1px solid #2d1f55;padding-top:8px;white-space:pre-line">'+msg+'</div>';
+    +'<div style="font-style:italic;color:var(--text3);font-size:11px;border-top:1px solid #1c2375;padding-top:8px;white-space:pre-line">'+msg+'</div>';
 
   // WhatsApp button
   const waBtn = document.getElementById('leave-wa-btn');
@@ -7006,7 +7038,7 @@ function notifyScheduleChange(empName, date, oldSched, newSched){
   const msg = 'Hi '+empName.split(' ')[0]+'! Your schedule on '+dateStr+' has been updated. From: '+(oldSched||'-')+' -> To: '+newSched+'. For questions, reach out to your Team Lead. - MNL Attendance Tracker';
 
   const notifyContent = document.getElementById('notify-content');
-  notifyContent.innerHTML = '<div style="background:#1a1035;border:1px solid #3a2868;border-radius:8px;padding:12px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">'+empName+'</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px">📆 '+dateStr+'</div><div style="font-size:11px;color:#ff5c7a">Was: '+(oldSched||'—')+'</div><div style="font-size:11px;color:#00e896">Now: '+newSched+'</div></div><div style="font-size:12px;background:#0d0818;border-radius:8px;padding:10px;color:var(--text2);border:1px solid #3a2868">'+msg+'</div>';
+  notifyContent.innerHTML = '<div style="background:#0d1250;border:1px solid #262e8c;border-radius:8px;padding:12px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">'+empName+'</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px">📆 '+dateStr+'</div><div style="font-size:11px;color:#ff5c7a">Was: '+(oldSched||'—')+'</div><div style="font-size:11px;color:#00e896">Now: '+newSched+'</div></div><div style="font-size:12px;background:#070a2a;border-radius:8px;padding:10px;color:var(--text2);border:1px solid #262e8c">'+msg+'</div>';
 
   // WhatsApp button
   const waBtn = document.getElementById('notify-wa-btn');
@@ -7230,7 +7262,7 @@ function renderContractManager(){
     html += '</div>';
   }
 
-  html += '<div style="display:grid;grid-template-columns:1fr 90px 100px 100px 100px;gap:6px;padding:6px 0;border-bottom:1px solid #3a2868;font-size:10px;color:#c4a8ff;font-weight:700;letter-spacing:.05em;text-transform:uppercase">'
+  html += '<div style="display:grid;grid-template-columns:1fr 90px 100px 100px 100px;gap:6px;padding:6px 0;border-bottom:1px solid #262e8c;font-size:10px;color:#bfccff;font-weight:700;letter-spacing:.05em;text-transform:uppercase">'
     +'<span>Employee</span><span>Status</span><span>Start Date</span><span>Prob. Date</span><span>Regular Date</span></div>';
 
   state.employees.forEach(emp=>{
@@ -7240,16 +7272,16 @@ function renderContractManager(){
     const probAlert  = probDays!==null && probDays>=0 && probDays<=7;
     const regAlert   = regDays!==null  && regDays>=0  && regDays<=7;
     const statusColors = {Regular:'#00e896',Probationary:'#ffcf3d',Trainee:'#5db8ff',Contractual:'#c49eff','Part-time':'#ffaa5c'};
-    const sc = statusColors[c.status||'Regular']||'#c4a8ff';
+    const sc = statusColors[c.status||'Regular']||'#bfccff';
 
     html += '<div style="display:grid;grid-template-columns:1fr 90px 100px 100px 100px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(58,40,104,.3)">'
       +'<span style="font-size:11px;font-weight:600;color:var(--text)">'+emp.name+'<br><span style="font-size:9px;color:var(--text3)">'+emp.team+'</span></span>'
-      +'<select data-emp="'+emp.name+'" data-field="status" onchange="updateContractField(this)" style="background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:'+sc+';padding:3px;font-size:11px;font-family:var(--font)">'
+      +'<select data-emp="'+emp.name+'" data-field="status" onchange="updateContractField(this)" style="background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:'+sc+';padding:3px;font-size:11px;font-family:var(--font)">'
       +EMP_STATUSES.map(s=>'<option value="'+s+'"'+(s===(c.status||'Regular')?' selected':'')+'>'+s+'</option>').join('')
       +'</select>'
-      +'<input type="date" data-emp="'+emp.name+'" data-field="startDate" value="'+(c.startDate||'')+'" onchange="updateContractField(this)" style="background:#0d0818;border:1px solid #3a2868;border-radius:4px;color:var(--text);padding:3px;font-size:10px;width:100%">'
-      +'<input type="date" data-emp="'+emp.name+'" data-field="probDate"  value="'+(c.probDate||'')+'"  onchange="updateContractField(this)" style="background:#0d0818;border:1px solid '+(probAlert?'#ffcf3d':'#3a2868')+';border-radius:4px;color:'+(probAlert?'#ffcf3d':'var(--text)')+';padding:3px;font-size:10px;width:100%">'
-      +'<input type="date" data-emp="'+emp.name+'" data-field="regularDate" value="'+(c.regularDate||'')+'" onchange="updateContractField(this)" style="background:#0d0818;border:1px solid '+(regAlert?'#00e896':'#3a2868')+';border-radius:4px;color:'+(regAlert?'#00e896':'var(--text)')+';padding:3px;font-size:10px;width:100%">'
+      +'<input type="date" data-emp="'+emp.name+'" data-field="startDate" value="'+(c.startDate||'')+'" onchange="updateContractField(this)" style="background:#070a2a;border:1px solid #262e8c;border-radius:4px;color:var(--text);padding:3px;font-size:10px;width:100%">'
+      +'<input type="date" data-emp="'+emp.name+'" data-field="probDate"  value="'+(c.probDate||'')+'"  onchange="updateContractField(this)" style="background:#070a2a;border:1px solid '+(probAlert?'#ffcf3d':'#262e8c')+';border-radius:4px;color:'+(probAlert?'#ffcf3d':'var(--text)')+';padding:3px;font-size:10px;width:100%">'
+      +'<input type="date" data-emp="'+emp.name+'" data-field="regularDate" value="'+(c.regularDate||'')+'" onchange="updateContractField(this)" style="background:#070a2a;border:1px solid '+(regAlert?'#00e896':'#262e8c')+';border-radius:4px;color:'+(regAlert?'#00e896':'var(--text)')+';padding:3px;font-size:10px;width:100%">'
       +'</div>';
   });
 
@@ -7474,10 +7506,10 @@ function openDayLeaves(date){
     + '<div style="font-size:11px;color:var(--text3);margin-bottom:14px">'+leaves.length+' leave request'+(leaves.length!==1?'s':'')+' on this day</div>'
     + '<div style="display:flex;flex-direction:column;gap:8px">'
     + leaves.map(r=>{
-        const sc = colors.statusColors[r.status]||'#c4a8ff';
-        const tc = colors.typeColors[r.type]||'#c4a8ff';
+        const sc = colors.statusColors[r.status]||'#bfccff';
+        const tc = colors.typeColors[r.type]||'#bfccff';
         const name = leaveEmpName(r);
-        return '<div onclick="document.getElementById(\'day-leaves-modal\').classList.remove(\'open\');openReviewLeave(\''+r.id+'\')" style="padding:10px 12px;background:#0d0818;border:1px solid #3a2868;border-left:4px solid '+sc+';border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
+        return '<div onclick="document.getElementById(\'day-leaves-modal\').classList.remove(\'open\');openReviewLeave(\''+r.id+'\')" style="padding:10px 12px;background:#070a2a;border:1px solid #262e8c;border-left:4px solid '+sc+';border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
           + '<div><span style="color:'+tc+';font-weight:700;font-size:12px">'+r.type+'</span> <span style="color:var(--text);font-size:13px">'+name+'</span></div>'
           + '<span style="font-size:10px;color:'+sc+';font-weight:600">'+r.status+'</span>'
           + '</div>';
@@ -7494,10 +7526,10 @@ function openReviewLeave(id){
   const req = (state.leaveRequests||[]).find(r=>r.id===id);
   if(!req) return;
   const days = leaveDaysLabel(req);
-  const statusColor = req.status==='Approved'?'#00e896':req.status==='Declined'?'#ff5c7a':req.status==='Cancelled'?'#7a68a8':'#ffcf3d';
+  const statusColor = req.status==='Approved'?'#00e896':req.status==='Declined'?'#ff5c7a':req.status==='Cancelled'?'#8d93d6':'#ffcf3d';
   const isMultiDay = req.from && req.to && req.from !== req.to;
   document.getElementById('review-leave-content').innerHTML =
-    '<div style="background:#1a1035;border:1px solid #3a2868;border-radius:8px;padding:12px;font-size:12px">'
+    '<div style="background:#0d1250;border:1px solid #262e8c;border-radius:8px;padding:12px;font-size:12px">'
     +'<div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:6px">'+leaveEmpName(req)+'<span style="margin-left:8px;font-size:10px;background:rgba(93,184,255,.2);color:#5db8ff;padding:2px 8px;border-radius:10px">'+req.dept+'</span></div>'
     +'<div style="color:var(--text2);margin-bottom:4px">'+req.type+' &nbsp;·&nbsp; '+days+'</div>'
     +(req.reason?'<div style="color:var(--text2);margin-bottom:4px">Reason: '+req.reason+'</div>':'')
@@ -7685,44 +7717,44 @@ function renderLeaves(){
     return;
   }
 
-  const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a',Cancelled:'#7a68a8'};
+  const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a',Cancelled:'#8d93d6'};
   const typeColors = {VL:'#00cfff',UVL:'#0088aa',HDVL:'#5cd6ff',SL:'#ffaa5c',EL:'#c49eff',BL:'#9d6fff',ML:'#ff8fc9',PL:'#8fb8ff'};
 
   const totalCount = reqs.length;
-  wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px 0;margin-bottom:8px">Showing <strong style="color:#c4a8ff">'+totalCount+'</strong> leave request'+(totalCount!==1?'s':'')+'</div>';
+  wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px 0;margin-bottom:8px">Showing <strong style="color:#bfccff">'+totalCount+'</strong> leave request'+(totalCount!==1?'s':'')+'</div>';
   wrap.innerHTML += '<table style="width:100%;border-collapse:collapse;font-size:12px">'
     +'<thead><tr>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Employee</th>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Dept</th>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Type</th>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Dates</th>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Filed</th>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Reason</th>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Status</th>'
-    +'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:left;color:#c4a8ff;background:#0d0818">Lead Notes</th>'
-    +((canManage||isLeaveApprover||isOwnLeaveOnly)?'<th style="padding:8px 12px;border:1px solid #3a2868;text-align:center;color:#c4a8ff;background:#0d0818">Action</th>':'')
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:left;color:#bfccff;background:#070a2a">Employee</th>'
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:left;color:#bfccff;background:#070a2a">Dept</th>'
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:left;color:#bfccff;background:#070a2a">Type</th>'
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:left;color:#bfccff;background:#070a2a">Dates</th>'
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:left;color:#bfccff;background:#070a2a">Filed</th>'
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:left;color:#bfccff;background:#070a2a">Reason</th>'
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:center;color:#bfccff;background:#070a2a">Status</th>'
+    +'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:left;color:#bfccff;background:#070a2a">Lead Notes</th>'
+    +((canManage||isLeaveApprover||isOwnLeaveOnly)?'<th style="padding:8px 12px;border:1px solid #262e8c;text-align:center;color:#bfccff;background:#070a2a">Action</th>':'')
     +'</tr></thead><tbody>'
     +reqs.map(r=>{
       const days = leaveDaysLabel(r);
-      const sc = statusColors[r.status]||'#c4a8ff';
-      const tc = typeColors[r.type]||'#c4a8ff';
-      return '<tr style="border-bottom:1px solid #2d1f55">'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;font-weight:600;color:var(--text)">'+leaveEmpName(r)+'</td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2)">'+r.dept+'</td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868"><span style="color:'+tc+';font-weight:700">'+r.type+'</span></td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);white-space:nowrap">'+days+'</td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text3);font-size:11px;white-space:nowrap">'+filedAtDisplay(r.filedAt)+'</td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);max-width:200px">'
+      const sc = statusColors[r.status]||'#bfccff';
+      const tc = typeColors[r.type]||'#bfccff';
+      return '<tr style="border-bottom:1px solid #1c2375">'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;font-weight:600;color:var(--text)">'+leaveEmpName(r)+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;color:var(--text2)">'+r.dept+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c"><span style="color:'+tc+';font-weight:700">'+r.type+'</span></td>'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;color:var(--text2);white-space:nowrap">'+days+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;color:var(--text3);font-size:11px;white-space:nowrap">'+filedAtDisplay(r.filedAt)+'</td>'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;color:var(--text2);max-width:200px">'
           +(r.reason||'—')
           +(r.docLink?'<br><a href="'+r.docLink+'" target="_blank" style="color:#5db8ff;font-size:10px">📎 View doc</a>':'')
         +'</td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;text-align:center"><span style="color:'+sc+';font-weight:700;font-size:11px;background:rgba(0,0,0,.2);padding:3px 10px;border-radius:10px;border:1px solid '+sc+'">'+r.status+'</span></td>'
-        +'<td style="padding:8px 12px;border:1px solid #3a2868;color:var(--text2);font-size:11px">'+(r.leadNotes||'—')+'</td>'
-        +((canManage||isLeaveApprover||isOwnLeaveOnly)?'<td style="padding:6px 10px;border:1px solid #3a2868;text-align:center;white-space:nowrap">'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;text-align:center"><span style="color:'+sc+';font-weight:700;font-size:11px;background:rgba(0,0,0,.2);padding:3px 10px;border-radius:10px;border:1px solid '+sc+'">'+r.status+'</span></td>'
+        +'<td style="padding:8px 12px;border:1px solid #262e8c;color:var(--text2);font-size:11px">'+(r.leadNotes||'—')+'</td>'
+        +((canManage||isLeaveApprover||isOwnLeaveOnly)?'<td style="padding:6px 10px;border:1px solid #262e8c;text-align:center;white-space:nowrap">'
           +(function(rid){
             const canReviewThis = canManage || (isLeaveApprover && r.dept===currentUser.approverDept);
             if(canReviewThis){
-              return '<button onclick="openReviewLeave(\''+rid+'\')" style="background:rgba(196,168,255,.2);border:1px solid #c4a8ff;color:#c4a8ff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font);margin-right:4px">Review</button>'
+              return '<button onclick="openReviewLeave(\''+rid+'\')" style="background:rgba(196,168,255,.2);border:1px solid #bfccff;color:#bfccff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font);margin-right:4px">Review</button>'
                 +(canManage?'<button onclick="deleteLeave(\''+rid+'\')" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>':'');
             }
             // A regular employee (leave_only) can withdraw their own request,
@@ -7765,7 +7797,7 @@ function renderLeavesCalendar(reqs){
   while(cur <= end){ days.push(fmt(cur)); cur.setDate(cur.getDate()+1); }
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a',Cancelled:'#7a68a8'};
+  const statusColors = {Pending:'#ffcf3d',Approved:'#00e896',Declined:'#ff5c7a',Cancelled:'#8d93d6'};
   const typeColors = {VL:'#00cfff',UVL:'#0088aa',HDVL:'#5cd6ff',SL:'#ffaa5c',EL:'#c49eff',BL:'#9d6fff',ML:'#ff8fc9',PL:'#8fb8ff'};
 
   // Build map: date -> list of leaves
@@ -7791,13 +7823,13 @@ function renderLeavesCalendar(reqs){
   window._currentLeaveColors = {statusColors, typeColors};
 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  let html = '<div style="font-size:13px;font-weight:700;color:#c4a8ff;margin-bottom:8px">'+MONTH_NAMES[start.getMonth()]+' '+start.getFullYear()
+  let html = '<div style="font-size:13px;font-weight:700;color:#bfccff;margin-bottom:8px">'+MONTH_NAMES[start.getMonth()]+' '+start.getFullYear()
     +(start.getMonth()!==end.getMonth()||start.getFullYear()!==end.getFullYear() ? ' → '+MONTH_NAMES[end.getMonth()]+' '+end.getFullYear() : '')
     +'</div>';
   html += '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:700px">';
   // Header
   html += '<tr>';
-  DAYS.forEach(d=> html+='<th style="padding:8px;background:#1a1035;border:1px solid #3a2868;color:#c4a8ff;font-size:11px;text-align:center;width:14.28%">'+d+'</th>');
+  DAYS.forEach(d=> html+='<th style="padding:8px;background:#0d1250;border:1px solid #262e8c;color:#bfccff;font-size:11px;text-align:center;width:14.28%">'+d+'</th>');
   html += '</tr>';
 
   // Pad start to Sunday
@@ -7805,7 +7837,7 @@ function renderLeavesCalendar(reqs){
   let dayIdx = 0;
   html += '<tr>';
   for(let p=0;p<firstDay;p++){
-    html += '<td style="padding:4px;border:1px solid #2d1f55;background:#0a0618;min-height:80px;vertical-align:top;height:80px"></td>';
+    html += '<td style="padding:4px;border:1px solid #1c2375;background:#060824;min-height:80px;vertical-align:top;height:80px"></td>';
   }
   dayIdx = firstDay;
 
@@ -7814,18 +7846,18 @@ function renderLeavesCalendar(reqs){
     const isToday = d===fmt(new Date());
     const dow = new Date(d+'T00:00:00').getDay();
     if(dow===0 && i>0) html += '</tr><tr>';
-    html += '<td style="padding:4px;border:1px solid #2d1f55;background:'+(isToday?'rgba(157,111,255,.1)':'#0d0818')+';vertical-align:top;min-height:80px;height:80px">';
+    html += '<td style="padding:4px;border:1px solid #1c2375;background:'+(isToday?'rgba(157,111,255,.1)':'#070a2a')+';vertical-align:top;min-height:80px;height:80px">';
     html += '<div style="font-size:11px;font-weight:700;color:'+(isToday?'#9d6fff':'var(--text3)')+';margin-bottom:3px">'+parseInt(d.slice(8))+'</div>';
     leaves.slice(0,3).forEach(r=>{
-      const sc = statusColors[r.status]||'#c4a8ff';
-      const tc = typeColors[r.type]||'#c4a8ff';
+      const sc = statusColors[r.status]||'#bfccff';
+      const tc = typeColors[r.type]||'#bfccff';
       const _rid=r.id,_rn=leaveEmpName(r).split(' ')[0],_rt=r.type,_rs=r.status;
       html += (function(rid,rn,rt,rs,sc2,tc2){
         return '<div style="font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;background:rgba(0,0,0,.3);border-left:3px solid '+sc2+';cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" onclick="openReviewLeave(\''+rid+'\')" title="'+rn+' - '+rt+' ('+rs+')">'
           +'<span style="color:'+tc2+';font-weight:700">'+rt+'</span> <span style="color:var(--text2)">'+rn+'</span></div>';
       })(_rid,_rn,_rt,_rs,sc,tc);
     });
-    if(leaves.length>3) html += '<div style="font-size:9px;color:#c4a8ff;padding-left:4px;cursor:pointer;text-decoration:underline" onclick="openDayLeaves(\''+d+'\')">+' +(leaves.length-3)+' more</div>';
+    if(leaves.length>3) html += '<div style="font-size:9px;color:#bfccff;padding-left:4px;cursor:pointer;text-decoration:underline" onclick="openDayLeaves(\''+d+'\')">+' +(leaves.length-3)+' more</div>';
     html += '</td>';
     dayIdx++;
   });
@@ -7833,7 +7865,7 @@ function renderLeavesCalendar(reqs){
   // Pad end
   const lastDow = new Date(days[days.length-1]+'T00:00:00').getDay();
   for(let p=lastDow+1;p<7;p++){
-    html += '<td style="padding:4px;border:1px solid #2d1f55;background:#0a0618;min-height:80px;height:80px"></td>';
+    html += '<td style="padding:4px;border:1px solid #1c2375;background:#060824;min-height:80px;height:80px"></td>';
   }
   html += '</tr></table></div>';
 
@@ -8060,8 +8092,8 @@ function enableEditMode(showToast=true){
     const name = currentUser?currentUser.name:'Lead';
     lb.innerHTML='🔓 '+name.split(' ')[0];
     lb.style.background='rgba(196,168,255,.2)';
-    lb.style.borderColor='#c4a8ff';
-    lb.style.color='#c4a8ff';
+    lb.style.borderColor='#bfccff';
+    lb.style.color='#bfccff';
   }
   if(showToast) toast('🔓 Welcome '+(currentUser?currentUser.name:'')+'!');
   const settingsTab = document.getElementById('nav-tab-settings');
