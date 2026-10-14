@@ -2223,6 +2223,22 @@ async function loadFromDB(){
     state._clearedStaleEmmanuelFriOff = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: copy manual Timesheet comments onto existing Overtime entries
+  // whose reason is still blank (the sync used to always leave it empty).
+  if(!state._backfilledOTReasonsFromTimesheet){
+    let filled = 0;
+    (state.otEntries||[]).forEach(e=>{
+      if(!e._tsSync || e.reason) return;
+      const t = (state.timesheet||{})[tsk(e.emp, e.date)];
+      if(t && t._notesManual && t.notes){
+        e.reason = String(t.notes).trim();
+        e._tsReason = e.reason;
+        filled++;
+      }
+    });
+    state._backfilledOTReasonsFromTimesheet = true;
+    if(filled > 0){ try{ await saveToDB(); }catch(e){} }
+  }
   // One-time: comprehensive sync of Rest Day -> Tracker "Off" across every
   // employee and every currently-tracked date. The earlier backfill only
   // ran once, before later cutoffs' dates existed, so anyone whose rest
@@ -5847,7 +5863,22 @@ function syncTimesheetOTToTracker(empName, date, tsEntry, otIssue){
   } else { otStart = tsEntry.timeOut||''; }
 
   const existingIdx = state.otEntries.findIndex(e=>e._tsSync && e.emp===empName && e.date===date);
-  const entry = {
+  const existing = existingIdx >= 0 ? state.otEntries[existingIdx] : null;
+
+  // A comment typed manually in the Timesheet's Notes cell is the overtime
+  // comment: carry it into the Overtime tab's reason. If someone has
+  // since edited the reason directly in the Overtime tab (it no longer
+  // matches what we last copied over), that edit wins and is never
+  // overwritten. Auto-generated notes like "30min OT" aren't copied --
+  // they'd just repeat the hours column.
+  const tsNote = (tsEntry && tsEntry._notesManual && tsEntry.notes) ? String(tsEntry.notes).trim() : '';
+  const lastTsReason = existing ? (existing._tsReason || '') : '';
+  let reason = existing ? (existing.reason || '') : '';
+  if(tsNote && (!reason || reason === lastTsReason)) reason = tsNote;
+
+  // Merge onto the existing entry instead of replacing it, so nothing set
+  // in the Overtime tab is thrown away every time the Timesheet redraws.
+  const entry = Object.assign({}, existing || {}, {
     id: '_ts_'+empName+'_'+date,
     _tsSync: true,
     date, dept,
@@ -5855,8 +5886,16 @@ function syncTimesheetOTToTracker(empName, date, tsEntry, otIssue){
     hrs,
     timeStart: otStart,
     timeEnd: tsEntry.timeOut||'',
-    reason: '' // leads fill in reason — left blank intentionally
-  };
+    reason,
+    _tsReason: tsNote || lastTsReason
+  });
+
+  // This runs for every row on every Timesheet redraw. Only write and mark
+  // unsaved when something actually changed, otherwise merely opening or
+  // refreshing the Timesheet kept flipping the Save button back to orange.
+  const fields = ['date','dept','emp','hrs','timeStart','timeEnd','reason','_tsReason'];
+  if(existing && fields.every(f => existing[f] === entry[f])) return;
+
   if(existingIdx >= 0) state.otEntries[existingIdx] = entry;
   else state.otEntries.push(entry);
   scheduleSave();
