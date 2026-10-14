@@ -5873,6 +5873,24 @@ function removeTimesheetOTFromTracker(empName, date){
   state.otEntries = state.otEntries.filter(e=>!(e._tsSync && e.emp===empName && e.date===date));
 }
 
+// Overtime entries that came from the Timesheet share their note with it, in
+// both directions. _tsReason remembers the last Timesheet note we saw, so we
+// can tell which side changed and let the other follow.
+function resolveOTReason(existing, tsNote){
+  const current = existing ? (existing.reason || '') : '';
+  // New entry, or one made before the two-way link existed: only fill a blank
+  // reason, never overwrite something that's already been typed.
+  if(!existing || existing._tsReason === undefined){
+    return { reason: current || tsNote, tsReason: tsNote };
+  }
+  const last = existing._tsReason || '';
+  if(tsNote === last) return { reason: current, tsReason: last };      // Timesheet side unchanged
+  if(tsNote) return { reason: tsNote, tsReason: tsNote };              // note edited on Timesheet: Overtime follows
+  // Timesheet note cleared (back to the auto note): clear the Overtime reason
+  // too, but only if it was just the mirrored text.
+  return { reason: current === last ? '' : current, tsReason: '' };
+}
+
 function syncTimesheetOTToTracker(empName, date, tsEntry, otIssue){
   if(!state.otEntries) state.otEntries=[];
   // Get employee dept
@@ -5903,9 +5921,8 @@ function syncTimesheetOTToTracker(empName, date, tsEntry, otIssue){
   // overwritten. Auto-generated notes like "30min OT" aren't copied --
   // they'd just repeat the hours column.
   const tsNote = (tsEntry && tsEntry._notesManual && tsEntry.notes) ? String(tsEntry.notes).trim() : '';
-  const lastTsReason = existing ? (existing._tsReason || '') : '';
-  let reason = existing ? (existing.reason || '') : '';
-  if(tsNote && (!reason || reason === lastTsReason)) reason = tsNote;
+  const resolved = resolveOTReason(existing, tsNote);
+  const reason = resolved.reason;
 
   // Merge onto the existing entry instead of replacing it, so nothing set
   // in the Overtime tab is thrown away every time the Timesheet redraws.
@@ -5918,7 +5935,7 @@ function syncTimesheetOTToTracker(empName, date, tsEntry, otIssue){
     timeStart: otStart,
     timeEnd: tsEntry.timeOut||'',
     reason,
-    _tsReason: tsNote || lastTsReason
+    _tsReason: resolved.tsReason
   });
 
   // This runs for every row on every Timesheet redraw. Only write and mark
@@ -6220,7 +6237,20 @@ function renderOT(){
 function updateOTReason(id, reason){
   if(!state.otEntries) return;
   const entry = state.otEntries.find(e=>e.id===id);
-  if(entry){ entry.reason=reason; scheduleSave(); }
+  if(!entry) return;
+  entry.reason = reason;
+  // An Overtime entry that came from the Timesheet shares its note with that
+  // day's Timesheet Notes cell, so an edit here shows up there too.
+  if(entry._tsSync){
+    const t = state.timesheet && state.timesheet[tsk(entry.emp, entry.date)];
+    if(t){
+      const txt = String(reason || '').trim();
+      if(txt){ t.notes = txt; t._notesManual = true; }
+      else { t.notes = ''; t._notesManual = false; }   // auto note comes back on the next Timesheet draw
+      entry._tsReason = txt;
+    }
+  }
+  scheduleSave();
 }
 
 function exportOTCSV(){
