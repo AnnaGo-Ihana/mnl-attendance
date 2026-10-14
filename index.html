@@ -324,6 +324,51 @@ html[data-theme="light"] .badge-Marketing{background:#fce7f3 !important;}
 html[data-theme="light"] .badge-Operations{background:#dbeafe !important;}
 html[data-theme="light"] .badge-Finance{background:#ecfccb !important;}
 /* Light-mode readability: bright "dark theme" accent colors are too pale on white */
+/* ═══ ROSTER ═══ */
+:root{--rs-w-bg:#0a0e3a;--rs-w-fg:#b8bdf0;--rs-rd-bg:#1b2060;--rs-rd-fg:#aab0f6;--rs-l-bg:#0f3f60;--rs-l-fg:#8fd8ff;--rs-ok-bg:#0f4a3a;--rs-ok-fg:#6df5bd;--rs-risk-bg:#4a3d0e;--rs-risk-fg:#ffdc70;--rs-short-bg:#4d1631;--rs-short-fg:#ff9db4;--rs-hol-bg:#1a2272;--rs-hol-fg:#ffdc70;--rs-cap-bg:#35206b;--rs-cap-fg:#d3b8ff;}
+.rs-wrap{padding:20px}
+.rs-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:10px}
+.rs-line{font-size:12px;color:var(--text2)}
+.rs-legend{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px}
+.rs-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;border:1.5px solid transparent}
+.rs-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px}
+.rs-table{border-collapse:collapse;min-width:1100px;width:100%}
+.rs-table th,.rs-table td{border-bottom:1px solid var(--border);padding:0}
+.rs-table td.rs-name,.rs-table th.rs-name{position:sticky;left:0;z-index:2;min-width:170px;padding:10px 14px;text-align:left;font-size:13px;font-weight:700;color:var(--text);background:var(--surface)}
+.rs-table th.rs-name{background:var(--surface2);font-size:11px;letter-spacing:.08em;color:var(--accent)}
+.rs-sub{font-size:10px;font-weight:700;color:var(--text3)}
+.rs-dh{background:var(--surface2);padding:8px 2px;text-align:center;min-width:58px}
+.rs-dh.rs-hol{background:var(--rs-hol-bg)}
+.rs-d{font-size:12px;font-weight:900;color:var(--text)}
+.rs-dow{font-size:10px;font-weight:700;color:var(--text2)}
+.rs-holtag{font-size:9px;font-weight:900;color:var(--rs-hol-fg);min-height:11px}
+.rs-cc{padding:5px 3px;text-align:center}
+.rs-c{height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;border:1.5px solid transparent;box-sizing:border-box}
+.rs-k-W,.rs-chip.rs-k-W{background:var(--rs-w-bg);color:var(--rs-w-fg)}
+.rs-k-NS{background:transparent;color:var(--text3)}
+.rs-k-RD,.rs-chip.rs-k-RD{background:var(--rs-rd-bg);color:var(--rs-rd-fg)}
+.rs-k-L,.rs-chip.rs-k-L{background:var(--rs-l-bg);color:var(--rs-l-fg)}
+.rs-k-LP,.rs-chip.rs-k-LP{background:transparent;color:var(--rs-l-fg);border:1.5px dashed var(--rs-l-fg)}
+.rs-k-LP.rs-wl,.rs-chip.rs-wl{background:var(--rs-cap-bg);color:var(--rs-cap-fg);border:1.5px dashed var(--rs-cap-fg)}
+.rs-covrow td{background:var(--surface2)}
+.rs-cov{border-radius:8px;padding:6px 2px;text-align:center;font-weight:700}
+.rs-cov .rs-big{font-size:19px;font-weight:900;line-height:1}
+.rs-cov .rs-s{font-size:10px;min-height:12px}
+.rs-cov .rs-s.b{font-weight:900}
+.rs-ok{background:var(--rs-ok-bg);color:var(--rs-ok-fg)}
+.rs-risk{background:var(--rs-risk-bg);color:var(--rs-risk-fg)}
+.rs-short{background:var(--rs-short-bg);color:var(--rs-short-fg)}
+.rs-nomin{background:var(--rs-w-bg);color:var(--rs-w-fg)}
+.rs-hw{text-align:center;font-size:13px;font-weight:900;color:var(--text);padding:8px}
+.rs-note{font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:8px}
+.rs-gaps-h{padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.rs-gap{display:grid;grid-template-columns:130px 1fr auto;gap:14px;align-items:center;padding:12px 18px;border-top:1px solid var(--border)}
+.rs-btn{background:rgba(157,111,255,.12) !important;border-color:var(--accent) !important;color:var(--accent) !important}
+.rs-badge{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:900}
+.rc-row{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;font-size:13px;font-weight:700;color:var(--text)}
+.rc-row input{width:100%;box-sizing:border-box}
+@media(max-width:700px){.rs-gap{grid-template-columns:1fr}}
+html[data-theme="light"]{--rs-w-bg:#ffffff;--rs-w-fg:#3b4080;--rs-rd-bg:#ececfb;--rs-rd-fg:#4b4fa6;--rs-l-bg:#cfeafa;--rs-l-fg:#0a5f89;--rs-ok-bg:#d9f5ea;--rs-ok-fg:#086646;--rs-risk-bg:#fbf0cc;--rs-risk-fg:#7a5800;--rs-short-bg:#fde3e9;--rs-short-fg:#b4233f;--rs-hol-bg:#fff6d6;--rs-hol-fg:#7a5800;--rs-cap-bg:#ece2fb;--rs-cap-fg:#5a24b0;}
 html[data-theme="light"]{--P-bg:#d1fae5;--A-bg:#fee2e2;--A-bd:#fecdd3;--HD-bg:#fef3c7;--UT-bg:#eef1ff;--L-bg:#dbeafe;--VL-bg:#cffafe;--UVL-bg:#cffafe;--UHD-bg:#fef3c7;--SL-bg:#ffedd5;--EL-bg:#ffedd5;--BL-bg:#eef1ff;--HDVL-bg:#cffafe;--HDSL-bg:#ffedd5;--Off-bg:#f3f4f6;}
 html[data-theme="light"]{--P:#086646;--A:#b4233f;--HD:#8a6500;--UT:#5a24b0;--L:#2b4fb8;--VL:#0a5f89;--UVL:#0a5f89;--SL:#9a4a08;--EL:#8c2f1c;--BL:#5a24b0;--HDVL:#0a5f89;--HDSL:#9a4a08;--Off:#4b4fa6;}
 /* Inline dark gradients (team cards etc.) sit on top of the light background-color overrides, so drop the gradient image in light mode */
@@ -501,6 +546,7 @@ html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [styl
         <div class="nav-tab" data-page="overtime" onclick="showPage('overtime')">Overtime</div>
         <div class="nav-tab" data-page="schedule" onclick="showPage('schedule')">Schedule</div>
         <div class="nav-tab" data-page="leaves" onclick="showPage('leaves')">Leaves</div>
+        <div class="nav-tab" data-page="roster" onclick="showPage('roster')">Roster</div>
         <div class="nav-tab" id="nav-tab-settings" data-page="settings" onclick="showPage('settings')" style="display:none">⚙️ Settings</div>
       </div>
       <div class="nav-actions" style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;max-width:100%">
@@ -1377,6 +1423,22 @@ html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [styl
 </div>
 
 <!-- SETTINGS PAGE (admin-only) -->
+<div class="page" id="page-roster" style="display:none">
+  <div class="rs-wrap">
+    <div class="rs-bar">
+      <select id="rs-dept" onchange="_rosterDept=this.value;renderRoster()" style="min-width:160px"></select>
+      <label class="rs-line" style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="rs-incl-leads" checked onchange="renderRoster()" style="width:auto"> Count team leads in coverage</label>
+      <span class="rs-line" id="rs-range" style="font-weight:700"></span>
+      <span style="flex:1"></span>
+      <button class="btn light rs-btn" id="rs-edit-btn" onclick="openRosterConfig()" style="display:none">⚙️ Minimums &amp; caps</button>
+      <button class="btn light" onclick="exportRosterCSV()" style="background:rgba(0,207,255,.1);border-color:#00cfff;color:#00cfff">📤 Export</button>
+    </div>
+    <div class="rs-line" id="rs-settings-line" style="margin-bottom:8px"></div>
+    <div class="rs-legend" id="rs-legend"></div>
+    <div id="rs-body"></div>
+  </div>
+</div>
+
 <div class="page" id="page-settings" style="display:none;padding:24px 20px">
   <div style="font-size:16px;font-weight:700;color:#bfccff;margin-bottom:4px">⚙️ Settings</div>
   <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Only visible to your account. Manage employees, departments, schedules and more from here.</div>
@@ -1521,6 +1583,22 @@ html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [styl
 </div>
 
 <!-- ACCESS EDIT MODAL (admin-only) -->
+<div class="ov" id="roster-config-modal" onclick="if(event.target===this)closeRosterConfig()">
+  <div class="popup" style="width:520px;max-width:95vw;max-height:88vh;overflow-y:auto">
+    <h3>⚙️ Roster settings</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Roster starts</label><input type="date" id="rc-start" style="width:100%"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:5px">Roster ends</label><input type="date" id="rc-end" style="width:100%"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:8px;align-items:center;font-size:10px;color:var(--text3);margin-bottom:6px">
+      <span>TEAM</span><span>MIN STAFF (WEEKDAY)</span><span>MIN STAFF (WEEKEND)</span><span>HOLIDAY LEAVE CAP</span>
+    </div>
+    <div id="rc-depts"></div>
+    <div style="font-size:11px;color:var(--text3);margin:10px 0 14px;line-height:1.5">Leave a box empty or 0 for no minimum / no cap. The cap limits vacation-type leave (VL, unpaid VL, half-day VL) per team on holidays inside the roster dates. Approved leave always keeps its slot; pending requests fill the remaining slots in the order they were filed, and the rest go on a waiting list. It warns, it never blocks &mdash; leads still decide.</div>
+    <div style="display:flex;gap:8px"><button class="btn go" style="flex:1" onclick="saveRosterConfig()">Save</button><button class="btn light" style="flex:1" onclick="closeRosterConfig()">Cancel</button></div>
+  </div>
+</div>
+
 <div class="ov" id="access-edit-modal" onclick="if(event.target===this)closeAccessEdit()">
   <div class="popup" style="width:340px">
     <h3 id="access-edit-name">Edit Access</h3>
@@ -2880,6 +2958,7 @@ async function syncNow(){
       const pid=activePage.id.replace('page-','');
       if(pid==='timesheet') renderTimesheet();
       if(pid==='overtime') renderOT();
+      if(pid==='roster') renderRoster();
     }
     toast('✅ Synced!');
   }catch(e){ toast('❌ Sync failed'); }
@@ -2932,6 +3011,7 @@ function launchApp(){
             const pid=activePage.id.replace('page-','');
             if(pid==='timesheet') renderTimesheet();
             if(pid==='overtime') renderOT();
+            if(pid==='roster') renderRoster();
           }
           const editor=state._lastEditedBy?(' by '+state._lastEditedBy):'';
           toast('📡 Live update'+editor);
@@ -2956,10 +3036,12 @@ function showPage(id){
   document.getElementById('page-overtime').style.display = (id==='overtime') ? 'block' : 'none';
   document.getElementById('page-schedule').style.display = (id==='schedule') ? 'block' : 'none';
   if(document.getElementById('page-leaves')) document.getElementById('page-leaves').style.display = (id==='leaves') ? 'block' : 'none';
+  if(document.getElementById('page-roster')) document.getElementById('page-roster').style.display = (id==='roster') ? 'block' : 'none';
   if(document.getElementById('page-settings')) document.getElementById('page-settings').style.display = (id==='settings') ? 'block' : 'none';
   document.querySelectorAll('.nav-tab').forEach(t=>{if(t.dataset.page===id)t.classList.add('active');});
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
+  if(id==='roster')renderRoster();
   if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); renderEmpMgmtList(); setSchedMgmtMode('individual'); }
   if(id==='timesheet'){
     populateTsEmpFilter();
@@ -3742,6 +3824,7 @@ function saveNewCutoff(){
   if(activePage && activePage.id==='page-timesheet') renderTimesheet();
   if(activePage && activePage.id==='page-schedule') renderSchedulePage();
   if(activePage && activePage.id==='page-overtime') renderOT();
+  if(activePage && activePage.id==='page-roster') renderRoster();
   toast('📦 New cutoff started: '+dd(start)+' – '+dd(end)+' ('+added+' date'+(added!==1?'s':'')+' added)');
 }
 
@@ -4704,6 +4787,7 @@ const PH_HOLIDAYS = {
   '2026-12-25':'Regular Holiday - Christmas Day',
   '2026-12-30':'Regular Holiday - Rizal Day',
   '2026-12-31':'Special Non-Working - New Years Eve',
+  '2027-01-01':'Regular Holiday - New Years Day',
   '2026-10-31':'Special Non-Working - Halloween',
   '2026-11-27':'Special Non-Working - Typhoon/Calamity Day',
   '2026-02-14':'Special Non-Working - Chinese New Year',
@@ -5333,6 +5417,7 @@ function onGlobalDateChange(){
     if(id==='tracker') renderTable();
     if(id==='timesheet') renderTimesheet();
     if(id==='overtime') renderOT();
+    if(id==='roster') renderRoster();
   }
 }
 
@@ -7477,6 +7562,305 @@ function openFileLeave(){
   document.getElementById('file-leave-modal').classList.add('open');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ROSTER — holiday-period coverage view (default 21 Dec – 4 Jan)
+// Reads each person's schedule/rest days and overlays leave requests, then
+// shows working-vs-minimum per day, a gaps list with cover suggestions,
+// holiday days worked, and a per-team holiday leave cap with a waiting list.
+// Display + warnings only: it never changes schedules or leave statuses.
+// ═══════════════════════════════════════════════════════════════
+const ROSTER_FULL_LEAVE = ['VL','UVL','SL','EL','BL','ML','PL'];
+const ROSTER_CAP_TYPES = ['VL','UVL','HDVL'];
+let _rosterDept = '';
+
+function rsEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function rosterEmpDept(e){ return e.team==='Leadership' ? (e.dept||'') : (e.team||''); }
+function getRosterConfig(){
+  const c = state.rosterConfig || {};
+  return { start: c.start || '2026-12-21', end: c.end || '2027-01-04', depts: c.depts || {} };
+}
+function rosterDeptCfg(dept){
+  const d = (getRosterConfig().depts || {})[dept] || {};
+  return { minWeekday: Number(d.minWeekday)||0, minWeekend: Number(d.minWeekend)||0, leaveCap: Number(d.leaveCap)||0 };
+}
+function rosterDates(cfg){
+  const out = []; const end = pd(cfg.end); const d = pd(cfg.start); let n = 0;
+  while(d <= end && n < 62){ out.push(fmt(d)); d.setDate(d.getDate()+1); n++; }
+  return out;
+}
+function rosterDeptOptions(){
+  const restricted = getRestrictedDeptsArray();
+  const set = new Set();
+  scopedActiveEmployees().forEach(e=>{ const d = rosterEmpDept(e); if(d && d!=='All Departments' && d!=='Leadership') set.add(d); });
+  let list = [...set].sort();
+  if(restricted) list = list.filter(d=>restricted.includes(d));
+  return list;
+}
+function rosterMembers(dept, includeLeads){
+  return scopedActiveEmployees().filter(e=>{
+    if(e.team==='Leadership') return includeLeads && e.dept===dept;
+    return e.team===dept;
+  });
+}
+// Everyone in a department (leads included), regardless of who is looking —
+// the leave cap is about the whole team, not just what one viewer can see.
+function rosterAllDeptNames(dept){
+  return (state.employees||[]).filter(e=>e.status!=='Inactive' && rosterEmpDept(e)===dept).map(e=>e.name);
+}
+function rosterLeaveMap(dates){
+  const map = {};
+  (state.leaveRequests||[]).forEach(r=>{
+    if(r.status!=='Approved' && r.status!=='Pending') return;
+    const rank = r.status==='Approved' ? 2 : 1;
+    const cancelled = r.cancelledDates || [];
+    dates.forEach(d=>{
+      if(d < r.from || d > r.to || cancelled.includes(d)) return;
+      if(!map[r.name]) map[r.name] = {};
+      const cur = map[r.name][d];
+      if(!cur || cur.rank < rank) map[r.name][d] = { type:r.type, status:r.status, id:r.id, rank:rank };
+    });
+  });
+  return map;
+}
+function rosterFiledTs(r){ return r.filedAt ? (Date.parse(r.filedAt)||0) : (parseInt(r.id,10)||0); }
+// Per holiday date: how many slots the cap allows, who holds them, who waits.
+// Approved leave always keeps its slot; pending fills what's left, first filed first.
+function rosterCapState(dept, dates, memberNames){
+  const cap = rosterDeptCfg(dept).leaveCap;
+  const res = {};
+  if(!cap) return res;
+  const names = new Set(memberNames);
+  dates.forEach(d=>{
+    if(!getPHHoliday(d)) return;
+    const reqs = (state.leaveRequests||[]).filter(r=>
+      names.has(r.name) && (r.status==='Approved' || r.status==='Pending') && ROSTER_CAP_TYPES.includes(r.type)
+      && r.from <= d && r.to >= d && !((r.cancelledDates||[]).includes(d)));
+    const approved = reqs.filter(r=>r.status==='Approved');
+    const pending = reqs.filter(r=>r.status==='Pending').sort((a,b)=>rosterFiledTs(a)-rosterFiledTs(b));
+    const free = Math.max(0, cap - approved.length);
+    res[d] = { cap:cap, approved:approved.length, inSlot:pending.slice(0,free), waitlist:pending.slice(free), over:Math.max(0, approved.length-cap) };
+  });
+  return res;
+}
+function rosterCellFor(e, d, leaveMap, capState){
+  const lv = leaveMap[e.name] && leaveMap[e.name][d];
+  const half = !!lv && (lv.type==='HDVL' || lv.type==='HDSL');
+  if(lv && !half){
+    if(lv.status==='Approved') return { kind:'L', label: lv.type };
+    const cs = capState[d];
+    const wl = !!(cs && cs.waitlist.some(r=>r.id===lv.id));
+    return { kind:'LP', label: wl ? 'WL' : lv.type+'?', wl:wl };
+  }
+  const tsE = (state.timesheet||{})[tsk(e.name, d)];
+  const sched = (tsE && tsE.schedule) || getScheduleForEmp(e.name, d) || '';
+  if(!lv){
+    const mark = (state.attendance||{})[gk(e.name, d)];
+    if(mark && ROSTER_FULL_LEAVE.includes(mark)) return { kind:'L', label: mark };
+  }
+  if(ROSTER_FULL_LEAVE.includes(sched)) return { kind:'L', label: sched };
+  if(sched==='RD') return { kind:'RD', label:'RD' };
+  if(!sched || sched==='—') return { kind:'NS', label:'—' };
+  return { kind:'W', label: String(sched).replace(/AM/g,'A').replace(/PM/g,'P'), half:half };
+}
+function rosterModel(dept, includeLeads){
+  const cfg = getRosterConfig();
+  const dates = rosterDates(cfg);
+  const members = rosterMembers(dept, includeLeads);
+  const leaveMap = rosterLeaveMap(dates);
+  const capAll = rosterCapState(dept, dates, rosterAllDeptNames(dept));
+  const dcfg = rosterDeptCfg(dept);
+  const holidays = dates.filter(d=>getPHHoliday(d));
+  const rows = members.map(e=>{
+    const cells = dates.map(d=>rosterCellFor(e, d, leaveMap, capAll));
+    const holWorked = holidays.filter(d=>{ const k = cells[dates.indexOf(d)].kind; return k==='W' || k==='LP'; }).length;
+    return { emp:e, cells:cells, holWorked:holWorked };
+  });
+  const coverage = [], gaps = [];
+  dates.forEach((d,i)=>{
+    const weekend = [0,6].includes(pd(d).getDay());
+    const min = weekend ? dcfg.minWeekend : dcfg.minWeekday;
+    let working = 0, pending = 0;
+    rows.forEach(r=>{ const k = r.cells[i].kind; if(k==='W' || k==='LP') working++; if(k==='LP') pending++; });
+    const ifAll = working - pending;
+    let status = 'nomin';
+    if(min > 0) status = working < min ? 'short' : (ifAll < min ? 'risk' : 'ok');
+    const cs = capAll[d] || null;
+    coverage.push({ date:d, working:working, pending:pending, min:min, status:status, ifAll:ifAll, cap:cs });
+    const cover = rows.filter(r=>r.cells[i].kind==='RD').map(r=>r.emp.name);
+    if(status==='short' || status==='risk') gaps.push({ date:d, tone:status, working:working, pending:pending, min:min, ifAll:ifAll, cover:cover });
+    if(cs && (cs.over>0 || cs.waitlist.length>0)) gaps.push({ date:d, tone:'cap', cap:cs, cover:[] });
+  });
+  return { cfg:cfg, dates:dates, holidays:holidays, rows:rows, coverage:coverage, gaps:gaps, dcfg:dcfg };
+}
+// One-line warning shown when someone files holiday leave that lands on the waiting list.
+function capNoticeForRequest(req){
+  try{
+    if(!req || !ROSTER_CAP_TYPES.includes(req.type)) return '';
+    const emp = (state.employees||[]).find(e=>e.name===req.name);
+    if(!emp) return '';
+    const dept = rosterEmpDept(emp);
+    if(!rosterDeptCfg(dept).leaveCap) return '';
+    const dates = rosterDates(getRosterConfig()).filter(d=>d>=req.from && d<=req.to);
+    if(!dates.length) return '';
+    const cap = rosterCapState(dept, dates, rosterAllDeptNames(dept));
+    const wl = dates.filter(d=>cap[d] && cap[d].waitlist.some(r=>r.id===req.id));
+    if(!wl.length) return '';
+    return '⚠️ Holiday leave cap reached for '+dept+' on '+wl.map(dd).join(', ')+' — this request is on the waiting list.';
+  }catch(e){ return ''; }
+}
+// Extra lines for the leave review popup: slot usage on capped holidays.
+function rosterCapReviewNote(req){
+  try{
+    if(!req || !ROSTER_CAP_TYPES.includes(req.type) || (req.status!=='Pending' && req.status!=='Approved')) return '';
+    const emp = (state.employees||[]).find(e=>e.name===req.name);
+    if(!emp) return '';
+    const dept = rosterEmpDept(emp);
+    if(!rosterDeptCfg(dept).leaveCap) return '';
+    const dates = rosterDates(getRosterConfig()).filter(d=>d>=req.from && d<=req.to && !((req.cancelledDates||[]).includes(d)));
+    const cap = rosterCapState(dept, dates, rosterAllDeptNames(dept));
+    const lines = dates.filter(d=>cap[d]).map(d=>{
+      const cs = cap[d];
+      const used = cs.approved + cs.inSlot.length;
+      const waiting = cs.waitlist.some(r=>r.id===req.id);
+      return dd(d)+': '+used+' of '+cs.cap+' leave slots used'+(used>cs.cap ? ' (over cap)' : '')+(waiting ? ' — <b style="color:#ffaa5c">this request is on the waiting list</b>' : (req.status==='Pending' ? ' — holds a slot until decided' : ''));
+    });
+    if(!lines.length) return '';
+    return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text2)"><div style="font-weight:700;color:var(--text);margin-bottom:3px">Holiday leave cap · '+rsEsc(dept)+'</div>'+lines.join('<br>')+'</div>';
+  }catch(e){ return ''; }
+}
+function renderRoster(){
+  const page = document.getElementById('page-roster');
+  if(!page) return;
+  const depts = rosterDeptOptions();
+  if(!depts.includes(_rosterDept)) _rosterDept = depts[0] || '';
+  document.getElementById('rs-dept').innerHTML = depts.map(d=>'<option value="'+rsEsc(d)+'"'+(d===_rosterDept?' selected':'')+'>'+rsEsc(d)+'</option>').join('');
+  const editBtn = document.getElementById('rs-edit-btn');
+  if(editBtn) editBtn.style.display = isEditMode ? '' : 'none';
+  const body = document.getElementById('rs-body');
+  const cfg = getRosterConfig();
+  document.getElementById('rs-range').textContent = dd(cfg.start)+' – '+dd(cfg.end);
+  if(!_rosterDept){
+    document.getElementById('rs-settings-line').textContent = '';
+    document.getElementById('rs-legend').innerHTML = '';
+    body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3)">No employees to show.</div>';
+    return;
+  }
+  const includeLeads = document.getElementById('rs-incl-leads').checked;
+  const m = rosterModel(_rosterDept, includeLeads);
+  const dc = m.dcfg;
+  document.getElementById('rs-settings-line').innerHTML =
+    'Minimum staff: <b>'+(dc.minWeekday||'not set')+'</b> on weekdays, <b>'+(dc.minWeekend||'not set')+'</b> on weekends'
+    +' &nbsp;·&nbsp; Holiday leave cap: <b>'+(dc.leaveCap||'none')+'</b> per day'
+    +((!dc.minWeekday && !dc.minWeekend) ? ' &nbsp;·&nbsp; <span style="color:#ffcf3d">Set minimums to see Short / At risk flags.</span>' : '');
+  document.getElementById('rs-legend').innerHTML =
+    '<span class="rs-chip rs-k-W">9A-6P Working</span><span class="rs-chip rs-k-RD">RD Rest day</span><span class="rs-chip rs-k-L">VL Leave approved</span>'
+    +'<span class="rs-chip rs-k-LP">VL? Leave pending</span><span class="rs-chip rs-k-LP rs-wl">WL Waiting list (cap reached)</span><span class="rs-chip" style="background:var(--rs-hol-bg);color:var(--rs-hol-fg)">HOL Holiday</span>';
+  let h = '<div class="rs-card"><div style="overflow-x:auto"><table class="rs-table"><thead><tr><th class="rs-name">EMPLOYEE</th>';
+  m.dates.forEach(d=>{
+    const hol = getPHHoliday(d);
+    h += '<th class="rs-dh'+(hol?' rs-hol':'')+'" title="'+rsEsc(hol)+'"><div class="rs-d">'+dd(d)+'</div><div class="rs-dow">'+dow(d)+'</div><div class="rs-holtag">'+(hol?'HOL':'')+'</div></th>';
+  });
+  h += '<th class="rs-dh" style="min-width:90px;font-size:10px;font-weight:900;color:var(--accent)">HOLIDAY DAYS WORKED</th></tr></thead><tbody>';
+  h += '<tr class="rs-covrow"><td class="rs-name" style="background:var(--surface2)"><div style="font-weight:900">Coverage</div><div class="rs-sub">working vs minimum</div></td>';
+  m.coverage.forEach(cv=>{
+    const label = cv.status==='ok' ? 'OK' : cv.status==='risk' ? 'At risk' : cv.status==='short' ? 'Short '+(cv.min-cv.working) : '';
+    let capTxt = '';
+    if(cv.cap){
+      capTxt = (cv.cap.over>0 ? 'Over cap +'+cv.cap.over : 'Leave '+(cv.cap.approved+cv.cap.inSlot.length)+'/'+cv.cap.cap) + (cv.cap.waitlist.length ? ' · '+cv.cap.waitlist.length+' WL' : '');
+    }
+    h += '<td class="rs-cc"><div class="rs-cov rs-'+cv.status+'"><div class="rs-big">'+cv.working+'</div><div class="rs-s">'+(cv.min?'min '+cv.min:'no min')+'</div><div class="rs-s b">'+label+'</div><div class="rs-s">'+(cv.pending?cv.pending+' pending':'')+'</div><div class="rs-s">'+capTxt+'</div></div></td>';
+  });
+  h += '<td class="rs-note">pending leave counts as working until approved</td></tr>';
+  m.rows.forEach(r=>{
+    h += '<tr><td class="rs-name"><div>'+rsEsc(r.emp.name)+'</div><div class="rs-sub">'+(r.emp.team==='Leadership' ? rsEsc(r.emp.role||'Team lead') : '')+'</div></td>';
+    r.cells.forEach(cl=>{
+      h += '<td class="rs-cc"><div class="rs-c rs-k-'+cl.kind+(cl.wl?' rs-wl':'')+'">'+rsEsc(cl.label)+'</div></td>';
+    });
+    h += '<td class="rs-hw">'+(m.holidays.length ? r.holWorked+' of '+m.holidays.length : '—')+'</td></tr>';
+  });
+  if(!m.rows.length) h += '<tr><td colspan="'+(m.dates.length+2)+'" style="padding:24px;text-align:center;color:var(--text3)">No employees in this team.</td></tr>';
+  h += '</tbody></table></div></div>';
+
+  // Gaps
+  let g = '<div class="rs-card"><div class="rs-gaps-h"><div style="font-size:15px;font-weight:900;color:var(--text)">Gaps to fill</div><div class="rs-line">Days below the minimum, days that would drop below it if every pending leave is approved, and holidays where the leave cap is reached. Cover suggestions are people on a rest day that date.</div></div>';
+  if(!m.gaps.length){
+    g += '<div style="padding:18px;font-size:13px;color:var(--text2)">'+((!dc.minWeekday && !dc.minWeekend && !dc.leaveCap) ? 'Nothing to flag yet — set minimum staff and a holiday leave cap to start seeing gaps.' : '✅ No gaps for '+rsEsc(_rosterDept)+' in this period.')+'</div>';
+  }
+  m.gaps.forEach(gp=>{
+    const when = dow(gp.date)+' '+dd(gp.date);
+    let badgeCls, title, action, actionPage, cover = '';
+    if(gp.tone==='short'){
+      badgeCls = 'short'; title = 'Short by '+(gp.min-gp.working)+': '+gp.working+' working, minimum '+gp.min; action = 'Adjust schedule'; actionPage = 'schedule';
+    } else if(gp.tone==='risk'){
+      badgeCls = 'risk'; title = 'If all '+gp.pending+' pending leave'+(gp.pending!==1?'s are':' is')+' approved: '+gp.ifAll+' working, minimum '+gp.min; action = 'Review leaves'; actionPage = 'leaves';
+    } else {
+      badgeCls = 'cap'; action = 'Review leaves'; actionPage = 'leaves';
+      const wl = gp.cap.waitlist.map(r=>rsEsc(r.name)+' ('+r.type+', filed '+(r.filedAt ? dd(String(r.filedAt).slice(0,10)) : '?')+')');
+      const parts = [ gp.cap.over>0 ? 'Over the holiday leave cap: '+gp.cap.approved+' approved, cap '+gp.cap.cap+'.' : 'Holiday leave cap reached ('+gp.cap.cap+').' ];
+      if(wl.length) parts.push('Waiting list: '+wl.join(', '));
+      title = parts.join(' ');
+    }
+    if(gp.tone!=='cap'){
+      cover = gp.cover.length
+        ? 'Could cover (on a rest day that date): '+gp.cover.slice(0,6).map(rsEsc).join(', ')+(gp.cover.length>6 ? ' and '+(gp.cover.length-6)+' more' : '')
+        : 'Nobody in this team is on a rest day that date, so it needs overtime cover or a decision on the pending leave.';
+    }
+    g += '<div class="rs-gap"><span class="rs-badge" style="background:var(--rs-'+badgeCls+'-bg);color:var(--rs-'+badgeCls+'-fg)">'+when+'</span>'
+      +'<div><div style="font-size:13px;font-weight:700;color:var(--text)">'+title+'</div>'+(cover?'<div style="font-size:12px;color:var(--text2);margin-top:3px">'+cover+'</div>':'')+'</div>'
+      +'<button class="btn light rs-btn" onclick="showPage(\''+actionPage+'\')">'+action+'</button></div>';
+  });
+  g += '</div>';
+  body.innerHTML = h + g;
+}
+function openRosterConfig(){
+  if(!isEditMode){ toast('Sign in with edit access to change roster settings'); return; }
+  const cfg = getRosterConfig();
+  document.getElementById('rc-start').value = cfg.start;
+  document.getElementById('rc-end').value = cfg.end;
+  document.getElementById('rc-depts').innerHTML = rosterDeptOptions().map(d=>{
+    const dc = rosterDeptCfg(d);
+    const inp = f => '<input type="number" min="0" data-dept="'+rsEsc(d)+'" data-f="'+f+'" value="'+(dc[f]||'')+'" placeholder="none">';
+    return '<div class="rc-row"><span>'+rsEsc(d)+'</span>'+inp('minWeekday')+inp('minWeekend')+inp('leaveCap')+'</div>';
+  }).join('');
+  document.getElementById('roster-config-modal').classList.add('open');
+}
+function closeRosterConfig(){ document.getElementById('roster-config-modal').classList.remove('open'); }
+function saveRosterConfig(){
+  const start = document.getElementById('rc-start').value, end = document.getElementById('rc-end').value;
+  if(!start || !end || end < start){ toast('End date must be on or after the start date'); return; }
+  if(Math.round((pd(end)-pd(start))/86400000) >= 62){ toast('Roster can cover at most 62 days'); return; }
+  const cur = getRosterConfig();
+  const depts = JSON.parse(JSON.stringify(cur.depts));
+  document.querySelectorAll('#rc-depts input[data-dept]').forEach(inp=>{
+    const d = inp.dataset.dept;
+    if(!depts[d]) depts[d] = {};
+    depts[d][inp.dataset.f] = Math.max(0, parseInt(inp.value,10) || 0);
+  });
+  state.rosterConfig = { start:start, end:end, depts:depts };
+  scheduleSave();
+  closeRosterConfig();
+  renderRoster();
+  toast('✅ Roster settings updated — click Save Changes');
+}
+function exportRosterCSV(){
+  if(!_rosterDept){ toast('Nothing to export'); return; }
+  const m = rosterModel(_rosterDept, document.getElementById('rs-incl-leads').checked);
+  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const lines = [];
+  lines.push([ 'Roster', _rosterDept, dd(m.cfg.start)+' to '+dd(m.cfg.end) ].map(q).join(','));
+  lines.push([ 'Employee' ].concat(m.dates.map(d=>dd(d)+' '+dow(d)+(getPHHoliday(d)?' (HOL)':'')), [ 'Holiday days worked' ]).map(q).join(','));
+  m.rows.forEach(r=>lines.push([ r.emp.name ].concat(r.cells.map(c=>c.label), [ m.holidays.length ? r.holWorked+' of '+m.holidays.length : '' ]).map(q).join(',')));
+  lines.push([ 'Working' ].concat(m.coverage.map(c=>c.working)).map(q).join(','));
+  lines.push([ 'Minimum' ].concat(m.coverage.map(c=>c.min||'')).map(q).join(','));
+  const blob = new Blob(['\ufeff'+lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'roster-'+_rosterDept.replace(/[^A-Za-z0-9]+/g,'-')+'-'+m.cfg.start+'-to-'+m.cfg.end+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast('📤 Roster exported');
+}
+
 function submitLeaveRequest(){
   if(!state.leaveRequests) state.leaveRequests=[];
   const name = document.getElementById('leave-emp-name').value;
@@ -7508,7 +7892,8 @@ function submitLeaveRequest(){
   document.getElementById('file-leave-modal').classList.remove('open');
   scheduleSave();
   renderLeaves();
-  toast('✅ Leave request submitted!');
+  const capMsg = (typeof capNoticeForRequest==='function') ? capNoticeForRequest(req) : '';
+  toast(capMsg ? ('✅ Leave request submitted. '+capMsg) : '✅ Leave request submitted!');
 }
 
 function filedAtDisplay(filedAt){
@@ -7566,6 +7951,7 @@ function openReviewLeave(id){
     +(req.docLink?'<div style="margin-bottom:4px"><a href="'+req.docLink+'" target="_blank" style="color:#5db8ff">📎 View Document</a></div>':'')
     +'<div>Status: <span style="color:'+statusColor+';font-weight:700">'+req.status+'</span></div>'
     +'<div style="font-size:10px;color:var(--text3);margin-top:4px">Filed: '+filedAtDisplay(req.filedAt)+'</div>'
+    +(typeof rosterCapReviewNote==='function' ? rosterCapReviewNote(req) : '')
     +'</div>';
   document.getElementById('review-lead-notes').value = req.leadNotes||'';
   // Show approve/decline only for leads, or a leave_approver reviewing a
