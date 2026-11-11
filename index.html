@@ -1097,6 +1097,11 @@ html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [styl
     <p style="font-size:12px;color:var(--text2);margin-bottom:16px;text-align:center">Reading your payroll Excel file…</p>
     <div id="import-progress" style="background:#070a2a;border-radius:8px;padding:14px;font-size:12px;font-family:var(--mono);color:var(--text2);max-height:200px;overflow-y:auto;line-height:1.8"></div>
     <div id="import-summary" style="display:none;margin-top:12px;padding:12px;background:rgba(52,211,153,.1);border:1px solid #34d399;border-radius:8px;font-size:13px;color:#34d399;text-align:center"></div>
+    <div id="import-through-wrap" style="display:none;margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)">
+      <label for="import-through" style="display:block;font-weight:700;color:var(--text);margin-bottom:6px">Balances in this file are counted through</label>
+      <input type="date" id="import-through" style="width:100%">
+      <div style="margin-top:6px;line-height:1.5">Leave marked in the Tracker <b>after</b> this date is subtracted from these balances. Leave on or before it is already inside the file, so it is not subtracted again.</div>
+    </div>
     <div class="ma" style="margin-top:16px">
       <button class="btn go" id="import-confirm-btn" onclick="confirmImport()" style="display:none;flex:1;padding:9px">✓ Apply Updates</button>
       <button class="btn light" onclick="document.getElementById('import-modal').classList.remove('open')" style="flex:1;padding:9px">Close</button>
@@ -1766,16 +1771,23 @@ let globalDateTo   = '';
 const VL_BASE = {"Aaron Vigilla":5.58,"Abigael Callos":14.78,"Alain Sebastian":14.1,"Allan Mangorangca":6.17,"Alyssa Ahsley Anareta":5.42,"Andreas Schmidt":7.08,"Angelica Labajo":11.37,"Angeline Amamio":6.42,"Ann Cruz":1.53,"Anna Go":18.67,"Ardel Delos Reyes":6.25,"Arielle Jesena":13.33,"Blesilda Lutchavez":8.56,"Brian Caramonte":5.58,"Camelle Dumayas":0.33,"Carlos Dimailig":5.58,"Catherine Rivera":12.67,"Cecille Verano":3.03,"Charina Silva":1.94,"Charmea Cruz":5.57,"Cheene B. Dapadap":6.25,"Clemente D. Manabat III":6.24,"Danilo Tabontabon":7.08,"Dexter Yatco":7.08,"Diana Santiago":11.64,"Earl Insierto":7.06,"Emmanuel Martin":13.7,"Errol Dexter Mamisao":11.17,"Evangeline De Ocampo":7.64,"Ferlene Rafael":7.08,"Gracel Ayento":6.17,"Gretchen Liao":13.96,"Hannah Tampoc":18.24,"Ivy Madrigal":6.75,"Jan Chiara Marie Palabrica":10.5,"Janell Kae Damayon Aganan":6.25,"Jax Tan":5.15,"Jay-Ann Oteros":3.42,"Jean Jeanice Velasco":13.5,"Jenieme Antong":7.08,"Jervin Tan":11.5,"Jessamae Candongo":16.42,"Jessica Solneo":14.41,"John Carlo Rapada":10.82,"John Dennis Clores":9.92,"Jonnel Ulit":13.92,"Joshua Dela Cruz":2.96,"Juana May De Mesa":12.01,"Jules Christian Atun":12.5,"Karen Orcales":10.25,"Kiesha Pastrana":11.08,"Kirsten Masilang":1.95,"Kristalyn Añonuevo":17.65,"Kristine Joy Israel":5.42,"Lailani Palle":5.58,"Lance Villafania":15.08,"Lemuel Yu":5.82,"Leomar Papa":7.08,"Lorenzo Bayana":15.4,"Ma. Luisa Nemenzo Moreno":6.25,"Maria Patrisha Lopez":5.58,"Marie Antonette Alvarez":17.47,"Mark Francis Obias":5.58,"Mark Jabez Ninonuevo":5.39,"Merry Datul":12.71,"Michelle Anne Barcelona":11.61,"Mikee Valencia":11.88,"Milagrose Gindap":7.17,"Niccorey Colina":6.25,"Pauline Lo":7.08,"Rachel Ann Dadivas":12.02,"Rachelle Sierra":6.73,"Rachelle Singh":5.83,"Reigne Buccat":6.41,"Ria Milarca Bejasa":7.5,"Riana Nakamoto":7.08,"Susan Gonzalez":1.89,"Wendel Lexis Rivera":5.42,"Yuri Bulahan":1.96,"Yvonne Tang":5.58,"Zan Juanes":8.07};
 const SL_BASE = {"Aaron Vigilla":2.79,"Abigael Callos":10.0,"Alain Sebastian":10.0,"Allan Mangorangca":10.0,"Alyssa Ahsley Anareta":2.71,"Andreas Schmidt":3.54,"Angelica Labajo":5.0,"Angeline Amamio":9.0,"Ann Cruz":9.0,"Anna Go":10.0,"Ardel Delos Reyes":3.12,"Arielle Jesena":5.67,"Blesilda Lutchavez":10.0,"Brian Caramonte":2.79,"Camelle Dumayas":0.17,"Carlos Dimailig":2.79,"Catherine Rivera":9.0,"Cecille Verano":10.0,"Charina Silva":8.0,"Charmea Cruz":2.79,"Cheene B. Dapadap":3.12,"Clemente D. Manabat III":3.12,"Danilo Tabontabon":3.54,"Dexter Yatco":3.54,"Diana Santiago":10.0,"Earl Insierto":3.54,"Emmanuel Martin":9.0,"Errol Dexter Mamisao":10.0,"Evangeline De Ocampo":10.0,"Ferlene Rafael":3.54,"Gracel Ayento":10.0,"Gretchen Liao":1.0,"Hannah Tampoc":10.0,"Ivy Madrigal":1.38,"Jan Chiara Marie Palabrica":9.0,"Janell Kae Damayon Aganan":3.12,"Jax Tan":8.0,"Jay-Ann Oteros":6.5,"Jean Jeanice Velasco":8.0,"Jenieme Antong":3.54,"Jervin Tan":10.0,"Jessamae Candongo":9.0,"Jessica Solneo":6.0,"John Carlo Rapada":9.0,"John Dennis Clores":10.0,"Jonnel Ulit":10.0,"Joshua Dela Cruz":10.0,"Juana May De Mesa":9.0,"Jules Christian Atun":9.0,"Karen Orcales":5.12,"Kiesha Pastrana":6.0,"Kirsten Masilang":9.5,"Kristalyn Añonuevo":10.0,"Kristine Joy Israel":2.71,"Lailani Palle":2.79,"Lance Villafania":4.5,"Lemuel Yu":10.0,"Leomar Papa":3.54,"Lorenzo Bayana":10.0,"Ma. Luisa Nemenzo Moreno":3.12,"Maria Patrisha Lopez":2.79,"Marie Antonette Alvarez":10.0,"Mark Francis Obias":2.79,"Mark Jabez Ninonuevo":10.0,"Merry Datul":9.5,"Michelle Anne Barcelona":8.0,"Mikee Valencia":10.0,"Milagrose Gindap":10.0,"Niccorey Colina":3.54,"Pauline Lo":8.0,"Rachel Ann Dadivas":10.0,"Rachelle Sierra":9.0,"Rachelle Singh":8.0,"Reigne Buccat":4.5,"Ria Milarca Bejasa":10.0,"Riana Nakamoto":3.54,"Susan Gonzalez":0.0,"Wendel Lexis Rivera":2.71,"Yuri Bulahan":0.35,"Yvonne Tang":2.79,"Zan Juanes":6.5};
 
+function leaveUsageAfter(){ return state._leaveUsageAfter || '2026-09-13'; }
+// "November 15, 2026" / "Sept 15, 2026" / "July 15 2026" in a column title -> 2026-11-15
+function leaveHeaderDate(s){
+  if(!s) return '';
+  const m = String(s).match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i);
+  if(!m) return '';
+  const mon = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m[1].toLowerCase());
+  return m[3]+'-'+String(mon+1).padStart(2,'0')+'-'+String(parseInt(m[2],10)).padStart(2,'0');
+}
 function getLeaveBalance(name, type) {
   const base = type==='VL' ? (VL_BASE[name]||0) : (SL_BASE[name]||0);
-  // Count usages in attendance tracker AFTER the base date. Refreshed from
-  // HR's official VL/SL Monitoring ledger — the "Final Accrued" column is
-  // mislabeled "As of August 30, 2026" but payroll confirmed it actually
-  // accounts for everything through Sep 13, 2026 (the end of that cutoff
-  // period), so usage only needs counting from after that date to avoid
-  // double-subtracting what's already reflected in the base figure.
+  // The imported balance already has leave taken up to a certain date taken
+  // out of it (HR's ledger), so only leave marked in the Tracker AFTER that
+  // date may still be subtracted -- otherwise it's deducted twice. That date
+  // is read from the payroll file when it's imported (state._leaveUsageAfter).
   const used = state.dates
-    .filter(d => d > '2026-09-13')
+    .filter(d => d > leaveUsageAfter())
     .filter(d => state.attendance[gk(name,d)] === type)
     .length;
   return Math.max(base - used, 0);
@@ -2331,6 +2343,15 @@ async function loadFromDB(){
     state._clearedStaleEmmanuelFriOff = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: the 15 Nov 2026 payroll ledger was imported while usage was
+  // still being counted from a fixed 13 Sep, so leave already in that ledger
+  // was subtracted a second time. Its balances run through 15 Nov.
+  if(!state._leaveUsageAfterSetNov15){
+    if(!state._leaveUsageAfter) state._leaveUsageAfter = '2026-11-15';
+    state.leaveBalanceNote = 'Last updated: Nov 11, 2026 based on VL/SL Monitoring as of Nov 15, 2026. Will refresh after the next payout.';
+    state._leaveUsageAfterSetNov15 = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: copy manual Timesheet comments onto existing Overtime entries
   // whose reason is still blank (the sync used to always leave it empty).
   if(!state._backfilledOTReasonsFromTimesheet){
@@ -2673,6 +2694,12 @@ function mergeRemoteIntoLocal(remoteData){
     if(!Array.isArray(state.cutoffs)) state.cutoffs = [];
     const localIds = new Set(state.cutoffs.map(c=>c.id));
     remoteData.cutoffs.forEach(c=>{ if(!localIds.has(c.id)) state.cutoffs.push(c); });
+  }
+
+  // _leaveUsageAfter: keep the later date, so a tab that loaded before an
+  // import can't roll it back to an older one and bring back double-counting.
+  if(remoteData._leaveUsageAfter && (!state._leaveUsageAfter || remoteData._leaveUsageAfter > state._leaveUsageAfter)){
+    state._leaveUsageAfter = remoteData._leaveUsageAfter;
   }
 
   // activeCutoffId: a plain scalar field with no natural "union" — if two
@@ -8718,6 +8745,7 @@ function importExcel(input){
   document.getElementById('import-modal').classList.add('open');
   document.getElementById('import-confirm-btn').style.display='none';
   document.getElementById('import-summary').style.display='none';
+  document.getElementById('import-through-wrap').style.display='none';
   document.getElementById('import-progress').innerHTML = '⏳ Reading file...';
 
   const reader = new FileReader();
@@ -8728,6 +8756,7 @@ function importExcel(input){
 
       let log = [];
       let vlUpdates = {}, slUpdates = {};
+      const headerCells = [];
 
       // ── VL Sheet ──
       if(wb.SheetNames.includes('VL Monitoring')){
@@ -8735,6 +8764,7 @@ function importExcel(input){
         const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
         // Find last column with "Final Accrued" or "Final Acccued" in header row (row index 1)
         const header = rows[1] || [];
+        headerCells.push(header);
         let vlBalCol = -1;
         for(let i=header.length-1;i>=0;i--){
           if(header[i]&&String(header[i]).toLowerCase().includes('final')){
@@ -8776,6 +8806,7 @@ function importExcel(input){
         const ws = wb.Sheets['SL Monitoring'];
         const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
         const header = rows[1] || [];
+        headerCells.push(header);
         let slBalCol = -1;
         for(let i=header.length-1;i>=0;i--){
           if(header[i]&&String(header[i]).toLowerCase().includes('final')){
@@ -8812,6 +8843,11 @@ function importExcel(input){
       // Match against roster — surname-based fuzzy match (handles spelling
       // variants like Kristen/Kirsten) instead of requiring a literal
       // substring match, which missed many real matches before.
+      // The latest date named in any column title is how far the ledger has
+      // been counted (the SL sheet's "Final" title can lag behind its newest
+      // "Leave Hrs Taken" column, so use the newest date anywhere).
+      let throughDate = '';
+      headerCells.forEach(h=>h.forEach(cell=>{ const d = leaveHeaderDate(cell); if(d && d > throughDate) throughDate = d; }));
       function normTok(s){ return (s||'').toLowerCase().replace(/[^a-z]/g,''); }
       const NAME_SUFFIXES = new Set(['jr','sr','ii','iii','iv','v']);
       function stripSuffix(tokens){
@@ -8869,6 +8905,9 @@ function importExcel(input){
 🎯 Matched: ${matched} employees`);
       if(unmatched.length) log.push(`⚠️ Not matched (${unmatched.length}): ${unmatched.join(', ')}`);
 
+      log.push(throughDate ? ('📅 Balances counted through '+throughDate) : '⚠️ Could not read a "counted through" date from the column titles — please set it below');
+      document.getElementById('import-through').value = throughDate || state._leaveUsageAfter || '';
+      document.getElementById('import-through-wrap').style.display = 'block';
       pendingLeaveImport = true;
       document.getElementById('import-progress').innerHTML = log.map(l=>`<div>${l}</div>`).join('');
       document.getElementById('import-summary').style.display='block';
@@ -8884,6 +8923,13 @@ function importExcel(input){
 
 function confirmImport(){
   if(!pendingLeaveImport) return;
+  const thrEl = document.getElementById('import-through');
+  const thr = thrEl ? thrEl.value : '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(thr)){
+    state._leaveUsageAfter = thr;
+    const longD = s => new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    state.leaveBalanceNote = 'Last updated: '+longD(fmt(new Date()))+' based on VL/SL Monitoring as of '+longD(thr)+'. Will refresh after the next payout.';
+  }
   scheduleSave();
   renderDash();
   renderTable();
