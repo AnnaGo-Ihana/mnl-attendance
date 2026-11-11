@@ -1098,9 +1098,10 @@ html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [styl
     <div id="import-progress" style="background:#070a2a;border-radius:8px;padding:14px;font-size:12px;font-family:var(--mono);color:var(--text2);max-height:200px;overflow-y:auto;line-height:1.8"></div>
     <div id="import-summary" style="display:none;margin-top:12px;padding:12px;background:rgba(52,211,153,.1);border:1px solid #34d399;border-radius:8px;font-size:13px;color:#34d399;text-align:center"></div>
     <div id="import-through-wrap" style="display:none;margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2)">
-      <label for="import-through" style="display:block;font-weight:700;color:var(--text);margin-bottom:6px">Balances in this file are counted through</label>
+      <label for="import-through" style="display:block;font-weight:700;color:var(--text);margin-bottom:6px">Payroll has taken leave out of these balances through (last date)</label>
       <input type="date" id="import-through" style="width:100%">
-      <div style="margin-top:6px;line-height:1.5">Leave marked in the Tracker <b>after</b> this date is subtracted from these balances. Leave on or before it is already inside the file, so it is not subtracted again.</div>
+      <div id="import-through-hint" style="margin-top:6px"></div>
+      <div style="margin-top:6px;line-height:1.5">Leave marked in the Tracker <b>after</b> this date is subtracted from these balances. Leave on or before it is already inside the file. Ask payroll if unsure &mdash; the column titles can be ahead of what was actually counted.</div>
     </div>
     <div class="ma" style="margin-top:16px">
       <button class="btn go" id="import-confirm-btn" onclick="confirmImport()" style="display:none;flex:1;padding:9px">✓ Apply Updates</button>
@@ -1772,6 +1773,7 @@ const VL_BASE = {"Aaron Vigilla":5.58,"Abigael Callos":14.78,"Alain Sebastian":1
 const SL_BASE = {"Aaron Vigilla":2.79,"Abigael Callos":10.0,"Alain Sebastian":10.0,"Allan Mangorangca":10.0,"Alyssa Ahsley Anareta":2.71,"Andreas Schmidt":3.54,"Angelica Labajo":5.0,"Angeline Amamio":9.0,"Ann Cruz":9.0,"Anna Go":10.0,"Ardel Delos Reyes":3.12,"Arielle Jesena":5.67,"Blesilda Lutchavez":10.0,"Brian Caramonte":2.79,"Camelle Dumayas":0.17,"Carlos Dimailig":2.79,"Catherine Rivera":9.0,"Cecille Verano":10.0,"Charina Silva":8.0,"Charmea Cruz":2.79,"Cheene B. Dapadap":3.12,"Clemente D. Manabat III":3.12,"Danilo Tabontabon":3.54,"Dexter Yatco":3.54,"Diana Santiago":10.0,"Earl Insierto":3.54,"Emmanuel Martin":9.0,"Errol Dexter Mamisao":10.0,"Evangeline De Ocampo":10.0,"Ferlene Rafael":3.54,"Gracel Ayento":10.0,"Gretchen Liao":1.0,"Hannah Tampoc":10.0,"Ivy Madrigal":1.38,"Jan Chiara Marie Palabrica":9.0,"Janell Kae Damayon Aganan":3.12,"Jax Tan":8.0,"Jay-Ann Oteros":6.5,"Jean Jeanice Velasco":8.0,"Jenieme Antong":3.54,"Jervin Tan":10.0,"Jessamae Candongo":9.0,"Jessica Solneo":6.0,"John Carlo Rapada":9.0,"John Dennis Clores":10.0,"Jonnel Ulit":10.0,"Joshua Dela Cruz":10.0,"Juana May De Mesa":9.0,"Jules Christian Atun":9.0,"Karen Orcales":5.12,"Kiesha Pastrana":6.0,"Kirsten Masilang":9.5,"Kristalyn Añonuevo":10.0,"Kristine Joy Israel":2.71,"Lailani Palle":2.79,"Lance Villafania":4.5,"Lemuel Yu":10.0,"Leomar Papa":3.54,"Lorenzo Bayana":10.0,"Ma. Luisa Nemenzo Moreno":3.12,"Maria Patrisha Lopez":2.79,"Marie Antonette Alvarez":10.0,"Mark Francis Obias":2.79,"Mark Jabez Ninonuevo":10.0,"Merry Datul":9.5,"Michelle Anne Barcelona":8.0,"Mikee Valencia":10.0,"Milagrose Gindap":10.0,"Niccorey Colina":3.54,"Pauline Lo":8.0,"Rachel Ann Dadivas":10.0,"Rachelle Sierra":9.0,"Rachelle Singh":8.0,"Reigne Buccat":4.5,"Ria Milarca Bejasa":10.0,"Riana Nakamoto":3.54,"Susan Gonzalez":0.0,"Wendel Lexis Rivera":2.71,"Yuri Bulahan":0.35,"Yvonne Tang":2.79,"Zan Juanes":6.5};
 
 function leaveUsageAfter(){ return state._leaveUsageAfter || '2026-09-13'; }
+function longDate(s){ return new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
 // "November 15, 2026" / "Sept 15, 2026" / "July 15 2026" in a column title -> 2026-11-15
 function leaveHeaderDate(s){
   if(!s) return '';
@@ -1786,10 +1788,13 @@ function getLeaveBalance(name, type) {
   // out of it (HR's ledger), so only leave marked in the Tracker AFTER that
   // date may still be subtracted -- otherwise it's deducted twice. That date
   // is read from the payroll file when it's imported (state._leaveUsageAfter).
+  const half = type==='VL' ? 'HDVL' : 'HDSL';
   const used = state.dates
     .filter(d => d > leaveUsageAfter())
-    .filter(d => state.attendance[gk(name,d)] === type)
-    .length;
+    .reduce((sum, d) => {
+      const v = state.attendance[gk(name,d)];
+      return sum + (v === type ? 1 : (v === half ? 0.5 : 0));
+    }, 0);
   return Math.max(base - used, 0);
 }
 function getLeaveUsed(name, type) {
@@ -2352,6 +2357,15 @@ async function loadFromDB(){
     state._leaveUsageAfterSetNov15 = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time correction: payroll confirmed the 15 Nov ledger only has leave
+  // taken out through 8 Nov, so leave marked after 8 Nov must still come off.
+  if(!state._leaveUsageAfterSetNov8){
+    state._leaveUsageAfter = '2026-11-08';
+    state._leaveUsageAfterAt = Date.now();
+    state.leaveBalanceNote = 'Last updated: Nov 11, 2026 based on VL/SL Monitoring as of Nov 8, 2026. Will refresh after the next payout.';
+    state._leaveUsageAfterSetNov8 = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: copy manual Timesheet comments onto existing Overtime entries
   // whose reason is still blank (the sync used to always leave it empty).
   if(!state._backfilledOTReasonsFromTimesheet){
@@ -2696,10 +2710,11 @@ function mergeRemoteIntoLocal(remoteData){
     remoteData.cutoffs.forEach(c=>{ if(!localIds.has(c.id)) state.cutoffs.push(c); });
   }
 
-  // _leaveUsageAfter: keep the later date, so a tab that loaded before an
-  // import can't roll it back to an older one and bring back double-counting.
-  if(remoteData._leaveUsageAfter && (!state._leaveUsageAfter || remoteData._leaveUsageAfter > state._leaveUsageAfter)){
+  // _leaveUsageAfter: keep whichever date was set most recently, so a tab
+  // that loaded before an import or correction can't roll it back.
+  if(remoteData._leaveUsageAfter && (!state._leaveUsageAfter || (remoteData._leaveUsageAfterAt||0) > (state._leaveUsageAfterAt||0))){
     state._leaveUsageAfter = remoteData._leaveUsageAfter;
+    state._leaveUsageAfterAt = remoteData._leaveUsageAfterAt;
   }
 
   // activeCutoffId: a plain scalar field with no natural "union" — if two
@@ -8905,8 +8920,11 @@ function importExcel(input){
 🎯 Matched: ${matched} employees`);
       if(unmatched.length) log.push(`⚠️ Not matched (${unmatched.length}): ${unmatched.join(', ')}`);
 
-      log.push(throughDate ? ('📅 Balances counted through '+throughDate) : '⚠️ Could not read a "counted through" date from the column titles — please set it below');
-      document.getElementById('import-through').value = throughDate || state._leaveUsageAfter || '';
+      log.push(throughDate ? ('📅 Column titles go up to '+longDate(throughDate)+' — but enter the last date payroll actually counted below') : '⚠️ No date found in the column titles — enter the last date payroll counted below');
+      document.getElementById('import-through').value = '';
+      document.getElementById('import-through-hint').innerHTML = throughDate
+        ? 'Column titles in the file go up to <b>'+longDate(throughDate)+'</b> <button type="button" class="btn light" style="padding:3px 10px;font-size:11px" onclick="document.getElementById(\'import-through\').value=\''+throughDate+'\'">Use this date</button>'
+        : 'No date found in the column titles.';
       document.getElementById('import-through-wrap').style.display = 'block';
       pendingLeaveImport = true;
       document.getElementById('import-progress').innerHTML = log.map(l=>`<div>${l}</div>`).join('');
@@ -8925,11 +8943,13 @@ function confirmImport(){
   if(!pendingLeaveImport) return;
   const thrEl = document.getElementById('import-through');
   const thr = thrEl ? thrEl.value : '';
-  if(/^\d{4}-\d{2}-\d{2}$/.test(thr)){
-    state._leaveUsageAfter = thr;
-    const longD = s => new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    state.leaveBalanceNote = 'Last updated: '+longD(fmt(new Date()))+' based on VL/SL Monitoring as of '+longD(thr)+'. Will refresh after the next payout.';
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(thr)){
+    toast('Enter the last date payroll counted leave through before applying');
+    return;
   }
+  state._leaveUsageAfter = thr;
+  state._leaveUsageAfterAt = Date.now();
+  state.leaveBalanceNote = 'Last updated: '+longDate(fmt(new Date()))+' based on VL/SL Monitoring as of '+longDate(thr)+'. Will refresh after the next payout.';
   scheduleSave();
   renderDash();
   renderTable();
