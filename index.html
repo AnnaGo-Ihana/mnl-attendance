@@ -2377,9 +2377,20 @@ async function loadFromDB(){
   if(!state._addedNov1618Holidays){
     if(!state.customHolidays) state.customHolidays = {};
     ['2026-11-16','2026-11-17','2026-11-18'].forEach(d=>{
-      if(!(d in state.customHolidays) && !PH_HOLIDAYS[d]) state.customHolidays[d] = 'Special Non-Working - Government Announced';
+      if(!(d in state.customHolidays) && !PH_HOLIDAYS[d]) state.customHolidays[d] = 'Special Non-Working - 49th ASEAN Summit';
     });
     state._addedNov1618Holidays = true;
+    try{ await saveToDB(); }catch(e){}
+  }
+  // One-time: 16-18 Nov 2026 are the 49th ASEAN Summit. Only rename the entries
+  // that still carry the first placeholder name -- anything edited or removed
+  // in Settings stays as it is.
+  if(!state._renamedNov1618AseanV1){
+    if(!state.customHolidays) state.customHolidays = {};
+    ['2026-11-16','2026-11-17','2026-11-18'].forEach(d=>{
+      if(state.customHolidays[d] === 'Special Non-Working - Government Announced') state.customHolidays[d] = 'Special Non-Working - 49th ASEAN Summit';
+    });
+    state._renamedNov1618AseanV1 = true;
     try{ await saveToDB(); }catch(e){}
   }
   // One-time: put the 15 Nov 2026 payroll ledger's VL/SL balances (from the
