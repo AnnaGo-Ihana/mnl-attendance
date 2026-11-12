@@ -1510,6 +1510,21 @@ html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [styl
     </div>
 
     <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🎌 Holidays</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px;line-height:1.5">Add a holiday the government announces, or turn one off. It shows in the Timesheet notes, the Schedule and the Roster right away. Leave "To" empty for a single day.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div><label for="hol-from" style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">From</label><input type="date" id="hol-from" style="width:100%"></div>
+        <div><label for="hol-to" style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">To (optional)</label><input type="date" id="hol-to" style="width:100%"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><label for="hol-type" style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Type</label><select id="hol-type" style="width:100%"><option value="Special Non-Working">Special Non-Working Day</option><option value="Regular Holiday">Regular Holiday</option></select></div>
+        <div><label for="hol-name" style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Name (optional)</label><input type="text" id="hol-name" placeholder="e.g. Government announced" style="width:100%"></div>
+      </div>
+      <button class="btn light" onclick="addHolidays()" style="width:100%;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">+ Add holiday</button>
+      <div id="hol-list" style="margin-top:14px;max-height:280px;overflow-y:auto"></div>
+    </div>
+
+    <div style="background:#0d1250;border:1px solid #262e8c;border-radius:10px;padding:18px;grid-column:1/-1;max-width:640px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📥 Download Backup</div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Downloads everything — attendance, timesheets, schedules, leave requests, employees — as one file. Keep it somewhere safe. If something ever goes missing, send this file to Claude and it can be used to recover the exact data that was lost, without needing to dig through the database manually.</div>
       <button class="btn light" onclick="downloadFullBackup()" style="width:100%;background:rgba(0,232,150,.1);border-color:#00e896;color:#00e896">Download Backup Now</button>
@@ -2358,6 +2373,15 @@ async function loadFromDB(){
     state._leaveUsageAfterSetNov15 = true;
     try{ await saveToDB(); }catch(e){}
   }
+  // One-time: Special Non-Working Days announced by the government for 16-18 Nov 2026.
+  if(!state._addedNov1618Holidays){
+    if(!state.customHolidays) state.customHolidays = {};
+    ['2026-11-16','2026-11-17','2026-11-18'].forEach(d=>{
+      if(!(d in state.customHolidays) && !PH_HOLIDAYS[d]) state.customHolidays[d] = 'Special Non-Working - Government Announced';
+    });
+    state._addedNov1618Holidays = true;
+    try{ await saveToDB(); }catch(e){}
+  }
   // One-time: put the 15 Nov 2026 payroll ledger's VL/SL balances (from the
   // Excel file) into the app for everyone in it. The earlier import only lived
   // in the browser and was lost when the page was refreshed before saving, so
@@ -2684,7 +2708,7 @@ function mergeRemoteIntoLocal(remoteData){
   if(!remoteData) return;
 
   // Per-key dictionaries: union of both sides, local wins per-key conflicts
-  const dictFields = ['attendance','timesheet','notes','onsite','scheduleOverrides','credentialOverrides','_leaveOverrides'];
+  const dictFields = ['attendance','timesheet','notes','onsite','scheduleOverrides','credentialOverrides','_leaveOverrides','customHolidays'];
   dictFields.forEach(field=>{
     const remoteObj = remoteData[field];
     if(!remoteObj) return;
@@ -3119,7 +3143,7 @@ function showPage(id){
   if(id==='dashboard')renderDash();
   if(id==='tracker')renderTable();
   if(id==='roster')renderRoster();
-  if(id==='settings'){ renderCutoffBadge(); renderAccessMgmtList(); renderEmpMgmtList(); setSchedMgmtMode('individual'); }
+  if(id==='settings'){ renderHolidayList(); renderCutoffBadge(); renderAccessMgmtList(); renderEmpMgmtList(); setSchedMgmtMode('individual'); }
   if(id==='timesheet'){
     populateTsEmpFilter();
     const tf=document.getElementById('ts-date-from');
@@ -4892,7 +4916,14 @@ const PH_HOLIDAYS = {
   '2026-04-01':'Special Non-Working - Chinese New Year',
 };
 
-function getPHHoliday(dateStr){ return PH_HOLIDAYS[dateStr]||''; }
+// Holidays you add or turn off in Settings live in state.customHolidays:
+// a label means "this is a holiday", '' means "not a holiday" (so a built-in
+// one can be switched off). Anything not in there falls back to the built-in list.
+function getPHHoliday(dateStr){
+  const ch = (typeof state!=='undefined' && state) ? state.customHolidays : null;
+  if(ch && Object.prototype.hasOwnProperty.call(ch, dateStr)) return ch[dateStr] || '';
+  return PH_HOLIDAYS[dateStr]||'';
+}
 
 // Note color rules:
 // RED   = VL, SL, Absent, UT, HD (from attendance)
@@ -5084,7 +5115,7 @@ function recalcAllOTNotes(){
       if(entry._notesManual && (entry.notes||'').trim()) return; // real manual note — skip
       const parts = k.split('||');
       const name = parts[1], date = parts[2];
-      const holiday = PH_HOLIDAYS[date];
+      const holiday = getPHHoliday(date);
       const att = (state.attendance||{})[name+'||'+date] || '';
       const issues = detectAttendanceIssues(entry.schedule, cleanTimeIn, cleanTimeOut);
       const issueNote = issues.length>0 ? issues.map(i=>i.note).join(' | ') : '';
@@ -7638,6 +7669,57 @@ function openFileLeave(){
   document.getElementById('leave-doc-link').value='';
   document.getElementById('leave-notice-warn').style.display='none';
   document.getElementById('file-leave-modal').classList.add('open');
+}
+
+// ═══ HOLIDAYS (Settings) ═══
+function holidayLabelFor(type, name){ return type+' - '+((name||'').trim() || 'Government Announced'); }
+async function addHolidays(){
+  if(!isEditMode){ toast('Sign in with edit access to change holidays'); return; }
+  const from = document.getElementById('hol-from').value;
+  const to = document.getElementById('hol-to').value || from;
+  if(!from){ toast('Pick the holiday date'); return; }
+  if(to < from){ toast('"To" must be on or after "From"'); return; }
+  if(Math.round((pd(to)-pd(from))/86400000) >= 31){ toast('Add up to 31 days at a time'); return; }
+  const label = holidayLabelFor(document.getElementById('hol-type').value, document.getElementById('hol-name').value);
+  if(!state.customHolidays) state.customHolidays = {};
+  const d = pd(from), end = pd(to); let n = 0;
+  while(d <= end){ state.customHolidays[fmt(d)] = label; d.setDate(d.getDate()+1); n++; }
+  document.getElementById('hol-from').value = ''; document.getElementById('hol-to').value = ''; document.getElementById('hol-name').value = '';
+  renderHolidayList();
+  scheduleSave();
+  try{ await manualSaveNow(); }catch(e){}
+  toast(_hasUnsavedChanges ? '⚠️ Holiday added but NOT saved yet — click Save Changes' : '✅ '+n+' holiday'+(n!==1?'s':'')+' added and saved');
+}
+// Remove = mark "not a holiday" (a stored '' rather than deleting the entry, so an
+// older browser tab can't quietly bring it back). Restore puts a built-in one back.
+async function toggleHoliday(d){
+  if(!isEditMode){ toast('Sign in with edit access to change holidays'); return; }
+  if(!state.customHolidays) state.customHolidays = {};
+  if(getPHHoliday(d)) state.customHolidays[d] = '';
+  else if(PH_HOLIDAYS[d]) state.customHolidays[d] = PH_HOLIDAYS[d];
+  renderHolidayList();
+  scheduleSave();
+  try{ await manualSaveNow(); }catch(e){}
+}
+function renderHolidayList(){
+  const box = document.getElementById('hol-list');
+  if(!box) return;
+  const ch = state.customHolidays || {};
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-14);
+  const from = fmt(cutoff);
+  const dates = [...new Set([...Object.keys(PH_HOLIDAYS), ...Object.keys(ch)])].filter(d=>d>=from).sort();
+  const rows = dates.map(d=>{
+    const eff = getPHHoliday(d);
+    const builtin = PH_HOLIDAYS[d];
+    if(!eff && !builtin) return '';           // an added day that was later removed
+    const off = !eff;
+    const tag = off ? 'turned off' : (ch[d] && !builtin ? 'added' : (ch[d] && ch[d]!==builtin ? 'edited' : 'built-in'));
+    return '<div style="display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--border);font-size:12px">'
+      +'<span style="font-weight:700;color:var(--text)">'+dow(d)+' '+dd(d)+(d.slice(0,4)!==String(new Date().getFullYear())?' '+d.slice(0,4):'')+'</span>'
+      +'<span style="color:var(--text2);'+(off?'text-decoration:line-through;opacity:.7':'')+'">'+rsEsc(eff||builtin)+' <span style="font-size:10px;color:var(--text3)">· '+tag+'</span></span>'
+      +'<button class="btn light" onclick="toggleHoliday(\''+d+'\')" style="padding:3px 10px;font-size:11px;'+(off?'color:#00e896;border-color:#00e896':'color:#ff5c7a;border-color:#ff5c7a')+'">'+(off?'Restore':'Remove')+'</button></div>';
+  }).filter(Boolean);
+  box.innerHTML = rows.length ? rows.join('') : '<div style="font-size:12px;color:var(--text3)">No upcoming holidays.</div>';
 }
 
 // ═══════════════════════════════════════════════════════════════
