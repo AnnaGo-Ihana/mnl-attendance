@@ -6049,15 +6049,8 @@ function exportTimesheetCSV(){
   let csv = 'Department,Employee,Date,Day,Schedule,Time In,Time Out,ND,Notes,Attendance\n';
   const emps = scopedActiveEmployees().filter(e=>(!deptF||e.team===deptF) && (!empF||e.name===empF));
   emps.forEach(emp=>{
-    // Skip an employee entirely if they have zero attendance/timesheet data
-    // in this exact date range — e.g. someone who resigned before this
-    // cutoff started shouldn't appear as an empty row.
-    const hasAnyData = dates.some(d=>{
-      const att = state.attendance[gk(emp.name,d)]||'';
-      const ts = state.timesheet ? state.timesheet[tsk(emp.name,d)] : null;
-      return att || (ts && (ts.timeIn || ts.timeOut || ts.notes));
-    });
-    if(!hasAnyData) return;
+    // Every active employee in the current filter is exported, even if they
+    // have no marks yet in this range (e.g. new hires), so nobody goes missing.
     dates.forEach(d=>{
       const e=getTsEntry(emp.name,d);
       const att=state.attendance[gk(emp.name,d)]||'';
