@@ -1768,6 +1768,7 @@ html[data-theme="light"] [style^="color:#ff5c7a"],html[data-theme="light"] [styl
     <div class="ma">
       <button onclick="reviewLeave('Approved')" id="btn-approve-leave" style="flex:1;padding:9px;background:rgba(0,232,150,.2);border:1px solid #00e896;color:#00e896;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">✅ Approve</button>
       <button onclick="reviewLeave('Declined')" id="btn-decline-leave" style="flex:1;padding:9px;background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">❌ Decline</button>
+      <button onclick="deleteLeave(_reviewingLeaveId)" id="btn-delete-leave" style="display:none;flex:1;padding:9px;background:rgba(255,92,122,.12);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:600">🗑 Delete</button>
       <button onclick="document.getElementById('review-leave-modal').classList.remove('open')" style="flex:1;padding:9px;background:#0d1250;border:1px solid #262e8c;color:var(--text2);border-radius:6px;cursor:pointer;font-family:var(--font)">Close</button>
     </div>
   </div>
@@ -2745,6 +2746,16 @@ function mergeRemoteIntoLocal(remoteData){
   Object.keys(remoteData).forEach(k=>{ if(k.charAt(0)==='_' && remoteData[k]===true && state[k]===undefined) state[k] = true; });
 
   // Array-of-objects-with-id: union by id, local wins per-id conflicts
+  // Deleted leave requests stay deleted: combine both sides' delete lists,
+  // and never re-add (or keep) a request whose id is on it.
+  if(!Array.isArray(state.deletedLeaveIds)) state.deletedLeaveIds = [];
+  if(Array.isArray(remoteData.deletedLeaveIds)){
+    remoteData.deletedLeaveIds.forEach(i=>{ if(!state.deletedLeaveIds.includes(i)) state.deletedLeaveIds.push(i); });
+  }
+  if(Array.isArray(state.leaveRequests) && state.deletedLeaveIds.length){
+    const gone = new Set(state.deletedLeaveIds);
+    state.leaveRequests = state.leaveRequests.filter(r=>!gone.has(r.id));
+  }
   const idArrayFields = ['leaveRequests','otEntries'];
   idArrayFields.forEach(field=>{
     const remoteArr = remoteData[field];
@@ -2752,7 +2763,7 @@ function mergeRemoteIntoLocal(remoteData){
     if(!Array.isArray(state[field])) state[field] = [];
     const localIds = new Set(state[field].map(r=>r.id));
     remoteArr.forEach(r=>{
-      if(!localIds.has(r.id)) state[field].push(r);
+      if(!localIds.has(r.id) && !(field==='leaveRequests' && state.deletedLeaveIds.includes(r.id))) state[field].push(r);
     });
   });
 
@@ -8126,6 +8137,8 @@ function openReviewLeave(id){
   const decBtn = document.getElementById('btn-decline-leave');
   if(appBtn) appBtn.style.display = canReview ? '' : 'none';
   if(decBtn) decBtn.style.display = canReview ? '' : 'none';
+  const delBtn = document.getElementById('btn-delete-leave');
+  if(delBtn) delBtn.style.display = canDeleteLeave(req) ? '' : 'none';
 
   // Partial cancellation — only relevant for a multi-day request that's
   // currently Approved. Declining the whole request would revert every date
@@ -8247,10 +8260,38 @@ function reviewLeave(status){
   toast((status==='Approved'?'✅':'❌')+' Leave '+status.toLowerCase()+'!');
 }
 
+// Who may delete a filed leave: anyone with full access (all team leads), or a
+// leave approver who is themselves a Team Lead / Deputy / Manager, for their
+// own department's requests.
+function canDeleteLeave(r){
+  if(isEditMode || sessionStorage.getItem('att_is_edit')==='1') return true;
+  if(currentUser && currentUser.accessLevel==='leave_approver' && r && r.dept===currentUser.approverDept){
+    const emp = (state.employees||[]).find(e=>e.name===currentUser.name);
+    return !!(emp && LEAD_ROLES.includes(emp.role));
+  }
+  return false;
+}
 function deleteLeave(id){
-  if(!confirm('Delete this leave request?')) return;
-  state.leaveRequests = (state.leaveRequests||[]).filter(r=>r.id!==id);
-  scheduleSave(); renderLeaves(); toast('Leave request deleted');
+  const req = (state.leaveRequests||[]).find(r=>r.id===id);
+  if(!req) return;
+  if(!canDeleteLeave(req)){ toast('⚠️ Only team leads can delete a filed leave'); return; }
+  if(!confirm('Delete this leave request for '+leaveEmpName(req)+' ('+req.type+', '+leaveDaysLabel(req)+')?'+(req.status==='Approved'?'\n\nIt is Approved, so its marks will also be cleared from the Tracker.':''))) return;
+  // An Approved request put its marks on the Tracker; take back only those,
+  // exactly like declining it would.
+  if(req.status==='Approved' && req.from && req.to){
+    const emp = leaveEmpName(req);
+    let dates = (state.dates||[]).filter(d=>d>=req.from && d<=req.to);
+    if(req.cancelledDates && req.cancelledDates.length) dates = dates.filter(d=>!req.cancelledDates.includes(d));
+    dates.forEach(d=>{ const k=gk(emp,d); if(state.attendance[k]===req.type) delete state.attendance[k]; });
+    if(typeof renderTable==='function') renderTable();
+  }
+  state.leaveRequests = state.leaveRequests.filter(r=>r.id!==id);
+  // Remember the delete so a merge with an older copy can't bring it back.
+  if(!Array.isArray(state.deletedLeaveIds)) state.deletedLeaveIds = [];
+  if(!state.deletedLeaveIds.includes(id)) state.deletedLeaveIds.push(id);
+  const m = document.getElementById('review-leave-modal'); if(m) m.classList.remove('open');
+  const dm = document.getElementById('day-leaves-modal'); if(dm) dm.classList.remove('open');
+  scheduleSave(); renderLeaves(); toast('Leave request deleted · click Save Changes');
 }
 
 function renderLeaves(){
@@ -8335,7 +8376,7 @@ function renderLeaves(){
             const canReviewThis = canManage || (isLeaveApprover && r.dept===currentUser.approverDept);
             if(canReviewThis){
               return '<button onclick="openReviewLeave(\''+rid+'\')" style="background:rgba(196,168,255,.2);border:1px solid #bfccff;color:#bfccff;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--font);margin-right:4px">Review</button>'
-                +(canManage?'<button onclick="deleteLeave(\''+rid+'\')" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>':'');
+                +(canDeleteLeave(r)?'<button onclick="deleteLeave(\''+rid+'\')" style="background:rgba(255,92,122,.2);border:1px solid #ff5c7a;color:#ff5c7a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font)">🗑</button>':'');
             }
             // A regular employee (leave_only) can withdraw their own request,
             // but only while it's still Pending — once a lead has acted on
@@ -8396,6 +8437,11 @@ function renderLeavesCalendar(reqs){
       }
       d.setDate(d.getDate()+1);
     }
+  });
+  // On each day, whoever filed first is listed first.
+  const _fileKey = r => r.filedAt || (parseInt(r.id,10) ? new Date(parseInt(r.id,10)).toISOString() : '');
+  Object.keys(leaveMap).forEach(k=>{
+    leaveMap[k].sort((a,b)=>_fileKey(a).localeCompare(_fileKey(b)) || String(a.id).localeCompare(String(b.id)));
   });
   // Make available to the "+X more" popup so it shows exactly what's
   // currently filtered/displayed, not a separate unfiltered lookup.
